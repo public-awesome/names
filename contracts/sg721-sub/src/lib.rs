@@ -1,8 +1,12 @@
-pub mod contract;
-mod error;
-pub mod helpers;
-pub mod integration_tests;
-pub mod msg;
-pub mod state;
+pub struct NameMetadataExtension<T> {
+    /// Address associated with the name. Doesn't have to be the owner. For example, this could be a collection contract address.
+    pub address: Addr,
+    pub content: String,
+    pub record: Vec<TextRecord>,
+    pub extension: T,
+}
 
-pub use crate::error::ContractError;
+pub struct TextRecord {
+    pub name: String,  // "twitter"
+    pub value: String, // "shan3v"
+}
