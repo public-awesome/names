@@ -87,11 +87,11 @@ Message additions:
 pub enum ExecuteMsg {
     /// Renew the subscription by paying all or a partial amount.
     /// Only the final payer becomes the new owner.
-    Renew { token_id }
+    Renew { token_id: String },
     /// Someone may call this to take ownership and of an expired subscription
-    Claim { token_id }
+    Claim { token_id: String },
     /// Someone may call this to burn and collect fees from an expired subscription
-    Burn { token_id }
+    Burn { token_id: String },
 }
 ```
 
