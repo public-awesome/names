@@ -1,7 +1,11 @@
 [workspace]
 members = ["contracts/*"]
 
-[profile.release.package.sg-marketplace]
+[profile.release.package.name-minter]
+codegen-units = 1
+incremental = false
+
+[profile.release.package.sg721-sub]
 codegen-units = 1
 incremental = false
 
