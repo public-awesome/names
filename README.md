@@ -130,11 +130,17 @@ Name minter mints subscription NFTs with a name metadata extension:
 
 ```rs
 pub struct NameMetadataExtension<T> {
-    /// Address associated with the name. Doesn't have to be the owner. For example, this could be a collection contract address.
+    /// Address associated with the name.
     pub address: Addr,
     pub content: String,
+    pub profile: NFT,
     pub record: Vec<TextRecord>,
     pub extension: T,
+}
+
+pub struct NFT {
+    pub collection: Addr,
+    pub token_id: String,
 }
 
 pub struct TextRecord {
