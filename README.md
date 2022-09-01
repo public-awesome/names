@@ -16,6 +16,7 @@
 - There is a 30 day grace period after name expiry for owner to pay fee
 - If owner doesn't pay the fee during the grace period, anyone can claim the name for the highest bid amount
 - If there are no bids, there is a minimum fee to keep the name (i.e: 100 STARS)
+- Cap annual fee at $100 / year
 - If the name is a subname, the root name owner gets 50% of the fee
 
 ## Overview
