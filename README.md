@@ -6,6 +6,8 @@
 5+ chars = 1,000 STARS
 4 chars = 10,000 STARS
 3 chars = 100,000 STARS
+2 chars = 1,000,000 STARS // save for later
+1 char = 10,000,000 STARS // save for later
 ```
 
 ## Annual Auction
@@ -15,8 +17,9 @@
 - After 1 year, owner has to pay 3% of the top bid to keep the name
 - There is a 30 day grace period after name expiry for owner to pay fee
 - If owner doesn't pay the fee during the grace period, anyone can claim the name for the highest bid amount
-- If there are no bids, there is a minimum fee to keep the name (i.e: 100 STARS)
+- If there are no bids, there is a minimum fee to keep the name based on the number of characters
 - Cap annual fee at $100 / year
+- Cap fee growth rate for N years
 - If the name is a subname, the root name owner gets 50% of the fee
 
 ## Overview
@@ -40,6 +43,8 @@ owner: stars157nwwthsyyskuzeugsf48k52v6s4sl2swlhm2r
 ## Subnames
 
 A name may have any amount of subnames with different owners.
+
+Subname issuers are basically registrars, and it is recommended (especially very short name) issuers do it through a DAO.
 
 ```
 name: stargazer.spaceships.stars
