@@ -1,10 +1,28 @@
 # Stargaze Names
 
+## Initial Fees
+
+```
+5+ chars = 1,000 STARS
+4 chars = 10,000 STARS
+3 chars = 100,000 STARS
+```
+
+## Annual Auction
+
+- When a name is minted it is automatically listed in Name Marketplace
+- Owner can accept the top bid at any time
+- After 1 year, owner has to pay 3% of the top bid to keep the name
+- There is a 30 day grace period after name expiry for owner to pay fee
+- If owner doesn't pay the fee during the grace period, anyone can claim the name for the highest bid amount
+- If there are no bids, there is a minimum fee to keep the name (i.e: 100 STARS)
+- If the name is a subname, the root name owner gets 50% of the fee
+
 ## Overview
 
 A name points to one address. An address points to one name. A name may have any amount of subnames with different owners. A single owner may own multiple names.
 
-You can only associate a name with your own address, or a contract address you are the admin of.
+You can only associate a name with an address for which you own. DAOs and multisigs can own names.
 
 ```
 name: jeanluc.stars
@@ -60,11 +78,9 @@ pub trait NameMinter {
 - `InitSubnames {}` initialized a new name minter with the parent name of `shane.badkids.stars`.
 - `Mint {}` on this `shane.badkids.stars` contract mints subnames like `newyork.shane.badkids.stars`.
 
-Each collection is an implementation of cw721 that supports subscriptions. Minting a name is like buying a subscription to that name for one year. The fee can be paid by anybody. When a new name is minted, its expiration time, renewal amount, and renewal amount collected so far, is tracked in `TokenInfo`. Anyone may call `Claim {}` after expiration to claim a name for themselves, as long as they pay the renewal fee. After expiration, anyone may also call `Burn {}` and collect any fees paid against the renewal.
-
 ## Contracts
 
-### SG721-SUB
+### sg721-sub
 
 A cw721-compatible contract for NFT subscriptions.
 
@@ -73,13 +89,9 @@ Extension to `TokenInfo`:
 ```rs
 pub struct RenewalExtension<T> {
     pub expiration: Timestamp,
-    pub cost: Coin,
-    pub collected: Coin,
-    pub extension: T,
+    pub extenstion: T,
 }
 ```
-
-`RenewalExtension` itself can take an extension for further extensibility.
 
 Message additions:
 
@@ -90,12 +102,10 @@ pub enum ExecuteMsg {
     Renew { token_id: String },
     /// Someone may call this to take ownership and of an expired subscription
     Claim { token_id: String },
-    /// Someone may call this to burn and collect fees from an expired subscription
-    Burn { token_id: String },
 }
 ```
 
-When `Renew` is called, another year is added to the `expiration` time, and `cost` and `collected` are updated. The collected fee is processed, going to name owner with a Fair Burn amount.
+When `Renew` is called, another year is added to the `expiration` time.
 
 ### Name Minter
 
@@ -147,13 +157,3 @@ A name minter will also keep a mapping of addresses to names for reverse lookups
 /// String = the name (token_id)
 pub const ADDRESSES: Map<&Addr, String> = Map::new("a");
 ```
-
-## Fees
-
-```
-5+ chars = 1,000 STARS
-4 chars = 10,000 STARS
-3 chars = 100,000 STARS
-```
-
-Names have to be renewed every year. Parent name owner is allowed to charge annual fees. 95% goes to name owner, 5% is Fair Burned. You can pre-pay for up to 5 years at once. For the top-level name `.stars`, fees go to the Community Pool.
