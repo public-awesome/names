@@ -642,7 +642,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sg721-sub"
+name = "sg721-name"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",

@@ -1,5 +1,5 @@
 [package]
-name = "sg721-sub"
+name = "sg721-name"
 version = "0.1.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.come>"]
 edition = "2018"
