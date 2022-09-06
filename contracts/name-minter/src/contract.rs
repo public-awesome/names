@@ -1,15 +1,24 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult, SubMsg,
+    WasmMsg,
+};
 use cw2::set_contract_version;
+use cw721_base::{
+    ExecuteMsg as Cw721ExecuteMsg, Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg,
+};
+use cw_utils::parse_reply_instantiate_data;
 
 use crate::error::ContractError;
-use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{State, STATE};
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::COLLECTION_ADDRESS;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const INIT_COLLECTION_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -18,17 +27,44 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let state = State {
-        count: msg.count,
-        owner: info.sender.clone(),
-    };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    STATE.save(deps.storage, &state)?;
+
+    let wasm_msg = WasmMsg::Instantiate {
+        code_id: msg.collection_code_id,
+        msg: to_binary(&Cw721InstantiateMsg {
+            name: "Name Tokens".to_string(),
+            symbol: "NAME".to_string(),
+            minter: info.sender.to_string(),
+        })?,
+        funds: info.funds,
+        admin: None,
+        label: "Name Collection".to_string(),
+    };
+    let submsg = SubMsg::reply_on_success(wasm_msg, INIT_COLLECTION_REPLY_ID);
 
     Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("owner", info.sender)
-        .add_attribute("count", msg.count.to_string()))
+        .add_attribute("action", "instantiate")
+        .add_submessage(submsg)
+        .add_attribute("owner", info.sender))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    if msg.id != INIT_COLLECTION_REPLY_ID {
+        return Err(ContractError::InvalidReplyID {});
+    }
+
+    let reply = parse_reply_instantiate_data(msg);
+    match reply {
+        Ok(res) => {
+            let collection_address = res.contract_address;
+
+            COLLECTION_ADDRESS.save(deps.storage, &Addr::unchecked(collection_address))?;
+
+            Ok(Response::default().add_attribute("action", "init_collection_reply"))
+        }
+        Err(_) => Err(ContractError::ReplyOnSuccess {}),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -39,110 +75,44 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Increment {} => try_increment(deps),
-        ExecuteMsg::Reset { count } => try_reset(deps, info, count),
+        ExecuteMsg::Mint { name } => execute_mint(deps, info, name),
     }
 }
 
-pub fn try_increment(deps: DepsMut) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-        state.count += 1;
-        Ok(state)
-    })?;
+pub fn execute_mint(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+) -> Result<Response, ContractError> {
+    let mint_msg = Cw721ExecuteMsg::Mint::<Extension, Extension>(MintMsg::<Extension> {
+        token_id: name.trim().to_string(),
+        owner: info.sender.to_string(),
+        token_uri: None,
+        extension: None,
+    });
+    let msg = WasmMsg::Execute {
+        contract_addr: COLLECTION_ADDRESS.load(deps.storage)?.to_string(),
+        msg: to_binary(&mint_msg)?,
+        funds: vec![],
+    };
 
-    Ok(Response::new().add_attribute("method", "try_increment"))
-}
+    // TODO: list on name marketplace
 
-pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Response, ContractError> {
-    STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-        if info.sender != state.owner {
-            return Err(ContractError::Unauthorized {});
-        }
-        state.count = count;
-        Ok(state)
-    })?;
-    Ok(Response::new().add_attribute("method", "reset"))
+    Ok(Response::new()
+        .add_attribute("action", "mint")
+        .add_message(msg))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
+        QueryMsg::Config {} => to_binary(&query_collection_addr(deps)?),
     }
 }
 
-fn query_count(deps: Deps) -> StdResult<CountResponse> {
-    let state = STATE.load(deps.storage)?;
-    Ok(CountResponse { count: state.count })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use cosmwasm_std::testing::{mock_dependencies_with_balance, mock_env, mock_info};
-    use cosmwasm_std::{coins, from_binary};
-
-    #[test]
-    fn proper_initialization() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(1000, "earth"));
-
-        // we can just call .unwrap() to assert this was a success
-        let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // it worked, let's query the state
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: CountResponse = from_binary(&res).unwrap();
-        assert_eq!(17, value.count);
-    }
-
-    #[test]
-    fn increment() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // beneficiary can release it
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Increment {};
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // should increase counter by 1
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: CountResponse = from_binary(&res).unwrap();
-        assert_eq!(18, value.count);
-    }
-
-    #[test]
-    fn reset() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
-
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        // beneficiary can release it
-        let unauth_info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
-        match res {
-            Err(ContractError::Unauthorized {}) => {}
-            _ => panic!("Must return unauthorized error"),
-        }
-
-        // only the original creator can reset the counter
-        let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
-
-        // should now be 5
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: CountResponse = from_binary(&res).unwrap();
-        assert_eq!(5, value.count);
-    }
+fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
+    let config = COLLECTION_ADDRESS.load(deps.storage)?;
+    Ok(ConfigResponse {
+        collection_addr: config.to_string(),
+    })
 }
