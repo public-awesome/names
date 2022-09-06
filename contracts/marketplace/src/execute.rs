@@ -1,14 +1,13 @@
 use crate::error::ContractError;
 use crate::helpers::map_validate;
-use crate::msg::{AskHookMsg, BidHookMsg, ExecuteMsg, HookAction, InstantiateMsg, SaleHookMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, Order, SudoParams, TokenId, ASK_HOOKS, BID_HOOKS,
-    SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, Bid, Order, SudoParams, TokenId, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, BankMsg, Coin, Decimal, Deps, DepsMut, Env, Event, MessageInfo, Reply,
+    coin, to_binary, Addr, BankMsg, Coin, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
     StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -63,10 +62,6 @@ pub fn instantiate(
         collection: deps.api.addr_validate(&msg.collection)?,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
-
-    if let Some(hook) = msg.sale_hook {
-        SALE_HOOKS.add_hook(deps.storage, deps.api.addr_validate(&hook)?)?;
-    }
 
     Ok(Response::new())
 }
@@ -166,14 +161,12 @@ pub fn execute_set_ask(
         fair_burn(listing_fee.u128(), None, &mut res);
     }
 
-    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
-
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("seller", seller);
 
-    Ok(res.add_submessages(hook).add_event(event))
+    Ok(res.add_event(event))
 }
 
 // TODO: use internally after bid is accepted?
@@ -192,13 +185,11 @@ fn execute_remove_ask(
     let ask = asks().load(deps.storage, key.clone())?;
     asks().remove(deps.storage, key)?;
 
-    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
-
     let event = Event::new("remove-ask")
         .add_attribute("collection", collection.to_string())
         .add_attribute("token_id", token_id.to_string());
 
-    Ok(Response::new().add_event(event).add_submessages(hook))
+    Ok(Response::new().add_event(event))
 }
 
 /// Places a bid on a listed or unlisted NFT. The bid is escrowed in the contract.
@@ -247,19 +238,13 @@ pub fn execute_set_bid(
 
     let bid = save_bid(deps.storage)?;
 
-    let hook = if let Some(bid) = bid {
-        prepare_bid_hook(deps.as_ref(), &bid, HookAction::Create)?
-    } else {
-        vec![]
-    };
-
     let event = Event::new("set-bid")
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("bidder", bidder)
         .add_attribute("bid_price", bid_price.to_string())
         .add_attribute("expires", expires.to_string());
 
-    Ok(res.add_submessages(hook).add_event(event))
+    Ok(res.add_event(event))
 }
 
 /// Removes a bid made by the bidder. Bidders can only remove their own bids
@@ -281,16 +266,13 @@ pub fn execute_remove_bid(
         amount: vec![coin(bid.price.u128(), NATIVE_DENOM)],
     };
 
-    let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Delete)?;
-
     let event = Event::new("remove-bid")
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("bidder", bidder);
 
     let res = Response::new()
         .add_message(refund_bidder_msg)
-        .add_event(event)
-        .add_submessages(hook);
+        .add_event(event);
 
     Ok(res)
 }
@@ -381,13 +363,11 @@ pub fn execute_sync_ask(
     ask.is_active = res.is_ok();
     asks().save(deps.storage, key, &ask)?;
 
-    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Update)?;
-
     let event = Event::new("update-ask-state")
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("is_active", ask.is_active.to_string());
 
-    Ok(Response::new().add_event(event).add_submessages(hook))
+    Ok(Response::new().add_event(event))
 }
 
 // TODO: is this needed?
@@ -413,7 +393,6 @@ pub fn execute_remove_stale_ask(
     let has_owner = res.is_ok();
 
     asks().remove(deps.storage, key)?;
-    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
 
     let event = Event::new("remove-ask")
         .add_attribute("collection", collection.to_string())
@@ -421,7 +400,7 @@ pub fn execute_remove_stale_ask(
         .add_attribute("operator", info.sender.to_string())
         .add_attribute("has_owner", has_owner.to_string());
 
-    Ok(Response::new().add_event(event).add_submessages(hook))
+    Ok(Response::new().add_event(event))
 }
 
 /// Privileged operation to remove a stale bid. Operators can call this to remove and refund bids that are still in the
@@ -459,8 +438,6 @@ pub fn execute_remove_stale_bid(
         amount: vec![coin(reward.u128(), NATIVE_DENOM)],
     };
 
-    let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Delete)?;
-
     let event = Event::new("remove-stale-bid")
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("bidder", bidder.to_string())
@@ -470,8 +447,7 @@ pub fn execute_remove_stale_bid(
     Ok(Response::new()
         .add_event(event)
         .add_message(bidder_msg)
-        .add_message(operator_msg)
-        .add_submessages(hook))
+        .add_message(operator_msg))
 }
 
 /// Transfers funds and NFT, updates bid
@@ -505,9 +481,6 @@ fn finalize_sale(
         funds: vec![],
     };
     res.messages.push(SubMsg::new(exec_cw721_transfer));
-
-    res.messages
-        .append(&mut prepare_sale_hook(deps, &ask, buyer.clone())?);
 
     let event = Event::new("finalize-sale")
         .add_attribute("token_id", ask.token_id.to_string())
@@ -596,93 +569,4 @@ fn only_operator(store: &dyn Storage, info: &MessageInfo) -> Result<Addr, Contra
     }
 
     Ok(info.sender.clone())
-}
-
-enum HookReply {
-    Ask = 1,
-    Sale,
-    Bid,
-    CollectionBid,
-}
-
-impl From<u64> for HookReply {
-    fn from(item: u64) -> Self {
-        match item {
-            1 => HookReply::Ask,
-            2 => HookReply::Sale,
-            3 => HookReply::Bid,
-            4 => HookReply::CollectionBid,
-            _ => panic!("invalid reply type"),
-        }
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match HookReply::from(msg.id) {
-        HookReply::Ask => {
-            let res = Response::new()
-                .add_attribute("action", "ask-hook-failed")
-                .add_attribute("error", msg.result.unwrap_err());
-            Ok(res)
-        }
-        HookReply::Sale => {
-            let res = Response::new()
-                .add_attribute("action", "sale-hook-failed")
-                .add_attribute("error", msg.result.unwrap_err());
-            Ok(res)
-        }
-        HookReply::Bid => {
-            let res = Response::new()
-                .add_attribute("action", "bid-hook-failed")
-                .add_attribute("error", msg.result.unwrap_err());
-            Ok(res)
-        }
-    }
-}
-
-fn prepare_ask_hook(deps: Deps, ask: &Ask, action: HookAction) -> StdResult<Vec<SubMsg>> {
-    let submsgs = ASK_HOOKS.prepare_hooks(deps.storage, |h| {
-        let msg = AskHookMsg { ask: ask.clone() };
-        let execute = WasmMsg::Execute {
-            contract_addr: h.to_string(),
-            msg: msg.into_binary(action.clone())?,
-            funds: vec![],
-        };
-        Ok(SubMsg::reply_on_error(execute, HookReply::Ask as u64))
-    })?;
-
-    Ok(submsgs)
-}
-
-fn prepare_sale_hook(deps: Deps, ask: &Ask, buyer: Addr) -> StdResult<Vec<SubMsg>> {
-    let submsgs = SALE_HOOKS.prepare_hooks(deps.storage, |h| {
-        let msg = SaleHookMsg {
-            token_id: ask.token_id,
-            seller: ask.seller.to_string(),
-            buyer: buyer.to_string(),
-        };
-        let execute = WasmMsg::Execute {
-            contract_addr: h.to_string(),
-            msg: msg.into_binary()?,
-            funds: vec![],
-        };
-        Ok(SubMsg::reply_on_error(execute, HookReply::Sale as u64))
-    })?;
-
-    Ok(submsgs)
-}
-
-fn prepare_bid_hook(deps: Deps, bid: &Bid, action: HookAction) -> StdResult<Vec<SubMsg>> {
-    let submsgs = BID_HOOKS.prepare_hooks(deps.storage, |h| {
-        let msg = BidHookMsg { bid: bid.clone() };
-        let execute = WasmMsg::Execute {
-            contract_addr: h.to_string(),
-            msg: msg.into_binary(action.clone())?,
-            funds: vec![],
-        };
-        Ok(SubMsg::reply_on_error(execute, HookReply::Bid as u64))
-    })?;
-
-    Ok(submsgs)
 }

@@ -1,11 +1,9 @@
 use crate::msg::{
     AskCountResponse, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder,
-    BidsResponse, Collection, CollectionBidOffset, CollectionBidResponse, CollectionBidsResponse,
-    CollectionOffset, CollectionsResponse, ParamsResponse, QueryMsg,
+    BidsResponse, Collection, CollectionBidOffset, CollectionOffset, ParamsResponse, QueryMsg,
 };
 use crate::state::{
-    ask_key, asks, bid_key, bids, collection_bid_key, collection_bids, BidKey, CollectionBidKey,
-    TokenId, ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, BidKey, TokenId, ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS,
 };
 use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::{Bound, PrefixBound};
@@ -20,57 +18,38 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let api = deps.api;
 
     match msg {
-        QueryMsg::Collections { start_after, limit } => {
-            to_binary(&query_collections(deps, start_after, limit)?)
-        }
-        QueryMsg::Ask {
-            collection,
-            token_id,
-        } => to_binary(&query_ask(deps, api.addr_validate(&collection)?, token_id)?),
+        QueryMsg::Ask { token_id } => to_binary(&query_ask(deps, token_id)?),
         QueryMsg::Asks {
-            collection,
             include_inactive,
             start_after,
             limit,
-        } => to_binary(&query_asks(
-            deps,
-            api.addr_validate(&collection)?,
-            include_inactive,
-            start_after,
-            limit,
-        )?),
+        } => to_binary(&query_asks(deps, include_inactive, start_after, limit)?),
         QueryMsg::ReverseAsks {
-            collection,
             include_inactive,
             start_before,
             limit,
         } => to_binary(&reverse_query_asks(
             deps,
-            api.addr_validate(&collection)?,
             include_inactive,
             start_before,
             limit,
         )?),
         QueryMsg::AsksSortedByPrice {
-            collection,
             include_inactive,
             start_after,
             limit,
         } => to_binary(&query_asks_sorted_by_price(
             deps,
-            api.addr_validate(&collection)?,
             include_inactive,
             start_after,
             limit,
         )?),
         QueryMsg::ReverseAsksSortedByPrice {
-            collection,
             include_inactive,
             start_before,
             limit,
         } => to_binary(&reverse_query_asks_sorted_by_price(
             deps,
-            api.addr_validate(&collection)?,
             include_inactive,
             start_before,
             limit,
@@ -87,31 +66,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
-        QueryMsg::AskCount { collection } => {
-            to_binary(&query_ask_count(deps, api.addr_validate(&collection)?)?)
+        QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
+        QueryMsg::Bid { token_id, bidder } => {
+            to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
         }
-        QueryMsg::Bid {
-            collection,
-            token_id,
-            bidder,
-        } => to_binary(&query_bid(
-            deps,
-            api.addr_validate(&collection)?,
-            token_id,
-            api.addr_validate(&bidder)?,
-        )?),
         QueryMsg::Bids {
-            collection,
             token_id,
             start_after,
             limit,
-        } => to_binary(&query_bids(
-            deps,
-            api.addr_validate(&collection)?,
-            token_id,
-            start_after,
-            limit,
-        )?),
+        } => to_binary(&query_bids(deps, token_id, start_after, limit)?),
         QueryMsg::BidsByBidder {
             bidder,
             start_after,
@@ -122,23 +85,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
-        QueryMsg::BidsSortedByPrice {
-            collection,
-            start_after,
-            limit,
-        } => to_binary(&query_bids_sorted_by_price(
-            deps,
-            api.addr_validate(&collection)?,
-            start_after,
-            limit,
-        )?),
+        QueryMsg::BidsSortedByPrice { start_after, limit } => {
+            to_binary(&query_bids_sorted_by_price(deps, start_after, limit)?)
+        }
         QueryMsg::ReverseBidsSortedByPrice {
-            collection,
             start_before,
             limit,
         } => to_binary(&reverse_query_bids_sorted_by_price(
             deps,
-            api.addr_validate(&collection)?,
             start_before,
             limit,
         )?),
@@ -152,83 +106,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
-        QueryMsg::CollectionBid { collection, bidder } => to_binary(&query_collection_bid(
-            deps,
-            api.addr_validate(&collection)?,
-            api.addr_validate(&bidder)?,
-        )?),
-        QueryMsg::CollectionBidsSortedByPrice {
-            collection,
-            start_after,
-            limit,
-        } => to_binary(&query_collection_bids_sorted_by_price(
-            deps,
-            api.addr_validate(&collection)?,
-            start_after,
-            limit,
-        )?),
-        QueryMsg::ReverseCollectionBidsSortedByPrice {
-            collection,
-            start_before,
-            limit,
-        } => to_binary(&reverse_query_collection_bids_sorted_by_price(
-            deps,
-            api.addr_validate(&collection)?,
-            start_before,
-            limit,
-        )?),
-        QueryMsg::CollectionBidsByBidder {
-            bidder,
-            start_after,
-            limit,
-        } => to_binary(&query_collection_bids_by_bidder(
-            deps,
-            api.addr_validate(&bidder)?,
-            start_after,
-            limit,
-        )?),
-        QueryMsg::CollectionBidsByBidderSortedByExpiration {
-            bidder,
-            start_after,
-            limit,
-        } => to_binary(&query_collection_bids_by_bidder_sorted_by_expiry(
-            deps,
-            api.addr_validate(&bidder)?,
-            start_after,
-            limit,
-        )?),
-        QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
-        QueryMsg::BidHooks {} => to_binary(&BID_HOOKS.query_hooks(deps)?),
-        QueryMsg::SaleHooks {} => to_binary(&SALE_HOOKS.query_hooks(deps)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
     }
 }
 
-pub fn query_collections(
-    deps: Deps,
-    start_after: Option<Collection>,
-    limit: Option<u32>,
-) -> StdResult<CollectionsResponse> {
-    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-    let start_addr = maybe_addr(deps.api, start_after)?;
-
-    let collections = asks()
-        .prefix_range(
-            deps.storage,
-            start_addr.map(PrefixBound::exclusive),
-            None,
-            Order::Ascending,
-        )
-        .take(limit)
-        .map(|item| item.map(|(key, _)| key.0))
-        .collect::<StdResult<Vec<_>>>()?;
-
-    Ok(CollectionsResponse { collections })
-}
-
 pub fn query_asks(
     deps: Deps,
-    collection: Addr,
     include_inactive: Option<bool>,
     start_after: Option<TokenId>,
     limit: Option<u32>,
