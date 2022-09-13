@@ -14,13 +14,11 @@
 
 - When a name is minted it is automatically listed in Name Marketplace
 - Owner can accept the top bid at any time
-- After 1 year, owner has to pay 3% (or 0.5%?) of the top bid to keep the name
-- Bid has to be placed for a specific period of time
-- TODO: There is a 30 day grace period after name expiry for owner to pay fee?
-- TODO: If owner doesn't pay the fee during the grace period, anyone can claim the name for the highest bid amount?
+- After 1 year, owner has to pay 0.5% of the top bid to keep the name
+- If a bid is placed for 4 weeks, name value rises to this value
+- If fee is not paid, name is transferred to the bidder
 - If there are no bids, there is a minimum fee to keep the name based on the number of characters
-- Cap annual fee at $100 / year
-- Cap fee growth rate for N years
+- Cap annual fee at X per year
 - If the name is a subname, the root name owner gets 50% of the fee
 
 ## Overview
