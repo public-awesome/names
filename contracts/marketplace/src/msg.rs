@@ -24,8 +24,6 @@ pub struct InstantiateMsg {
     pub stale_bid_duration: Duration,
     /// Stale bid removal reward
     pub bid_removal_reward_bps: u64,
-    /// Listing fee to reduce spam
-    pub listing_fee: Uint128,
     /// Name collection
     pub collection: String,
 }
@@ -33,26 +31,28 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    /// List an NFT on the marketplace by creating a new ask
+    /// List name NFT on the marketplace by creating a new ask
+    /// Only the name minter can call this.
     SetAsk {
         token_id: TokenId,
         funds_recipient: Option<String>,
     },
     /// Place a bid on an existing ask
-    SetBid {
-        token_id: TokenId,
-        expires: Timestamp,
-    },
+    SetBid { token_id: TokenId },
     /// Remove an existing bid from an ask
     RemoveBid { token_id: TokenId },
     /// Accept a bid on an existing ask
     AcceptBid { token_id: TokenId, bidder: String },
-    /// Privileged operation to change the active state of an ask when an NFT is transferred
-    SyncAsk { token_id: TokenId },
-    /// Privileged operation to remove stale or invalid asks.
-    RemoveStaleAsk { token_id: TokenId },
-    /// Privileged operation to remove stale bids
-    RemoveStaleBid { token_id: TokenId, bidder: String },
+    /// Check if expired names have been paid for, and collect fees.
+    /// If not paid, transfer ownership to the highest bidder.
+    ProcessFees {},
+    // TODO: what do you do when a name is transferred and allowances are gone?
+    // Privileged operation to change the active state of an ask when an NFT is transferred
+    // SyncAsk { token_id: TokenId },
+    // Privileged operation to remove stale or invalid asks.
+    // RemoveStaleAsk { token_id: TokenId },
+    // Privileged operation to remove stale bids
+    // RemoveStaleBid { token_id: TokenId, bidder: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -65,9 +65,6 @@ pub enum SudoMsg {
         bid_expiry: Option<ExpiryRange>,
         operators: Option<Vec<String>>,
         min_price: Option<Uint128>,
-        stale_bid_duration: Option<u64>,
-        bid_removal_reward_bps: Option<u64>,
-        listing_fee: Option<Uint128>,
     },
     /// Add a new operator
     AddOperator { operator: String },

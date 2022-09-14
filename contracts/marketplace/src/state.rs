@@ -23,8 +23,6 @@ pub struct SudoParams {
     pub stale_bid_duration: Duration,
     /// Stale bid removal reward
     pub bid_removal_reward_percent: Decimal,
-    /// Listing fee to reduce spam
-    pub listing_fee: Uint128,
     /// Name collection
     pub collection: Addr,
 }
@@ -51,7 +49,8 @@ pub struct Ask {
     pub token_id: TokenId,
     pub seller: Addr,
     pub funds_recipient: Option<Addr>,
-    pub is_active: bool,
+    // pub is_active: bool,
+    pub height: u64,
 }
 
 /// Primary key for asks: token_id
@@ -64,6 +63,7 @@ pub fn ask_key(token_id: TokenId) -> AskKey {
 /// Defines indices for accessing Asks
 pub struct AskIndicies<'a> {
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
+    // TODO: add index by height
 }
 
 impl<'a> IndexList<Ask> for AskIndicies<'a> {
@@ -86,25 +86,24 @@ pub struct Bid {
     pub token_id: TokenId,
     pub bidder: Addr,
     pub price: Uint128,
-    pub expires_at: Timestamp,
+    // pub expires_at: Timestamp,
 }
 
 impl Bid {
-    pub fn new(token_id: TokenId, bidder: Addr, price: Uint128, expires: Timestamp) -> Self {
+    pub fn new(token_id: TokenId, bidder: Addr, price: Uint128) -> Self {
         Bid {
             token_id,
             bidder,
             price,
-            expires_at: expires,
         }
     }
 }
 
-impl Order for Bid {
-    fn expires_at(&self) -> Timestamp {
-        self.expires_at
-    }
-}
+// impl Order for Bid {
+//     fn expires_at(&self) -> Timestamp {
+//         self.expires_at
+//     }
+// }
 
 /// Primary key for bids: (token_id, bidder)
 pub type BidKey = (TokenId, Addr);
@@ -119,7 +118,7 @@ pub struct BidIndicies<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
     // Cannot include `Timestamp` in index, converted `Timestamp` to `seconds` and stored as `u64`
-    pub bidder_expires_at: MultiIndex<'a, (Addr, u64), Bid, BidKey>,
+    // pub bidder_expires_at: MultiIndex<'a, (Addr, u64), Bid, BidKey>,
 }
 
 impl<'a> IndexList<Bid> for BidIndicies<'a> {
@@ -128,7 +127,7 @@ impl<'a> IndexList<Bid> for BidIndicies<'a> {
             &self.token_id,
             &self.price,
             &self.bidder,
-            &self.bidder_expires_at,
+            // &self.bidder_expires_at,
         ];
         Box::new(v.into_iter())
     }
@@ -139,11 +138,11 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
         token_id: MultiIndex::new(|d: &Bid| d.token_id, "bids", "bids__collection_token_id"),
         price: MultiIndex::new(|d: &Bid| d.price.u128(), "bids", "bids__collection_price"),
         bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
-        bidder_expires_at: MultiIndex::new(
-            |d: &Bid| (d.bidder.clone(), d.expires_at.seconds()),
-            "bids",
-            "bids__bidder_expires_at",
-        ),
+        // bidder_expires_at: MultiIndex::new(
+        //     |d: &Bid| (d.bidder.clone(), d.expires_at.seconds()),
+        //     "bids",
+        //     "bids__bidder_expires_at",
+        // ),
     };
     IndexedMap::new("bids", indexes)
 }

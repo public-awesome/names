@@ -8,12 +8,12 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Coin, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
-    StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
+    StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{may_pay, maybe_addr, must_pay, nonpayable, Duration, Expiration};
+use cw_utils::{maybe_addr, must_pay, nonpayable, Duration};
 use sg1::fair_burn;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
@@ -32,9 +32,6 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    if msg.max_finders_fee_bps > MAX_FEE_BPS {
-        return Err(ContractError::InvalidFindersFeeBps(msg.max_finders_fee_bps));
-    }
     if msg.trading_fee_bps > MAX_FEE_BPS {
         return Err(ContractError::InvalidTradingFeeBps(msg.trading_fee_bps));
     }
@@ -58,7 +55,6 @@ pub fn instantiate(
         min_price: msg.min_price,
         stale_bid_duration: msg.stale_bid_duration,
         bid_removal_reward_percent: Decimal::percent(msg.bid_removal_reward_bps),
-        listing_fee: msg.listing_fee,
         collection: deps.api.addr_validate(&msg.collection)?,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
@@ -73,7 +69,6 @@ pub struct AskInfo {
 
 pub struct BidInfo {
     token_id: TokenId,
-    expires: Timestamp,
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -98,20 +93,12 @@ pub fn execute(
                 funds_recipient: maybe_addr(api, funds_recipient)?,
             },
         ),
-        ExecuteMsg::SetBid { token_id, expires } => {
-            execute_set_bid(deps, env, info, BidInfo { token_id, expires })
-        }
+        ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, BidInfo { token_id }),
         ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, token_id),
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, token_id, api.addr_validate(&bidder)?)
         }
-        ExecuteMsg::SyncAsk { token_id } => execute_sync_ask(deps, env, info, token_id),
-        ExecuteMsg::RemoveStaleAsk { token_id } => {
-            execute_remove_stale_ask(deps, env, info, token_id)
-        }
-        ExecuteMsg::RemoveStaleBid { token_id, bidder } => {
-            execute_remove_stale_bid(deps, env, info, token_id, api.addr_validate(&bidder)?)
-        }
+        ExecuteMsg::ProcessFees {} => todo!(),
     }
 }
 
@@ -122,6 +109,7 @@ pub fn execute_set_ask(
     info: MessageInfo,
     ask_info: AskInfo,
 ) -> Result<Response, ContractError> {
+    // TODO: only name minter should be able to call this..
     let AskInfo {
         token_id,
         funds_recipient,
@@ -140,26 +128,18 @@ pub fn execute_set_ask(
         None,
     )?;
 
-    // Check if msg has correct listing fee
-    let listing_fee = may_pay(&info, NATIVE_DENOM)?;
-    if listing_fee != params.listing_fee {
-        return Err(ContractError::InvalidListingFee(listing_fee));
-    }
-
     let seller = info.sender;
     let ask = Ask {
         token_id,
         seller: seller.clone(),
         funds_recipient,
-        is_active: true,
+        height: todo!(),
+        // is_active: true,
     };
     store_ask(deps.storage, &ask)?;
 
     // Append fair_burn msg
     let mut res = Response::new();
-    if listing_fee > Uint128::zero() {
-        fair_burn(listing_fee.u128(), None, &mut res);
-    }
 
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())
@@ -199,14 +179,14 @@ pub fn execute_set_bid(
     info: MessageInfo,
     bid_info: BidInfo,
 ) -> Result<Response, ContractError> {
-    let BidInfo { token_id, expires } = bid_info;
+    let BidInfo { token_id } = bid_info;
     let params = SUDO_PARAMS.load(deps.storage)?;
 
     let bid_price = must_pay(&info, NATIVE_DENOM)?;
     if bid_price < params.min_price {
         return Err(ContractError::PriceTooSmall(bid_price));
     }
-    params.bid_expiry.is_valid(&env.block, expires)?;
+    // params.bid_expiry.is_valid(&env.block, expires)?;
 
     let bidder = info.sender;
     let mut res = Response::new();
@@ -225,13 +205,13 @@ pub fn execute_set_bid(
     let existing_ask = asks().may_load(deps.storage, ask_key.clone())?;
 
     if let Some(ask) = existing_ask.clone() {
-        if !ask.is_active {
-            return Err(ContractError::AskNotActive {});
-        }
+        // if !ask.is_active {
+        //     return Err(ContractError::AskNotActive {});
+        // }
     }
 
     let save_bid = |store| -> StdResult<_> {
-        let bid = Bid::new(token_id, bidder.clone(), bid_price, expires);
+        let bid = Bid::new(token_id, bidder.clone(), bid_price);
         store_bid(store, &bid)?;
         Ok(Some(bid))
     };
@@ -241,8 +221,8 @@ pub fn execute_set_bid(
     let event = Event::new("set-bid")
         .add_attribute("token_id", token_id.to_string())
         .add_attribute("bidder", bidder)
-        .add_attribute("bid_price", bid_price.to_string())
-        .add_attribute("expires", expires.to_string());
+        .add_attribute("bid_price", bid_price.to_string());
+    // .add_attribute("expires", expires.to_string());
 
     Ok(res.add_event(event))
 }
@@ -294,23 +274,24 @@ pub fn execute_accept_bid(
     let ask_key = ask_key(token_id);
 
     let bid = bids().load(deps.storage, bid_key.clone())?;
-    if bid.is_expired(&env.block) {
-        return Err(ContractError::BidExpired {});
-    }
+    // if bid.is_expired(&env.block) {
+    //     return Err(ContractError::BidExpired {});
+    // }
 
     let ask = if let Some(existing_ask) = asks().may_load(deps.storage, ask_key.clone())? {
-        if !existing_ask.is_active {
-            return Err(ContractError::AskNotActive {});
-        }
+        // if !existing_ask.is_active {
+        //     return Err(ContractError::AskNotActive {});
+        // }
         asks().remove(deps.storage, ask_key)?;
         existing_ask
     } else {
         // Create a temporary Ask
         Ask {
             token_id,
-            is_active: true,
+            // is_active: true,
             seller: info.sender,
             funds_recipient: None,
+            height: todo!(),
         }
     };
 
@@ -357,97 +338,16 @@ pub fn execute_sync_ask(
         env.contract.address.to_string(),
         None,
     );
-    if res.is_ok() == ask.is_active {
-        return Err(ContractError::AskUnchanged {});
-    }
-    ask.is_active = res.is_ok();
+    // if res.is_ok() == ask.is_active {
+    //     return Err(ContractError::AskUnchanged {});
+    // }
+    // ask.is_active = res.is_ok();
     asks().save(deps.storage, key, &ask)?;
 
-    let event = Event::new("update-ask-state")
-        .add_attribute("token_id", token_id.to_string())
-        .add_attribute("is_active", ask.is_active.to_string());
+    let event = Event::new("update-ask-state").add_attribute("token_id", token_id.to_string());
+    // .add_attribute("is_active", ask.is_active.to_string());
 
     Ok(Response::new().add_event(event))
-}
-
-// TODO: is this needed?
-/// Privileged operation to remove a stale ask. Operators can call this to remove asks that are still in the
-/// state after they have expired or a token is no longer existing.
-pub fn execute_remove_stale_ask(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    token_id: TokenId,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-    only_operator(deps.storage, &info)?;
-
-    let key = ask_key(token_id);
-    let ask = asks().load(deps.storage, key.clone())?;
-
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
-
-    let res =
-        Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id.to_string(), false);
-    let has_owner = res.is_ok();
-
-    asks().remove(deps.storage, key)?;
-
-    let event = Event::new("remove-ask")
-        .add_attribute("collection", collection.to_string())
-        .add_attribute("token_id", token_id.to_string())
-        .add_attribute("operator", info.sender.to_string())
-        .add_attribute("has_owner", has_owner.to_string());
-
-    Ok(Response::new().add_event(event))
-}
-
-/// Privileged operation to remove a stale bid. Operators can call this to remove and refund bids that are still in the
-/// state after they have expired. As a reward they get a governance-determined percentage of the bid price.
-pub fn execute_remove_stale_bid(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    token_id: TokenId,
-    bidder: Addr,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-    let operator = only_operator(deps.storage, &info)?;
-
-    let bid_key = bid_key(token_id, &bidder);
-    let bid = bids().load(deps.storage, bid_key.clone())?;
-
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let stale_time = (Expiration::AtTime(bid.expires_at) + params.stale_bid_duration)?;
-    if !stale_time.is_expired(&env.block) {
-        return Err(ContractError::BidNotStale {});
-    }
-
-    // bid is stale, refund bidder and reward operator
-    bids().remove(deps.storage, bid_key)?;
-
-    let reward = bid.price * params.bid_removal_reward_percent / Uint128::from(100u128);
-
-    let bidder_msg = BankMsg::Send {
-        to_address: bid.bidder.to_string(),
-        amount: vec![coin((bid.price - reward).u128(), NATIVE_DENOM)],
-    };
-    let operator_msg = BankMsg::Send {
-        to_address: operator.to_string(),
-        amount: vec![coin(reward.u128(), NATIVE_DENOM)],
-    };
-
-    let event = Event::new("remove-stale-bid")
-        .add_attribute("token_id", token_id.to_string())
-        .add_attribute("bidder", bidder.to_string())
-        .add_attribute("operator", operator.to_string())
-        .add_attribute("reward", reward.to_string());
-
-    Ok(Response::new()
-        .add_event(event)
-        .add_message(bidder_msg)
-        .add_message(operator_msg))
 }
 
 /// Transfers funds and NFT, updates bid
@@ -503,7 +403,7 @@ fn payout(
 
     // Append Fair Burn message
     let network_fee = payment * params.trading_fee_percent / Uint128::from(100u128);
-    fair_burn(network_fee.u128(), None, res);
+    // fair_burn(network_fee.u128(), None, res);
 
     if payment < network_fee {
         return Err(StdError::generic_err("Fees exceed payment"));
