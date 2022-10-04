@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
 use name_minter::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use name_minter::state::COLLECTION_ADDRESS;
+// use name_minter::state::COLLECTION_ADDRESS;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

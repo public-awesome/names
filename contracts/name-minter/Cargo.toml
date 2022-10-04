@@ -34,6 +34,7 @@ cw721 = "0.13.4"
 cw721-base = { git = "https://github.com/CosmWasm/cw-nfts", features = [
   "library",
 ] }
+sg-name = { path = "../../packages/sg-name" }
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"

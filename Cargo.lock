@@ -585,6 +585,7 @@ dependencies = [
  "cw721-base 0.13.4 (git+https://github.com/CosmWasm/cw-nfts)",
  "schemars",
  "serde",
+ "sg-name",
  "thiserror",
 ]
 

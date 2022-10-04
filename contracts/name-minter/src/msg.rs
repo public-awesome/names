@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sg_name::{TextRecord, NFT};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -9,13 +10,14 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Mint { name: String },
+    MintAndList { name: String },
     // TODO: update
     // only owner can update, make sure sender == owner
-    // Update {
-    //     name: String,
-    //     metadata: Option<String>,
-    // },
+    UpdateBio { name: String, bio: Option<String> },
+    UpdateProfile { name: String, profile: Option<NFT> },
+    AddTextRecord { name: String, record: TextRecord },
+    RemoveTextRecord { name: String, record_name: String },
+    UpdateTextRecord { name: String, record: TextRecord },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

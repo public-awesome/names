@@ -75,15 +75,21 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Mint { name } => execute_mint(deps, info, name),
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name),
+        ExecuteMsg::UpdateBio { name, bio } => todo!(),
+        ExecuteMsg::UpdateProfile { name, profile } => todo!(),
+        ExecuteMsg::AddTextRecord { name, record } => todo!(),
+        ExecuteMsg::RemoveTextRecord { name, record_name } => todo!(),
+        ExecuteMsg::UpdateTextRecord { name, record } => todo!(),
     }
 }
 
-pub fn execute_mint(
+pub fn execute_mint_and_list(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
 ) -> Result<Response, ContractError> {
+    // TODO: use mint message from sg721-name
     let mint_msg = Cw721ExecuteMsg::Mint::<Extension, Extension>(MintMsg::<Extension> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
