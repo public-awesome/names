@@ -143,10 +143,10 @@ mod tests {
             owner: "john".to_string(),
             token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
             extension: Metadata {
-                bio: todo!(),
-                profile: todo!(),
-                record: todo!(),
-                extension: todo!(),
+                bio: Some("This is the USS Enterprise NCC-1701".to_string()),
+                profile: None,
+                records: vec![],
+                extension: None,
             },
         };
         let exec_msg = ExecuteMsg::Mint(mint_msg.clone());

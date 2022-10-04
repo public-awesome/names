@@ -17,8 +17,8 @@ pub struct TextRecord {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Metadata<T> {
-    pub bio: String,
-    pub profile: NFT,
-    pub record: Vec<TextRecord>,
+    pub bio: Option<String>,
+    pub profile: Option<NFT>,
+    pub records: Vec<TextRecord>,
     pub extension: T,
 }
