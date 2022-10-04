@@ -59,7 +59,7 @@ pub struct TextRecord {
 
 ```rs
 pub struct Metadata {
-    pub content: String,
+    pub bio: String,
     pub profile: NFT,
     pub record: Vec<TextRecord>,
     pub extension: T,
