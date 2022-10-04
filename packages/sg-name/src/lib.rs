@@ -1,0 +1,24 @@
+use cosmwasm_std::{Addr, Timestamp};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct NFT {
+    pub collection: Addr,
+    pub token_id: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct TextRecord {
+    pub name: String,  // "twitter"
+    pub value: String, // "shan3v"
+    pub verified_at: Option<Timestamp>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Metadata<T> {
+    pub bio: String,
+    pub profile: NFT,
+    pub record: Vec<TextRecord>,
+    pub extension: T,
+}

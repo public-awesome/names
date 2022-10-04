@@ -1,11 +1,15 @@
 [workspace]
-members = ["contracts/*"]
+members = ["contracts/*", "packages/*"]
+
+[profile.release.package.sg-name]
+codegen-units = 1
+incremental = false
 
 [profile.release.package.name-minter]
 codegen-units = 1
 incremental = false
 
-[profile.release.package.sg721-sub]
+[profile.release.package.sg721-name]
 codegen-units = 1
 incremental = false
 

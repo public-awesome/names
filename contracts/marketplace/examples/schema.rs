@@ -2,9 +2,8 @@ use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, s
 use sg_controllers::HooksResponse;
 use sg_marketplace::msg::{
     AskCountResponse, AskHookMsg, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse,
-    BidsResponse, CollectionBidOffset, CollectionBidResponse, CollectionOffset,
-    CollectionsResponse, ExecuteMsg, InstantiateMsg, ParamsResponse, QueryMsg, SaleHookMsg,
-    SudoMsg,
+    BidsResponse, CollectionBidOffset, CollectionOffset, ExecuteMsg, InstantiateMsg,
+    ParamsResponse, QueryMsg, SaleHookMsg, SudoMsg,
 };
 use sg_marketplace::MarketplaceContract;
 use std::env::current_dir;
@@ -29,10 +28,8 @@ fn main() {
     export_schema(&schema_for!(BidOffset), &out_dir);
     export_schema(&schema_for!(BidResponse), &out_dir);
     export_schema(&schema_for!(BidsResponse), &out_dir);
-    export_schema(&schema_for!(CollectionBidResponse), &out_dir);
     export_schema(&schema_for!(CollectionBidOffset), &out_dir);
     export_schema(&schema_for!(CollectionOffset), &out_dir);
-    export_schema(&schema_for!(CollectionsResponse), &out_dir);
     export_schema(&schema_for!(ParamsResponse), &out_dir);
 
     // cosmwasm-typescript-gen expects the query return type as QueryNameResponse
@@ -94,10 +91,5 @@ fn main() {
         "ReverseCollectionBidsSortedByPriceResponse",
     );
 
-    export_schema_with_title(
-        &schema_for!(CollectionsResponse),
-        &out_dir,
-        "ListedCollectionsResponse",
-    );
     export_schema_with_title(&schema_for!(SaleHookMsg), &out_dir, "SaleHooksResponse");
 }
