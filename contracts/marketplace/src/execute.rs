@@ -118,35 +118,31 @@ pub fn execute_set_ask(
     let params = SUDO_PARAMS.load(deps.storage)?;
     let collection = params.collection;
 
-    only_owner(deps.as_ref(), &info, &collection, token_id)?;
+    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
     // Check if this contract is approved to transfer the token
     Cw721Contract(collection.clone()).approval(
         &deps.querier,
-        token_id.to_string(),
+        token_id.clone(),
         env.contract.address.to_string(),
         None,
     )?;
 
     let seller = info.sender;
     let ask = Ask {
-        token_id,
+        token_id: token_id.clone(),
         seller: seller.clone(),
         funds_recipient,
-        height: todo!(),
-        // is_active: true,
+        height: 5,
     };
     store_ask(deps.storage, &ask)?;
 
-    // Append fair_burn msg
-    let mut res = Response::new();
-
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())
-        .add_attribute("token_id", token_id.to_string())
+        .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
 
-    Ok(res.add_event(event))
+    Ok(Response::new().add_event(event))
 }
 
 // TODO: use internally after bid is accepted?
@@ -159,10 +155,9 @@ fn execute_remove_ask(
     nonpayable(&info)?;
     let params = SUDO_PARAMS.load(deps.storage)?;
     let collection = params.collection;
-    only_owner(deps.as_ref(), &info, &collection, token_id)?;
+    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
-    let key = ask_key(token_id);
-    let ask = asks().load(deps.storage, key.clone())?;
+    let key = ask_key(token_id.clone());
     asks().remove(deps.storage, key)?;
 
     let event = Event::new("remove-ask")
@@ -190,8 +185,8 @@ pub fn execute_set_bid(
 
     let bidder = info.sender;
     let mut res = Response::new();
-    let bid_key = bid_key(token_id, &bidder);
-    let ask_key = ask_key(token_id);
+    let bid_key = bid_key(token_id.clone(), &bidder);
+    let ask_key = ask_key(token_id.clone());
 
     if let Some(existing_bid) = bids().may_load(deps.storage, bid_key.clone())? {
         bids().remove(deps.storage, bid_key)?;
@@ -211,7 +206,7 @@ pub fn execute_set_bid(
     }
 
     let save_bid = |store| -> StdResult<_> {
-        let bid = Bid::new(token_id, bidder.clone(), bid_price);
+        let bid = Bid::new(token_id.clone(), bidder.clone(), bid_price);
         store_bid(store, &bid)?;
         Ok(Some(bid))
     };
@@ -219,7 +214,7 @@ pub fn execute_set_bid(
     let bid = save_bid(deps.storage)?;
 
     let event = Event::new("set-bid")
-        .add_attribute("token_id", token_id.to_string())
+        .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("bid_price", bid_price.to_string());
     // .add_attribute("expires", expires.to_string());
@@ -237,7 +232,7 @@ pub fn execute_remove_bid(
     nonpayable(&info)?;
     let bidder = info.sender;
 
-    let key = bid_key(token_id, &bidder);
+    let key = bid_key(token_id.clone(), &bidder);
     let bid = bids().load(deps.storage, key.clone())?;
     bids().remove(deps.storage, key)?;
 
@@ -247,7 +242,7 @@ pub fn execute_remove_bid(
     };
 
     let event = Event::new("remove-bid")
-        .add_attribute("token_id", token_id.to_string())
+        .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder);
 
     let res = Response::new()
@@ -268,10 +263,10 @@ pub fn execute_accept_bid(
     nonpayable(&info)?;
     let params = SUDO_PARAMS.load(deps.storage)?;
     let collection = params.collection;
-    only_owner(deps.as_ref(), &info, &collection, token_id)?;
+    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
-    let bid_key = bid_key(token_id, &bidder);
-    let ask_key = ask_key(token_id);
+    let bid_key = bid_key(token_id.clone(), &bidder);
+    let ask_key = ask_key(token_id.clone());
 
     let bid = bids().load(deps.storage, bid_key.clone())?;
     // if bid.is_expired(&env.block) {
@@ -287,11 +282,11 @@ pub fn execute_accept_bid(
     } else {
         // Create a temporary Ask
         Ask {
-            token_id,
+            token_id: token_id.clone(),
             // is_active: true,
             seller: info.sender,
             funds_recipient: None,
-            height: todo!(),
+            height: 5,
         }
     };
 
@@ -304,7 +299,7 @@ pub fn execute_accept_bid(
     finalize_sale(deps.as_ref(), ask, bid.price, bidder.clone(), &mut res)?;
 
     let event = Event::new("accept-bid")
-        .add_attribute("token_id", token_id.to_string())
+        .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("price", bid.price.to_string());
 
@@ -322,7 +317,7 @@ pub fn execute_sync_ask(
     nonpayable(&info)?;
     only_operator(deps.storage, &info)?;
 
-    let key = ask_key(token_id);
+    let key = ask_key(token_id.clone());
     let mut ask = asks().load(deps.storage, key.clone())?;
 
     let params = SUDO_PARAMS.load(deps.storage)?;
@@ -434,11 +429,11 @@ fn price_validate(store: &dyn Storage, price: &Coin) -> Result<(), ContractError
 }
 
 fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
-    bids().save(store, bid_key(bid.token_id, &bid.bidder), bid)
+    bids().save(store, bid_key(bid.token_id.clone(), &bid.bidder), bid)
 }
 
 fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
-    asks().save(store, ask_key(ask.token_id), ask)
+    asks().save(store, ask_key(ask.token_id.clone()), ask)
 }
 
 /// Checks to enfore only NFT owner can call
@@ -446,10 +441,9 @@ fn only_owner(
     deps: Deps,
     info: &MessageInfo,
     collection: &Addr,
-    token_id: u32,
+    token_id: TokenId,
 ) -> Result<OwnerOfResponse, ContractError> {
-    let res =
-        Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id.to_string(), false)?;
+    let res = Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id, false)?;
     if res.owner != info.sender {
         return Err(ContractError::UnauthorizedOwner {});
     }

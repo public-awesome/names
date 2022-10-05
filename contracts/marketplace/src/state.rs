@@ -33,7 +33,7 @@ pub const ASK_HOOKS: Hooks = Hooks::new("ask-hooks");
 pub const BID_HOOKS: Hooks = Hooks::new("bid-hooks");
 pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 
-pub type TokenId = u32;
+pub type TokenId = String;
 
 pub trait Order {
     fn expires_at(&self) -> Timestamp;
@@ -135,7 +135,11 @@ impl<'a> IndexList<Bid> for BidIndicies<'a> {
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
     let indexes = BidIndicies {
-        token_id: MultiIndex::new(|d: &Bid| d.token_id, "bids", "bids__collection_token_id"),
+        token_id: MultiIndex::new(
+            |d: &Bid| d.token_id.clone(),
+            "bids",
+            "bids__collection_token_id",
+        ),
         price: MultiIndex::new(|d: &Bid| d.price.u128(), "bids", "bids__collection_price"),
         bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
         // bidder_expires_at: MultiIndex::new(
