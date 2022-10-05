@@ -1,12 +1,9 @@
 [package]
-name = "sg-marketplace"
+name = "name-marketplace"
 version = "1.0.0"
-authors = [
-  "Shane Vitarana <s@noreply.publicawesome.com>",
-  "Jake Hartnell <jake@publicawesome.com>",
-]
+authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2018"
-repository = "https://github.com/public-awesome/marketplace"
+repository = "https://github.com/public-awesome/names"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.

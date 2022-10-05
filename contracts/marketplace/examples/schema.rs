@@ -1,11 +1,11 @@
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
-use sg_controllers::HooksResponse;
-use sg_marketplace::msg::{
+use name_marketplace::msg::{
     AskCountResponse, AskHookMsg, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse,
     BidsResponse, CollectionBidOffset, CollectionOffset, ExecuteMsg, InstantiateMsg,
     ParamsResponse, QueryMsg, SaleHookMsg, SudoMsg,
 };
-use sg_marketplace::MarketplaceContract;
+use name_marketplace::MarketplaceContract;
+use sg_controllers::HooksResponse;
 use std::env::current_dir;
 use std::fs::create_dir_all;
 

@@ -5,6 +5,7 @@ use sg_name::{TextRecord, NFT};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub collection_code_id: u64,
+    pub marketplace_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

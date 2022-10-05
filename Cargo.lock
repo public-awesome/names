@@ -628,6 +628,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
+name = "name-marketplace"
+version = "1.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus 0.13.4",
+ "cw-utils 0.13.4",
+ "cw2 0.13.4",
+ "cw20",
+ "cw721 0.13.4",
+ "cw721-base 0.13.4",
+ "schemars",
+ "semver",
+ "serde",
+ "sg-controllers",
+ "sg-multi-test",
+ "sg-std 0.13.0",
+ "sg1 0.14.1",
+ "sg721 0.12.0",
+ "thiserror",
+]
+
+[[package]]
 name = "name-minter"
 version = "0.1.0"
 dependencies = [
@@ -640,12 +665,12 @@ dependencies = [
  "cw2 0.13.4",
  "cw721 0.13.4",
  "cw721-base 0.13.4",
+ "name-marketplace",
  "schemars",
  "serde",
  "sg-name",
  "sg721-name",
  "thiserror",
- "unicode-segmentation",
 ]
 
 [[package]]
@@ -853,31 +878,6 @@ dependencies = [
  "schemars",
  "serde",
  "sg-std 0.14.0",
- "thiserror",
-]
-
-[[package]]
-name = "sg-marketplace"
-version = "1.0.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test",
- "cw-storage-plus 0.13.4",
- "cw-utils 0.13.4",
- "cw2 0.13.4",
- "cw20",
- "cw721 0.13.4",
- "cw721-base 0.13.4",
- "schemars",
- "semver",
- "serde",
- "sg-controllers",
- "sg-multi-test",
- "sg-std 0.13.0",
- "sg1 0.14.1",
- "sg721 0.12.0",
  "thiserror",
 ]
 
@@ -1187,12 +1187,6 @@ checksum = "854cbdc4f7bc6ae19c820d44abdc3277ac3e1b2b93db20a636825d9322fb60e6"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fdbf052a0783de01e944a6ce7a8cb939e295b1e7be835a1112c3b9a7f047a5a"
 
 [[package]]
 name = "url"

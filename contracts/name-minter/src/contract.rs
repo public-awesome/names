@@ -9,18 +9,22 @@ use cw721_base::{
     ExecuteMsg as Cw721ExecuteMsg, Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg,
 };
 use cw_utils::{must_pay, parse_reply_instantiate_data};
+use name_marketplace::{ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg};
 use sg_name::Metadata;
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::NAME_COLLECTION;
+use crate::state::{NAME_COLLECTION, NAME_MARKETPLACE};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_COLLECTION_REPLY_ID: u64 = 1;
+
+const MIN_NAME_LENGTH: u64 = 3;
+const MAX_NAME_LENGTH: u64 = 63;
+const BASE_PRICE: u128 = 1000000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -30,6 +34,9 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    let marketplace = deps.api.addr_validate(&msg.marketplace)?;
+    NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
@@ -91,17 +98,14 @@ pub fn execute_mint_and_list(
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
-    // TODO: add to governance
-    let BASE_PRICE = 100000000u128;
+    validate_name(name)?;
 
-    let count = name.graphemes(true).count();
-    let amount = match count {
-        1 => return Err(ContractError::NameTooShort {}),
-        2 => return Err(ContractError::NameTooShort {}),
+    // Because we know we are left with ASCII chars, a simple byte count is enough
+    let amount = match name.len() {
+        0..2 => return Err(ContractError::NameTooShort {}),
         3 => BASE_PRICE * 100,
         4 => BASE_PRICE * 10,
-        5..255 => BASE_PRICE,
-        _ => return Err(ContractError::NameTooLong {}),
+        _ => BASE_PRICE,
     };
     let price = coin(amount, "ustars");
 
@@ -120,18 +124,70 @@ pub fn execute_mint_and_list(
         token_uri: None,
         extension: None,
     };
-
-    let msg = WasmMsg::Execute {
+    let mint_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
         msg: to_binary(&mint_msg)?,
         funds: vec![],
     };
 
-    // TODO: list on name marketplace
+    let list_msg = MarketplaceExecuteMsg::SetAsk {
+        token_id: name,
+        funds_recipient: info.sender,
+    };
+    let list_msg_exec = WasmMsg::Execute {
+        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        msg: to_binary(&list_msg)?,
+        funds: vec![],
+    };
 
     Ok(Response::new()
         .add_attribute("action", "mint")
-        .add_message(msg))
+        .add_message(mint_msg_exec)
+        .add_message(list_msg_exec))
+}
+
+// We store the name without the TLD so it can be mapped to a raw address
+// that is not bech32 encoded. This way, all Cosmos / Interchain names can
+// be resolved to an address that is derived via the same (118) derivation
+// path.
+//
+// For example:
+//
+// bobo -> D93385094E906D7DA4EBFDEC2C4B167D5CAA431A (in hex)
+//
+// Now this can be resolved per chain:
+//
+// bobo.stars -> stars1myec2z2wjpkhmf8tlhkzcjck04w25sc6ymhplz
+// bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
+fn validate_name(name: &str) -> Result<(), ContractError> {
+    let len = name.len() as u64;
+    if len < MIN_NAME_LENGTH {
+        return Err(ContractError::NameTooShort {});
+    } else if len > MAX_NAME_LENGTH {
+        return Err(ContractError::NameTooLong {});
+    }
+
+    name.find(invalid_char)
+        .map_or(Ok(()), |_| Err(ContractError::InvalidName {}));
+
+    name.starts_with("-")
+        .then(|| Err(ContractError::InvalidName {}));
+
+    name.ends_with("-")
+        .then(|| Err(ContractError::InvalidName {}));
+
+    if len > 4 {
+        name[2..]
+            .find("--")
+            .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))
+    }
+
+    Ok(())
+}
+
+fn invalid_char(c: char) -> bool {
+    let is_valid = c.is_digit(10) || c.is_ascii_lowercase() || (c == '-');
+    !is_valid
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

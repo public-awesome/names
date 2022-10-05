@@ -12,6 +12,9 @@ pub enum ContractError {
     #[error("Invalid reply ID")]
     InvalidReplyID {},
 
+    #[error("Invalid name")]
+    InvalidName {},
+
     #[error("Reply error")]
     ReplyOnSuccess {},
 }
