@@ -13,7 +13,7 @@ use sg_name::Metadata;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::COLLECTION_ADDRESS;
+use crate::state::NAME_COLLECTION;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -60,7 +60,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         Ok(res) => {
             let collection_address = res.contract_address;
 
-            COLLECTION_ADDRESS.save(deps.storage, &Addr::unchecked(collection_address))?;
+            NAME_COLLECTION.save(deps.storage, &Addr::unchecked(collection_address))?;
 
             Ok(Response::default().add_attribute("action", "init_collection_reply"))
         }
@@ -98,7 +98,7 @@ pub fn execute_mint_and_list(
     };
 
     let msg = WasmMsg::Execute {
-        contract_addr: COLLECTION_ADDRESS.load(deps.storage)?.to_string(),
+        contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
         msg: to_binary(&mint_msg)?,
         funds: vec![],
     };
@@ -118,7 +118,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = COLLECTION_ADDRESS.load(deps.storage)?;
+    let config = NAME_COLLECTION.load(deps.storage)?;
     Ok(ConfigResponse {
         collection_addr: config.to_string(),
     })

@@ -31,9 +31,6 @@ serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cw721 = "0.13.4"
 cw721-base = { version = "0.13.4", features = ["library"] }
-# cw721-base = { git = "https://github.com/CosmWasm/cw-nfts", features = [
-#   "library",
-# ] }
 sg-name = { path = "../../packages/sg-name" }
 sg721-name = { path = "../sg721-name" }
 
