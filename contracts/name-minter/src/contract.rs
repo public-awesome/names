@@ -9,6 +9,7 @@ use cw721_base::{
     ExecuteMsg as Cw721ExecuteMsg, Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg,
 };
 use cw_utils::parse_reply_instantiate_data;
+use sg_name::Metadata;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -89,13 +90,13 @@ pub fn execute_mint_and_list(
     info: MessageInfo,
     name: String,
 ) -> Result<Response, ContractError> {
-    // TODO: use mint message from sg721-name
-    let mint_msg = Cw721ExecuteMsg::Mint::<Extension, Extension>(MintMsg::<Extension> {
+    let mint_msg = MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
         extension: None,
-    });
+    };
+
     let msg = WasmMsg::Execute {
         contract_addr: COLLECTION_ADDRESS.load(deps.storage)?.to_string(),
         msg: to_binary(&mint_msg)?,
