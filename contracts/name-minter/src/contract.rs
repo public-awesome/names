@@ -1,15 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult, SubMsg,
-    WasmMsg,
+    coin, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdResult, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::{
     ExecuteMsg as Cw721ExecuteMsg, Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg,
 };
-use cw_utils::parse_reply_instantiate_data;
+use cw_utils::{must_pay, parse_reply_instantiate_data};
 use sg_name::Metadata;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -76,7 +77,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name),
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
         ExecuteMsg::UpdateBio { name, bio } => todo!(),
         ExecuteMsg::UpdateProfile { name, profile } => todo!(),
         ExecuteMsg::AddTextRecord { name, record } => todo!(),
@@ -88,8 +89,31 @@ pub fn execute(
 pub fn execute_mint_and_list(
     deps: DepsMut,
     info: MessageInfo,
-    name: String,
+    name: &str,
 ) -> Result<Response, ContractError> {
+    // TODO: add to governance
+    let BASE_PRICE = 100000000u128;
+
+    let count = name.graphemes(true).count();
+    let amount = match count {
+        1 => return Err(ContractError::NameTooShort {}),
+        2 => return Err(ContractError::NameTooShort {}),
+        3 => BASE_PRICE * 100,
+        4 => BASE_PRICE * 10,
+        5..255 => BASE_PRICE,
+        _ => return Err(ContractError::NameTooLong {}),
+    };
+    let price = coin(amount, "ustars");
+
+    let payment = must_pay(&info, "ustars")?;
+    if payment != amount {
+        return Err(ContractError::InvalidPayment {});
+    }
+    let msg = CosmosMsg::Distribution(DistributionMsg::FundCommunityPool {
+        amount: payment,
+        denom: "ustars",
+    });
+
     let mint_msg = MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
