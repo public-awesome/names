@@ -133,9 +133,11 @@ pub fn execute_set_ask(
         token_id: token_id.clone(),
         seller: seller.clone(),
         funds_recipient,
-        height: 5,
+        height: env.block.height,
     };
     store_ask(deps.storage, &ask)?;
+
+    // TODO: store reference to ask in expiration queue
 
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())
