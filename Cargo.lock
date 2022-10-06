@@ -600,6 +600,7 @@ dependencies = [
  "schemars",
  "serde",
  "sg-name",
+ "sg-std 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg721-name",
  "thiserror",
 ]

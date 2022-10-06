@@ -1,16 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdResult, SubMsg, WasmMsg,
+    coin, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, StdResult, SubMsg,
+    WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721_base::{
-    ExecuteMsg as Cw721ExecuteMsg, Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg,
-};
+use cw721_base::{Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg};
 use cw_utils::{must_pay, parse_reply_instantiate_data};
-use name_marketplace::{ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg};
+use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg_name::Metadata;
+use sg_std::{create_fund_community_pool_msg, Response, StargazeMsg};
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -102,7 +101,7 @@ pub fn execute_mint_and_list(
 
     // Because we know we are left with ASCII chars, a simple byte count is enough
     let amount = match name.len() {
-        0..2 => return Err(ContractError::NameTooShort {}),
+        0..=2 => return Err(ContractError::NameTooShort {}),
         3 => BASE_PRICE * 100,
         4 => BASE_PRICE * 10,
         _ => BASE_PRICE,
@@ -110,19 +109,21 @@ pub fn execute_mint_and_list(
     let price = coin(amount, "ustars");
 
     let payment = must_pay(&info, "ustars")?;
-    if payment != amount {
-        return Err(ContractError::InvalidPayment {});
+    if payment.u128() != amount {
+        return Err(ContractError::IncorrectPayment {});
     }
-    let msg = CosmosMsg::Distribution(DistributionMsg::FundCommunityPool {
-        amount: payment,
-        denom: "ustars",
-    });
+    let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
     let mint_msg = MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
-        extension: None,
+        extension: Metadata {
+            bio: None,
+            profile: None,
+            records: vec![],
+            extension: None,
+        },
     };
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
@@ -131,8 +132,8 @@ pub fn execute_mint_and_list(
     };
 
     let list_msg = MarketplaceExecuteMsg::SetAsk {
-        token_id: name,
-        funds_recipient: info.sender,
+        token_id: name.to_string(),
+        funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
@@ -142,6 +143,7 @@ pub fn execute_mint_and_list(
 
     Ok(Response::new()
         .add_attribute("action", "mint")
+        .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
 }
@@ -168,18 +170,18 @@ fn validate_name(name: &str) -> Result<(), ContractError> {
     }
 
     name.find(invalid_char)
-        .map_or(Ok(()), |_| Err(ContractError::InvalidName {}));
+        .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))?;
 
-    name.starts_with("-")
-        .then(|| Err(ContractError::InvalidName {}));
+    name.starts_with('-')
+        .then(|| Err(ContractError::InvalidName {}))
+        .unwrap_or(Ok(()))?;
 
-    name.ends_with("-")
-        .then(|| Err(ContractError::InvalidName {}));
+    name.ends_with('-')
+        .then(|| Err(ContractError::InvalidName {}))
+        .unwrap_or(Ok(()))?;
 
-    if len > 4 {
-        name[2..]
-            .find("--")
-            .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))
+    if len > 4 && name[2..3].contains("--") {
+        return Err(ContractError::InvalidName {});
     }
 
     Ok(())
