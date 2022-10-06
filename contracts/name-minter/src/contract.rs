@@ -35,7 +35,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let marketplace = deps.api.addr_validate(&msg.marketplace)?;
+    let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
     let wasm_msg = WasmMsg::Instantiate {

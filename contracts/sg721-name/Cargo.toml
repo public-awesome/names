@@ -26,9 +26,11 @@ cw2 = "0.13.4"
 schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 sg-name = { path = "../../packages/sg-name" }
-sg-std = "0.14.0"
-sg721 = "0.16.1"
-sg721-base = { version = "0.15.1", features = ["library"] }
+sg-std = { path = "../../../launchpad/packages/sg-std" }
+sg721 = { path = "../../../launchpad/packages/sg721" }
+sg721-base = { path = "../../../launchpad/contracts/sg721-base", features = [
+  "library",
+] }
 cw721-base = { version = "0.13.4", features = ["library"] }
 
 [dev-dependencies]
