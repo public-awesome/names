@@ -1,6 +1,6 @@
 use crate::msg::{
     AskCountResponse, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder,
-    BidsResponse, Collection, CollectionBidOffset, CollectionOffset, ParamsResponse, QueryMsg,
+    BidsResponse, ParamsResponse, QueryMsg,
 };
 use crate::state::{
     ask_key, asks, bid_key, bids, BidKey, TokenId, ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS,
@@ -77,11 +77,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
         )?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
-        QueryMsg::BidsByBidderSortedByExpiration {
-            bidder,
-            start_after,
-            limit,
-        } => todo!(),
         QueryMsg::AskHooks {} => todo!(),
         QueryMsg::BidHooks {} => todo!(),
         QueryMsg::SaleHooks {} => todo!(),
@@ -237,17 +232,12 @@ pub fn query_asks_by_seller(
     deps: Deps,
     seller: Addr,
     include_inactive: Option<bool>,
-    start_after: Option<CollectionOffset>,
+    start_after: Option<TokenId>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start = if let Some(start) = start_after {
-        let collection = deps.api.addr_validate(&start.collection)?;
-        Some(Bound::exclusive(ask_key(start.token_id)))
-    } else {
-        None
-    };
+    let start = start_after.map(|start| Bound::exclusive(ask_key(start)));
 
     let asks = asks()
         .idx
@@ -255,10 +245,7 @@ pub fn query_asks_by_seller(
         .prefix(seller)
         .range(deps.storage, start, None, Order::Ascending)
         .filter(|item| match item {
-            Ok((_, ask)) => match include_inactive {
-                Some(true) => true,
-                _ => false,
-            },
+            Ok(_) => matches!(include_inactive, Some(true)),
             Err(_) => true,
         })
         .take(limit)
@@ -283,17 +270,12 @@ pub fn query_bid(deps: Deps, token_id: TokenId, bidder: Addr) -> StdResult<BidRe
 pub fn query_bids_by_bidder(
     deps: Deps,
     bidder: Addr,
-    start_after: Option<CollectionOffset>,
+    start_after: Option<TokenId>,
     limit: Option<u32>,
 ) -> StdResult<BidsResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start = if let Some(start) = start_after {
-        let collection = deps.api.addr_validate(&start.collection)?;
-        Some(Bound::exclusive(bid_key(start.token_id, &bidder)))
-    } else {
-        None
-    };
+    let start = start_after.map(|start| Bound::exclusive(bid_key(start, &bidder)));
 
     let bids = bids()
         .idx
@@ -379,41 +361,6 @@ pub fn reverse_query_bids_sorted_by_price(
 
     Ok(BidsResponse { bids: vec![] })
 }
-
-// pub fn query_bids_by_bidder_sorted_by_expiry(
-//     deps: Deps,
-//     bidder: Addr,
-//     start_after: Option<CollectionOffset>,
-//     limit: Option<u32>,
-// ) -> StdResult<BidsResponse> {
-//     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-
-//     let start = match start_after {
-//         Some(offset) => {
-//             let collection = deps.api.addr_validate(&offset.collection)?;
-//             let bid = query_bid(deps, offset.token_id, bidder.clone())?;
-//             match bid.bid {
-//                 Some(bid) => Some(Bound::exclusive((
-//                     bid.expires_at.seconds(),
-//                     bid_key(offset.token_id, &bidder),
-//                 ))),
-//                 None => None,
-//             }
-//         }
-//         None => None,
-//     };
-
-//     let bids = bids()
-//         .idx
-//         .bidder_expires_at
-//         .sub_prefix(bidder)
-//         .range(deps.storage, start, None, Order::Ascending)
-//         .take(limit)
-//         .map(|item| item.map(|(_, b)| b))
-//         .collect::<StdResult<Vec<_>>>()?;
-
-//     Ok(BidsResponse { bids })
-// }
 
 pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
     let config = SUDO_PARAMS.load(deps.storage)?;

@@ -1,7 +1,8 @@
 use crate::error::ContractError;
-use crate::helpers::map_validate;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, SUDO_PARAMS};
+use crate::state::{
+    ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION, SUDO_PARAMS,
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -32,27 +33,10 @@ pub fn instantiate(
     if msg.trading_fee_bps > MAX_FEE_BPS {
         return Err(ContractError::InvalidTradingFeeBps(msg.trading_fee_bps));
     }
-    if msg.bid_removal_reward_bps > MAX_FEE_BPS {
-        return Err(ContractError::InvalidBidRemovalRewardBps(
-            msg.bid_removal_reward_bps,
-        ));
-    }
-
-    msg.bid_expiry.validate()?;
-
-    match msg.stale_bid_duration {
-        Duration::Height(_) => return Err(ContractError::InvalidDuration {}),
-        Duration::Time(_) => {}
-    };
 
     let params = SudoParams {
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps),
-        bid_expiry: msg.bid_expiry,
-        operators: map_validate(deps.api, &msg.operators)?,
         min_price: msg.min_price,
-        stale_bid_duration: msg.stale_bid_duration,
-        bid_removal_reward_percent: Decimal::percent(msg.bid_removal_reward_bps),
-        collection: deps.api.addr_validate(&msg.collection)?,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -112,8 +96,7 @@ pub fn execute_set_ask(
         funds_recipient,
     } = ask_info;
 
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
+    let collection = NAME_COLLECTION.load(deps.storage)?;
 
     only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
@@ -152,8 +135,7 @@ fn _execute_remove_ask(
     token_id: TokenId,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
+    let collection = NAME_COLLECTION.load(deps.storage)?;
     only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
     let key = ask_key(token_id.clone());
@@ -180,7 +162,6 @@ pub fn execute_set_bid(
     if bid_price < params.min_price {
         return Err(ContractError::PriceTooSmall(bid_price));
     }
-    // params.bid_expiry.is_valid(&env.block, expires)?;
 
     let bidder = info.sender;
     let mut res = Response::new();
@@ -198,14 +179,13 @@ pub fn execute_set_bid(
 
     let existing_ask = asks().may_load(deps.storage, ask_key.clone())?;
 
-    if let Some(ask) = existing_ask.clone() {
-        // if !ask.is_active {
-        //     return Err(ContractError::AskNotActive {});
-        // }
-    }
-
     let save_bid = |store| -> StdResult<_> {
-        let bid = Bid::new(token_id.clone(), bidder.clone(), bid_price);
+        let bid = Bid::new(
+            token_id.clone(),
+            bidder.clone(),
+            bid_price,
+            env.block.height,
+        );
         store_bid(store, &bid)?;
         Ok(Some(bid))
     };
@@ -216,7 +196,6 @@ pub fn execute_set_bid(
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("bid_price", bid_price.to_string());
-    // .add_attribute("expires", expires.to_string());
 
     Ok(res.add_event(event))
 }
@@ -260,32 +239,24 @@ pub fn execute_accept_bid(
     bidder: Addr,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
+    let collection = NAME_COLLECTION.load(deps.storage)?;
     only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
     let bid_key = bid_key(token_id.clone(), &bidder);
     let ask_key = ask_key(token_id.clone());
 
     let bid = bids().load(deps.storage, bid_key.clone())?;
-    // if bid.is_expired(&env.block) {
-    //     return Err(ContractError::BidExpired {});
-    // }
 
     let ask = if let Some(existing_ask) = asks().may_load(deps.storage, ask_key.clone())? {
-        // if !existing_ask.is_active {
-        //     return Err(ContractError::AskNotActive {});
-        // }
         asks().remove(deps.storage, ask_key)?;
         existing_ask
     } else {
         // Create a temporary Ask
         Ask {
             token_id: token_id.clone(),
-            // is_active: true,
             seller: info.sender,
             funds_recipient: None,
-            height: 5,
+            height: env.block.height,
         }
     };
 
@@ -303,45 +274,6 @@ pub fn execute_accept_bid(
         .add_attribute("price", bid.price.to_string());
 
     Ok(res.add_event(event))
-}
-
-/// Synchronizes the active state of an ask based on token ownership.
-/// This is a privileged operation called by an operator to update an ask when a transfer happens.
-pub fn execute_sync_ask(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    token_id: TokenId,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-    only_operator(deps.storage, &info)?;
-
-    let key = ask_key(token_id.clone());
-    let mut ask = asks().load(deps.storage, key.clone())?;
-
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
-
-    // Check if marketplace still holds approval
-    // An approval will be removed when
-    // 1 - There is a transfer
-    // 2 - The approval expired (approvals can have different expiration times)
-    let res = Cw721Contract(collection.clone()).approval(
-        &deps.querier,
-        token_id.to_string(),
-        env.contract.address.to_string(),
-        None,
-    );
-    // if res.is_ok() == ask.is_active {
-    //     return Err(ContractError::AskUnchanged {});
-    // }
-    // ask.is_active = res.is_ok();
-    asks().save(deps.storage, key, &ask)?;
-
-    let event = Event::new("update-ask-state").add_attribute("token_id", token_id.to_string());
-    // .add_attribute("is_active", ask.is_active.to_string());
-
-    Ok(Response::new().add_event(event))
 }
 
 /// Transfers funds and NFT, updates bid
@@ -366,8 +298,7 @@ fn finalize_sale(
         recipient: buyer.to_string(),
     };
 
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let collection = params.collection;
+    let collection = NAME_COLLECTION.load(deps.storage)?;
 
     let exec_cw721_transfer = WasmMsg::Execute {
         contract_addr: collection.to_string(),
@@ -415,18 +346,6 @@ fn payout(
     Ok(())
 }
 
-fn price_validate(store: &dyn Storage, price: &Coin) -> Result<(), ContractError> {
-    if price.amount.is_zero() || price.denom != NATIVE_DENOM {
-        return Err(ContractError::InvalidPrice {});
-    }
-
-    if price.amount < SUDO_PARAMS.load(store)?.min_price {
-        return Err(ContractError::PriceTooSmall(price.amount));
-    }
-
-    Ok(())
-}
-
 fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
     bids().save(store, bid_key(bid.token_id.clone(), &bid.bidder), bid)
 }
@@ -448,18 +367,4 @@ fn only_owner(
     }
 
     Ok(res)
-}
-
-/// Checks to enforce only privileged operators
-fn only_operator(store: &dyn Storage, info: &MessageInfo) -> Result<Addr, ContractError> {
-    let params = SUDO_PARAMS.load(store)?;
-    if !params
-        .operators
-        .iter()
-        .any(|a| a.as_ref() == info.sender.as_ref())
-    {
-        return Err(ContractError::UnauthorizedOperator {});
-    }
-
-    Ok(info.sender.clone())
 }

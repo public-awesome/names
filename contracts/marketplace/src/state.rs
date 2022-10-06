@@ -1,30 +1,15 @@
-use cosmwasm_std::{Addr, BlockInfo, Decimal, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
-use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sg_controllers::Hooks;
-
-use crate::helpers::ExpiryRange;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SudoParams {
     /// Fair Burn fee for winning bids
     pub trading_fee_percent: Decimal,
-    /// Valid time range for Bids
-    /// (min, max) in seconds
-    pub bid_expiry: ExpiryRange,
-    /// Operators are entites that are responsible for maintaining the active state of Asks
-    /// They listen to NFT transfer events, and update the active state of Asks
-    pub operators: Vec<Addr>,
     /// Min value for a bid
     pub min_price: Uint128,
-    /// Duration after expiry when a bid becomes stale
-    pub stale_bid_duration: Duration,
-    /// Stale bid removal reward
-    pub bid_removal_reward_percent: Decimal,
-    /// Name collection
-    pub collection: Addr,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("sudo-params");
@@ -33,15 +18,9 @@ pub const ASK_HOOKS: Hooks = Hooks::new("ask-hooks");
 pub const BID_HOOKS: Hooks = Hooks::new("bid-hooks");
 pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 
+pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
+
 pub type TokenId = String;
-
-pub trait Order {
-    fn expires_at(&self) -> Timestamp;
-
-    fn is_expired(&self, block: &BlockInfo) -> bool {
-        self.expires_at() <= block.time
-    }
-}
 
 /// Represents an ask on the marketplace
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -49,7 +28,6 @@ pub struct Ask {
     pub token_id: TokenId,
     pub seller: Addr,
     pub funds_recipient: Option<Addr>,
-    // pub is_active: bool,
     pub height: u64,
 }
 
@@ -86,24 +64,19 @@ pub struct Bid {
     pub token_id: TokenId,
     pub bidder: Addr,
     pub price: Uint128,
-    // pub expires_at: Timestamp,
+    pub height: u64,
 }
 
 impl Bid {
-    pub fn new(token_id: TokenId, bidder: Addr, price: Uint128) -> Self {
+    pub fn new(token_id: TokenId, bidder: Addr, price: Uint128, height: u64) -> Self {
         Bid {
             token_id,
             bidder,
             price,
+            height,
         }
     }
 }
-
-// impl Order for Bid {
-//     fn expires_at(&self) -> Timestamp {
-//         self.expires_at
-//     }
-// }
 
 /// Primary key for bids: (token_id, bidder)
 pub type BidKey = (TokenId, Addr);
@@ -117,18 +90,11 @@ pub struct BidIndicies<'a> {
     pub token_id: MultiIndex<'a, TokenId, Bid, BidKey>,
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
-    // Cannot include `Timestamp` in index, converted `Timestamp` to `seconds` and stored as `u64`
-    // pub bidder_expires_at: MultiIndex<'a, (Addr, u64), Bid, BidKey>,
 }
 
 impl<'a> IndexList<Bid> for BidIndicies<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Bid>> + '_> {
-        let v: Vec<&dyn Index<Bid>> = vec![
-            &self.token_id,
-            &self.price,
-            &self.bidder,
-            // &self.bidder_expires_at,
-        ];
+        let v: Vec<&dyn Index<Bid>> = vec![&self.token_id, &self.price, &self.bidder];
         Box::new(v.into_iter())
     }
 }
@@ -142,11 +108,6 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
         ),
         price: MultiIndex::new(|d: &Bid| d.price.u128(), "bids", "bids__collection_price"),
         bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
-        // bidder_expires_at: MultiIndex::new(
-        //     |d: &Bid| (d.bidder.clone(), d.expires_at.seconds()),
-        //     "bids",
-        //     "bids__bidder_expires_at",
-        // ),
     };
     IndexedMap::new("bids", indexes)
 }

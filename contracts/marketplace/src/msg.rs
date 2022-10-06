@@ -1,9 +1,5 @@
-use crate::{
-    helpers::ExpiryRange,
-    state::{Ask, Bid, SudoParams, TokenId},
-};
-use cosmwasm_std::{to_binary, Addr, Binary, Coin, StdResult, Timestamp, Uint128};
-use cw_utils::Duration;
+use crate::state::{Ask, Bid, SudoParams, TokenId};
+use cosmwasm_std::{to_binary, Addr, Binary, Coin, StdResult, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,20 +8,8 @@ pub struct InstantiateMsg {
     /// Fair Burn fee for winning bids
     /// 0.25% = 25, 0.5% = 50, 1% = 100, 2.5% = 250
     pub trading_fee_bps: u64,
-    /// Valid time range for Bids
-    /// (min, max) in seconds
-    pub bid_expiry: ExpiryRange,
-    /// Operators are entites that are responsible for maintaining the active state of Asks.
-    /// They listen to NFT transfer events, and update the active state of Asks.
-    pub operators: Vec<String>,
     /// Min value for bids and asks
     pub min_price: Uint128,
-    /// Duration after expiry when a bid becomes stale (in seconds)
-    pub stale_bid_duration: Duration,
-    /// Stale bid removal reward
-    pub bid_removal_reward_bps: u64,
-    /// Name collection
-    pub collection: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -49,10 +33,6 @@ pub enum ExecuteMsg {
     // TODO: what do you do when a name is transferred and allowances are gone?
     // Privileged operation to change the active state of an ask when an NFT is transferred
     // SyncAsk { token_id: TokenId },
-    // Privileged operation to remove stale or invalid asks.
-    // RemoveStaleAsk { token_id: TokenId },
-    // Privileged operation to remove stale bids
-    // RemoveStaleBid { token_id: TokenId, bidder: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -62,14 +42,8 @@ pub enum SudoMsg {
     /// Can only be called by governance
     UpdateParams {
         trading_fee_bps: Option<u64>,
-        bid_expiry: Option<ExpiryRange>,
-        operators: Option<Vec<String>>,
         min_price: Option<Uint128>,
     },
-    /// Add a new operator
-    AddOperator { operator: String },
-    /// Remove operator
-    RemoveOperator { operator: String },
     /// Add a new hook to be informed of all asks
     AddAskHook { hook: String },
     /// Add a new hook to be informed of all bids
@@ -118,39 +92,6 @@ impl BidOffset {
         }
     }
 }
-/// Offset for collection pagination
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CollectionOffset {
-    pub collection: String,
-    pub token_id: TokenId,
-}
-
-impl CollectionOffset {
-    pub fn new(collection: String, token_id: TokenId) -> Self {
-        CollectionOffset {
-            collection,
-            token_id,
-        }
-    }
-}
-
-/// Offset for collection bid pagination
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CollectionBidOffset {
-    pub price: Uint128,
-    pub collection: Collection,
-    pub bidder: Bidder,
-}
-
-impl CollectionBidOffset {
-    pub fn new(price: Uint128, collection: String, bidder: Bidder) -> Self {
-        CollectionBidOffset {
-            price,
-            collection,
-            bidder,
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -180,7 +121,7 @@ pub enum QueryMsg {
     AsksBySeller {
         seller: Seller,
         include_inactive: Option<bool>,
-        start_after: Option<CollectionOffset>,
+        start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get data for a specific bid
@@ -190,14 +131,7 @@ pub enum QueryMsg {
     /// Return type: `BidsResponse`
     BidsByBidder {
         bidder: Bidder,
-        start_after: Option<CollectionOffset>,
-        limit: Option<u32>,
-    },
-    /// Get all bids by a bidder, sorted by expiration
-    /// Return type: `BidsResponse`
-    BidsByBidderSortedByExpiration {
-        bidder: Bidder,
-        start_after: Option<CollectionOffset>,
+        start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get all bids for a specific NFT

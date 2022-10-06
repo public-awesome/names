@@ -1,8 +1,7 @@
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 use name_marketplace::msg::{
     AskCountResponse, AskHookMsg, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse,
-    BidsResponse, CollectionBidOffset, CollectionOffset, ExecuteMsg, InstantiateMsg,
-    ParamsResponse, QueryMsg, SaleHookMsg, SudoMsg,
+    BidsResponse, ExecuteMsg, InstantiateMsg, ParamsResponse, QueryMsg, SaleHookMsg, SudoMsg,
 };
 use name_marketplace::MarketplaceContract;
 use sg_controllers::HooksResponse;
@@ -28,8 +27,6 @@ fn main() {
     export_schema(&schema_for!(BidOffset), &out_dir);
     export_schema(&schema_for!(BidResponse), &out_dir);
     export_schema(&schema_for!(BidsResponse), &out_dir);
-    export_schema(&schema_for!(CollectionBidOffset), &out_dir);
-    export_schema(&schema_for!(CollectionOffset), &out_dir);
     export_schema(&schema_for!(ParamsResponse), &out_dir);
 
     // cosmwasm-typescript-gen expects the query return type as QueryNameResponse

@@ -1,9 +1,7 @@
 use crate::error::ContractError;
-use crate::helpers::ExpiryRange;
 use crate::msg::SudoMsg;
 use crate::state::{ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS};
 use cosmwasm_std::{entry_point, Addr, Decimal, DepsMut, Env, Uint128};
-use cw_utils::Duration;
 use sg_std::Response;
 
 // bps fee can not exceed 100%
@@ -11,8 +9,6 @@ const MAX_FEE_BPS: u64 = 10000;
 
 pub struct ParamInfo {
     trading_fee_bps: Option<u64>,
-    bid_expiry: Option<ExpiryRange>,
-    operators: Option<Vec<String>>,
     min_price: Option<Uint128>,
 }
 
@@ -23,23 +19,15 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
     match msg {
         SudoMsg::UpdateParams {
             trading_fee_bps,
-            bid_expiry,
-            operators,
             min_price,
         } => sudo_update_params(
             deps,
             env,
             ParamInfo {
                 trading_fee_bps,
-                bid_expiry,
-                operators,
                 min_price,
             },
         ),
-        SudoMsg::AddOperator { operator } => sudo_add_operator(deps, api.addr_validate(&operator)?),
-        SudoMsg::RemoveOperator { operator } => {
-            sudo_remove_operator(deps, api.addr_validate(&operator)?)
-        }
         SudoMsg::AddSaleHook { hook } => sudo_add_sale_hook(deps, api.addr_validate(&hook)?),
         SudoMsg::AddAskHook { hook } => sudo_add_ask_hook(deps, env, api.addr_validate(&hook)?),
         SudoMsg::AddBidHook { hook } => sudo_add_bid_hook(deps, env, api.addr_validate(&hook)?),
@@ -57,8 +45,6 @@ pub fn sudo_update_params(
 ) -> Result<Response, ContractError> {
     let ParamInfo {
         trading_fee_bps,
-        bid_expiry,
-        operators: _operators,
         min_price,
     } = param_info;
     if let Some(trading_fee_bps) = trading_fee_bps {
@@ -67,55 +53,17 @@ pub fn sudo_update_params(
         }
     }
 
-    // ask_expiry.as_ref().map(|a| a.validate()).transpose()?;
-    bid_expiry.as_ref().map(|b| b.validate()).transpose()?;
-
     let mut params = SUDO_PARAMS.load(deps.storage)?;
 
     params.trading_fee_percent = trading_fee_bps
         .map(Decimal::percent)
         .unwrap_or(params.trading_fee_percent);
 
-    // params.ask_expiry = ask_expiry.unwrap_or(params.ask_expiry);
-    params.bid_expiry = bid_expiry.unwrap_or(params.bid_expiry);
-
-    // params.max_finders_fee_percent = max_finders_fee_bps
-    //     .map(Decimal::percent)
-    //     .unwrap_or(params.max_finders_fee_percent);
-
     params.min_price = min_price.unwrap_or(params.min_price);
 
     SUDO_PARAMS.save(deps.storage, &params)?;
 
     Ok(Response::new().add_attribute("action", "update_params"))
-}
-
-pub fn sudo_add_operator(deps: DepsMut, operator: Addr) -> Result<Response, ContractError> {
-    let mut params = SUDO_PARAMS.load(deps.storage)?;
-    if !params.operators.iter().any(|o| o == &operator) {
-        params.operators.push(operator.clone());
-    } else {
-        return Err(ContractError::OperatorAlreadyRegistered {});
-    }
-    SUDO_PARAMS.save(deps.storage, &params)?;
-    let res = Response::new()
-        .add_attribute("action", "add_operator")
-        .add_attribute("operator", operator);
-    Ok(res)
-}
-
-pub fn sudo_remove_operator(deps: DepsMut, operator: Addr) -> Result<Response, ContractError> {
-    let mut params = SUDO_PARAMS.load(deps.storage)?;
-    if let Some(i) = params.operators.iter().position(|o| o == &operator) {
-        params.operators.remove(i);
-    } else {
-        return Err(ContractError::OperatorNotRegistered {});
-    }
-    SUDO_PARAMS.save(deps.storage, &params)?;
-    let res = Response::new()
-        .add_attribute("action", "remove_operator")
-        .add_attribute("operator", operator);
-    Ok(res)
 }
 
 pub fn sudo_add_sale_hook(deps: DepsMut, hook: Addr) -> Result<Response, ContractError> {
