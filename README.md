@@ -1,13 +1,5 @@
 # Stargaze Names
 
-## Initial Fees
-
-```
-5+ chars = 100 STARS
-4 chars = 1,000 STARS
-3 chars = 10,000 STARS
-```
-
 ## Annual Auction
 
 - When a name is minted it is automatically listed in Name Marketplace
@@ -17,24 +9,6 @@
 - If fee is not paid, name is transferred to the bidder
 - If there are no bids, there is a minimum fee to keep the name based on the number of characters
 - Cap annual fee at X per year
-
-## Overview
-
-A name points to one address. An address points to one name. A name may have any amount of subnames with different owners. A single owner may own multiple names.
-
-You can only associate a name with an address for which you own. DAOs and multisigs can own names.
-
-```
-name: jeanluc.stars
-address: stars157nwwthsyyskuzeugsf48k52v6s4sl2swlhm2r
-owner: stars157nwwthsyyskuzeugsf48k52v6s4sl2swlhm2r
-```
-
-```
-name: spaceships.stars
-address: stars1lhz29slmz60lskr9yf8c3wn3p344n9g4jz88wx1h2gf322g3hf
-owner: stars157nwwthsyyskuzeugsf48k52v6s4sl2swlhm2r
-```
 
 ## Architecture
 
@@ -54,6 +28,14 @@ bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
 ```
 
 This architecture enables Stargaze Names to be a truly Interchain name service since it can mint and resolve names for any Cosmos chain.
+
+## Initial Fees
+
+```
+5+ chars = 100 STARS
+4 chars = 1,000 STARS
+3 chars = 10,000 STARS
+```
 
 ## Contracts
 
