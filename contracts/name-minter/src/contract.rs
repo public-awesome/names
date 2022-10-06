@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, StdResult, SubMsg,
+    coin, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, StdResult, SubMsg,
     WasmMsg,
 };
 use cw2::set_contract_version;
@@ -9,7 +9,7 @@ use cw721_base::{Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg};
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg_name::Metadata;
-use sg_std::{create_fund_community_pool_msg, Response, StargazeMsg};
+use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -99,19 +99,7 @@ pub fn execute_mint_and_list(
 ) -> Result<Response, ContractError> {
     validate_name(name)?;
 
-    // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount = match name.len() {
-        0..=2 => return Err(ContractError::NameTooShort {}),
-        3 => BASE_PRICE * 100,
-        4 => BASE_PRICE * 10,
-        _ => BASE_PRICE,
-    };
-    let price = coin(amount, "ustars");
-
-    let payment = must_pay(&info, "ustars")?;
-    if payment.u128() != amount {
-        return Err(ContractError::IncorrectPayment {});
-    }
+    let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
     let mint_msg = MintMsg::<Metadata<Extension>> {
@@ -175,6 +163,23 @@ fn validate_name(name: &str) -> Result<(), ContractError> {
     Ok(())
 }
 
+fn validate_payment(name_len: usize, info: &MessageInfo) -> Result<Coin, ContractError> {
+    // Because we know we are left with ASCII chars, a simple byte count is enough
+    let amount = match name_len {
+        0..=2 => return Err(ContractError::NameTooShort {}),
+        3 => BASE_PRICE * 100,
+        4 => BASE_PRICE * 10,
+        _ => BASE_PRICE,
+    };
+
+    let payment = must_pay(info, NATIVE_DENOM)?;
+    if payment.u128() != amount {
+        return Err(ContractError::IncorrectPayment {});
+    }
+
+    Ok(coin(amount, NATIVE_DENOM))
+}
+
 fn invalid_char(c: char) -> bool {
     let is_valid = c.is_digit(10) || c.is_ascii_lowercase() || (c == '-');
     !is_valid
@@ -196,7 +201,11 @@ fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_name;
+    use cosmwasm_std::{coin, Addr, MessageInfo};
+
+    use crate::contract::BASE_PRICE;
+
+    use super::{validate_name, validate_payment};
 
     #[test]
     fn check_validate_name() {
@@ -221,5 +230,35 @@ mod tests {
         assert!(validate_name("BOBO").is_err());
         assert!(validate_name("b-o----b").is_ok());
         assert!(validate_name("bobo.stars").is_err());
+    }
+
+    #[test]
+    fn check_validate_payment() {
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(BASE_PRICE, "ustars")],
+        };
+        assert_eq!(
+            validate_payment(5, &info).unwrap().amount.u128(),
+            BASE_PRICE
+        );
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(BASE_PRICE * 10, "ustars")],
+        };
+        assert_eq!(
+            validate_payment(4, &info).unwrap().amount.u128(),
+            BASE_PRICE * 10
+        );
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(BASE_PRICE * 100, "ustars")],
+        };
+        assert_eq!(
+            validate_payment(3, &info).unwrap().amount.u128(),
+            BASE_PRICE * 100
+        );
     }
 }
