@@ -142,25 +142,13 @@ pub fn execute_mint_and_list(
     };
 
     Ok(Response::new()
-        .add_attribute("action", "mint")
+        .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
 }
 
-// We store the name without the TLD so it can be mapped to a raw address
-// that is not bech32 encoded. This way, all Cosmos / Interchain names can
-// be resolved to an address that is derived via the same (118) derivation
-// path.
-//
-// For example:
-//
-// bobo -> D93385094E906D7DA4EBFDEC2C4B167D5CAA431A (in hex)
-//
-// Now this can be resolved per chain:
-//
-// bobo.stars -> stars1myec2z2wjpkhmf8tlhkzcjck04w25sc6ymhplz
-// bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
+// This follows the same rules as Internet domain names
 fn validate_name(name: &str) -> Result<(), ContractError> {
     let len = name.len() as u64;
     if len < MIN_NAME_LENGTH {
