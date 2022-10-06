@@ -1,9 +1,7 @@
 use crate::error::ContractError;
 use crate::helpers::map_validate;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, Order, SudoParams, TokenId, SUDO_PARAMS,
-};
+use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, SUDO_PARAMS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -14,7 +12,6 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{maybe_addr, must_pay, nonpayable, Duration};
-use sg1::fair_burn;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -149,7 +146,7 @@ pub fn execute_set_ask(
 
 // TODO: use internally after bid is accepted?
 /// Removes the ask on a particular NFT
-fn execute_remove_ask(
+fn _execute_remove_ask(
     deps: DepsMut,
     info: MessageInfo,
     token_id: TokenId,
@@ -164,7 +161,7 @@ fn execute_remove_ask(
 
     let event = Event::new("remove-ask")
         .add_attribute("collection", collection.to_string())
-        .add_attribute("token_id", token_id.to_string());
+        .add_attribute("token_id", token_id);
 
     Ok(Response::new().add_event(event))
 }

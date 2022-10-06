@@ -153,7 +153,7 @@ fn validate_name(name: &str) -> Result<(), ContractError> {
     let len = name.len() as u64;
     if len < MIN_NAME_LENGTH {
         return Err(ContractError::NameTooShort {});
-    } else if len > MAX_NAME_LENGTH {
+    } else if len >= MAX_NAME_LENGTH {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -168,7 +168,7 @@ fn validate_name(name: &str) -> Result<(), ContractError> {
         .then(|| Err(ContractError::InvalidName {}))
         .unwrap_or(Ok(()))?;
 
-    if len > 4 && name[2..3].contains("--") {
+    if len > 4 && name[2..4].contains("--") {
         return Err(ContractError::InvalidName {});
     }
 
@@ -192,4 +192,34 @@ fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         collection_addr: config.to_string(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_name;
+
+    #[test]
+    fn check_validate_name() {
+        assert!(validate_name("bobo").is_ok());
+        assert!(validate_name("-bobo").is_err());
+        assert!(validate_name("bobo-").is_err());
+        assert!(validate_name("bo-bo").is_ok());
+        assert!(validate_name("bo--bo").is_err());
+        assert!(validate_name("bob--o").is_ok());
+        assert!(validate_name("bo").is_err());
+        assert!(validate_name("b").is_err());
+        assert!(validate_name("bob").is_ok());
+        assert!(
+            validate_name("bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobo").is_ok()
+        );
+        assert!(
+            validate_name("bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobob")
+                .is_err()
+        );
+        assert!(validate_name("0123456789").is_ok());
+        assert!(validate_name("😬").is_err());
+        assert!(validate_name("BOBO").is_err());
+        assert!(validate_name("b-o----b").is_ok());
+        assert!(validate_name("bobo.stars").is_err());
+    }
 }
