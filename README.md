@@ -36,9 +36,28 @@ address: stars1lhz29slmz60lskr9yf8c3wn3p344n9g4jz88wx1h2gf322g3hf
 owner: stars157nwwthsyyskuzeugsf48k52v6s4sl2swlhm2r
 ```
 
+## Architecture
+
+Names are stored without the TLD so they can be mapped to a raw address that is not bech32 encoded. This way, all Cosmos / Interchain names can be resolved to an address that is derived via the same key derivation path (118).
+
+For example:
+
+```
+bobo -> D93385094E906D7DA4EBFDEC2C4B167D5CAA431A (in hex)
+```
+
+Now this can be resolved per chain:
+
+```
+bobo.stars -> stars1myec2z2wjpkhmf8tlhkzcjck04w25sc6ymhplz
+bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
+```
+
+This architecture enables Stargaze Names to be a truly Interchain name service since it can mint and resolve names for any Cosmos chain.
+
 ## Contracts
 
-### sg721-name
+### SG-721 Name (sg721-name)
 
 A cw721 contract with on-chain metadata for a name.
 
@@ -66,28 +85,10 @@ pub struct Metadata {
 }
 ```
 
-### Name Minter
+### Name Minter (name-minter)
 
-The top-level name minter is initialized with the prefix `stars`.
+Name minter is responsible for minting, validating, and updating names and their metadata.
 
-```rs
-pub struct InitializeMsg {
-    pub name: String,
-}
-```
+### Name Marketplace (marketplace)
 
-The mint function mints a new name as the `token_id`.
-
-```rs
-pub enum ExecuteMsg {
-    Mint { name: String }
-}
-```
-
-A name minter will also keep a mapping of addresses to names for reverse lookups:
-
-```rs
-/// Addr = address associated with name
-/// String = the name (token_id)
-pub const ADDRESS_NAME: Map<&Addr, String> = Map::new("a");
-```
+The secondary marketplace for names. Names are automatically listed here once they are minted.
