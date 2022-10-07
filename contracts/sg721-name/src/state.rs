@@ -1,3 +1,5 @@
-use cw_storage_plus::Item;
+use cosmwasm_std::Addr;
+use cw_storage_plus::Map;
 
-pub const FROZEN_TOKEN_METADATA: Item<bool> = Item::new("frozen_token_metadata");
+// name, addr
+pub const NAME_MAP: Map<&str, Addr> = Map::new("nm");

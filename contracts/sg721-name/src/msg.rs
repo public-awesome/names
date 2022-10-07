@@ -2,7 +2,7 @@ use cosmwasm_std::{Binary, Timestamp};
 use cw721::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sg721::{MintMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
+use sg721::{ExecuteMsg as Sg721ExecuteMsg, MintMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
 use sg_name::{TextRecord, NFT};
 
 // Add execute msgs related to bio, profile, text records
@@ -82,4 +82,63 @@ pub enum ExecuteMsg<T> {
     UpdateTradingStartTime(Option<Timestamp>),
     // Freeze collection info from further updates
     FreezeCollectionInfo,
+}
+
+impl<T> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T> {
+    fn from(msg: ExecuteMsg<T>) -> Sg721ExecuteMsg<T> {
+        match msg {
+            ExecuteMsg::TransferNft {
+                recipient,
+                token_id,
+            } => Sg721ExecuteMsg::TransferNft {
+                recipient,
+                token_id,
+            },
+            ExecuteMsg::SendNft {
+                contract,
+                token_id,
+                msg,
+            } => Sg721ExecuteMsg::SendNft {
+                contract,
+                token_id,
+                msg,
+            },
+            ExecuteMsg::Approve {
+                spender,
+                token_id,
+                expires,
+            } => Sg721ExecuteMsg::Approve {
+                spender,
+                token_id,
+                expires,
+            },
+            ExecuteMsg::ApproveAll { operator, expires } => {
+                Sg721ExecuteMsg::ApproveAll { operator, expires }
+            }
+            ExecuteMsg::Revoke { spender, token_id } => {
+                Sg721ExecuteMsg::Revoke { spender, token_id }
+            }
+            ExecuteMsg::RevokeAll { operator } => Sg721ExecuteMsg::RevokeAll { operator },
+            ExecuteMsg::Burn { token_id } => Sg721ExecuteMsg::Burn { token_id },
+            ExecuteMsg::UpdateCollectionInfo { collection_info } => {
+                Sg721ExecuteMsg::UpdateCollectionInfo { collection_info }
+            }
+            ExecuteMsg::UpdateTradingStartTime(start_time) => {
+                Sg721ExecuteMsg::UpdateTradingStartTime(start_time)
+            }
+            ExecuteMsg::FreezeCollectionInfo {} => Sg721ExecuteMsg::FreezeCollectionInfo {},
+            ExecuteMsg::Mint(MintMsg {
+                token_id,
+                owner,
+                token_uri,
+                extension,
+            }) => Sg721ExecuteMsg::Mint(MintMsg {
+                token_id,
+                owner,
+                token_uri,
+                extension,
+            }),
+            _ => unreachable!("Invalid ExecuteMsg"),
+        }
+    }
 }
