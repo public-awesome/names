@@ -1,11 +1,12 @@
 use crate::error::ContractError;
 
-use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, MessageInfo, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, WasmQuery};
 
 use cw721::OwnerOfResponse;
 use cw721_base::Extension;
 use cw_utils::nonpayable;
 
+use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::{msg::QueryMsg as Sg721QueryMsg, ContractError::Unauthorized};
 use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_std::Response;
@@ -160,6 +161,37 @@ pub fn execute_update_text_record(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
+    Ok(Response::new())
+}
+
+pub fn execute_transfer_nft(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    recipient: String,
+    token_id: String,
+) -> Result<Response, ContractError> {
+    // sender can transfer check done on sg721 transfer tx
+    nonpayable(&info)?;
+    let mut token = Sg721NameContract::default()
+        .tokens
+        .may_load(deps.storage, &token_id)?
+        .ok_or(ContractError::NameNotFound {})?;
+
+    // reset bio, profile, records
+    token.extension.bio = None;
+    token.extension.profile = None;
+    token.extension.records = vec![];
+    Sg721NameContract::default()
+        .tokens
+        .save(deps.storage, &token_id, &token)?;
+
+    let msg = Sg721ExecuteMsg::TransferNft {
+        recipient,
+        token_id,
+    };
+    Sg721NameContract::default().execute(deps, env, info, msg)?;
+
     Ok(Response::new())
 }
 
