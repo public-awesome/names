@@ -1,8 +1,7 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_slice, to_binary, ContractInfoResponse, ContractResult, DepsMut, Empty, MessageInfo,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, Timestamp,
-    WasmQuery,
+    from_slice, to_binary, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
+    QuerierResult, QueryRequest, SystemError, SystemResult, Timestamp, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::Extension;
@@ -11,7 +10,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord};
 use std::marker::PhantomData;
 
-use crate::entry::{execute, instantiate, query};
+use crate::entry::{execute, instantiate};
 use crate::{ContractError, ExecuteMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 const CREATOR: &str = "creator";
@@ -273,65 +272,8 @@ fn mint_and_update() {
     assert_eq!(res.owner, FRIEND.to_string());
 }
 
+#[test]
 fn update_profile() {
+    unimplemented!("TODO");
     // stub mock nft collection to return OwnerOfResponse nft
-
-    // instantiate normal sg721 nft collection
-    // let init_msg = InstantiateMsg {
-    //     name: "SpaceShips".to_string(),
-    //     symbol: "SPACE".to_string(),
-    //     minter: CREATOR.to_string(),
-    //     collection_info: CollectionInfo {
-    //         creator: CREATOR.to_string(),
-    //         description: "this is a test".to_string(),
-    //         image: "https://larry.engineer".to_string(),
-    //         external_link: None,
-    //         explicit_content: false,
-    //         trading_start_time: None,
-    //         royalty_info: None,
-    //     },
-    // };
-
-    // create names collection
-    // add nft profile to names collection
-    let mut deps = mock_deps();
-    let contract = Sg721NameContract::default();
-
-    // instantiate contract
-    let info = mock_info(CREATOR, &[]);
-    let init_msg = InstantiateMsg {
-        name: "SpaceShips".to_string(),
-        symbol: "SPACE".to_string(),
-        minter: CREATOR.to_string(),
-        collection_info: CollectionInfo {
-            creator: CREATOR.to_string(),
-            description: "this is a test".to_string(),
-            image: "https://larry.engineer".to_string(),
-            external_link: None,
-            explicit_content: false,
-            trading_start_time: None,
-            royalty_info: None,
-        },
-    };
-    contract
-        .instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg)
-        .unwrap();
-
-    // mint token
-    let token_id = "Enterprise";
-    let mint_msg = MintMsg {
-        token_id: token_id.to_string(),
-        owner: "john".to_string(),
-        token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
-        extension: Metadata {
-            bio: Some("This is the USS Enterprise NCC-1701".to_string()),
-            profile: None,
-            records: vec![],
-            extension: None,
-        },
-    };
-    let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
-    contract
-        .execute(deps.as_mut(), mock_env(), info, exec_msg)
-        .unwrap();
 }
