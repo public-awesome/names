@@ -102,14 +102,12 @@ pub enum QueryMsg {
     /// Get all asks for a collection
     /// Return type: `AsksResponse`
     Asks {
-        include_inactive: Option<bool>,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get all asks for a collection in reverse
     /// Return type: `AsksResponse`
     ReverseAsks {
-        include_inactive: Option<bool>,
         start_before: Option<TokenId>,
         limit: Option<u32>,
     },
@@ -120,7 +118,6 @@ pub enum QueryMsg {
     /// Return type: `AsksResponse`
     AsksBySeller {
         seller: Seller,
-        include_inactive: Option<bool>,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },

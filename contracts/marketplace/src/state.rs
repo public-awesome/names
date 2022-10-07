@@ -41,7 +41,7 @@ pub fn ask_key(token_id: TokenId) -> AskKey {
 /// Defines indices for accessing Asks
 pub struct AskIndicies<'a> {
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
-    // TODO: add index by height
+    pub height: MultiIndex<'a, u64, Ask, AskKey>,
 }
 
 impl<'a> IndexList<Ask> for AskIndicies<'a> {
@@ -54,6 +54,7 @@ impl<'a> IndexList<Ask> for AskIndicies<'a> {
 pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
     let indexes = AskIndicies {
         seller: MultiIndex::new(|d: &Ask| d.seller.clone(), "asks", "asks__seller"),
+        height: MultiIndex::new(|d: &Ask| d.height, "asks", "asks__height"),
     };
     IndexedMap::new("asks", indexes)
 }
@@ -90,6 +91,7 @@ pub struct BidIndicies<'a> {
     pub token_id: MultiIndex<'a, TokenId, Bid, BidKey>,
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
+    pub height: MultiIndex<'a, u64, Bid, BidKey>,
 }
 
 impl<'a> IndexList<Bid> for BidIndicies<'a> {
@@ -108,6 +110,7 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
         ),
         price: MultiIndex::new(|d: &Bid| d.price.u128(), "bids", "bids__collection_price"),
         bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
+        height: MultiIndex::new(|d: &Bid| d.height, "bids", "bids__height"),
     };
     IndexedMap::new("bids", indexes)
 }

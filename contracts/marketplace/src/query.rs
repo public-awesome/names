@@ -19,30 +19,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
     match msg {
         QueryMsg::Ask { token_id } => to_binary(&query_ask(deps, token_id)?),
-        QueryMsg::Asks {
-            include_inactive,
-            start_after,
-            limit,
-        } => to_binary(&query_asks(deps, include_inactive, start_after, limit)?),
+        QueryMsg::Asks { start_after, limit } => to_binary(&query_asks(deps, start_after, limit)?),
         QueryMsg::ReverseAsks {
-            include_inactive,
             start_before,
             limit,
-        } => to_binary(&reverse_query_asks(
-            deps,
-            include_inactive,
-            start_before,
-            limit,
-        )?),
+        } => to_binary(&reverse_query_asks(deps, start_before, limit)?),
         QueryMsg::AsksBySeller {
             seller,
-            include_inactive,
             start_after,
             limit,
         } => to_binary(&query_asks_by_seller(
             deps,
             api.addr_validate(&seller)?,
-            include_inactive,
             start_after,
             limit,
         )?),
@@ -85,7 +73,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 pub fn query_asks(
     deps: Deps,
-    include_inactive: Option<bool>,
     start_after: Option<TokenId>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
@@ -124,7 +111,6 @@ pub fn query_asks(
 
 pub fn reverse_query_asks(
     deps: Deps,
-    include_inactive: Option<bool>,
     start_before: Option<TokenId>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
@@ -159,7 +145,6 @@ pub fn reverse_query_asks(
 
 pub fn query_asks_sorted_by_price(
     deps: Deps,
-    include_inactive: Option<bool>,
     start_after: Option<AskOffset>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
@@ -189,7 +174,6 @@ pub fn query_asks_sorted_by_price(
 
 pub fn reverse_query_asks_sorted_by_price(
     deps: Deps,
-    include_inactive: Option<bool>,
     start_before: Option<AskOffset>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
@@ -231,7 +215,6 @@ pub fn query_ask_count(deps: Deps) -> StdResult<AskCountResponse> {
 pub fn query_asks_by_seller(
     deps: Deps,
     seller: Addr,
-    include_inactive: Option<bool>,
     start_after: Option<TokenId>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
@@ -244,10 +227,6 @@ pub fn query_asks_by_seller(
         .seller
         .prefix(seller)
         .range(deps.storage, start, None, Order::Ascending)
-        .filter(|item| match item {
-            Ok(_) => matches!(include_inactive, Some(true)),
-            Err(_) => true,
-        })
         .take(limit)
         .map(|res| res.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()?;
