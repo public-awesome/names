@@ -10,8 +10,6 @@ pub struct NFT {
     pub token_id: String,
 }
 
-// TODO: validate length of text record data
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TextRecord {
     pub name: String,  // "twitter"
