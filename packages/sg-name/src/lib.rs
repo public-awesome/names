@@ -2,13 +2,13 @@ use cosmwasm_std::{Addr, Timestamp};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub const MAX_TEXT_LENGTH: u64 = 512;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NFT {
     pub collection: Addr,
     pub token_id: String,
 }
-
-// TODO: validate length of text record data
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TextRecord {

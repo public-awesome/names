@@ -23,7 +23,7 @@ const INIT_COLLECTION_REPLY_ID: u64 = 1;
 
 const MIN_NAME_LENGTH: u64 = 3;
 const MAX_NAME_LENGTH: u64 = 63;
-const BASE_PRICE: u128 = 1000000;
+const BASE_PRICE: u128 = 100000000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -84,11 +84,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
-        ExecuteMsg::UpdateBio { name, bio } => todo!(),
-        ExecuteMsg::UpdateProfile { name, profile } => todo!(),
-        ExecuteMsg::AddTextRecord { name, record } => todo!(),
-        ExecuteMsg::RemoveTextRecord { name, record_name } => todo!(),
-        ExecuteMsg::UpdateTextRecord { name, record } => todo!(),
     }
 }
 
