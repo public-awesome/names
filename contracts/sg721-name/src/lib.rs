@@ -20,7 +20,10 @@ pub type QueryMsg = sg721_base::msg::QueryMsg;
 pub mod entry {
     use super::*;
 
-    use contract::execute_update_bio;
+    use contract::{
+        execute_add_text_record, execute_remove_text_record, execute_update_bio,
+        execute_update_profile, execute_update_text_record,
+    };
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
     use sg_std::Response;
@@ -50,10 +53,18 @@ pub mod entry {
     ) -> Result<Response, ContractError> {
         match msg {
             ExecuteMsg::UpdateBio { name, bio } => execute_update_bio(deps, info, name, bio),
-            ExecuteMsg::UpdateProfile { name, profile } => unimplemented!(),
-            ExecuteMsg::AddTextRecord { name, record } => unimplemented!(),
-            ExecuteMsg::RemoveTextRecord { name, record_name } => unimplemented!(),
-            ExecuteMsg::UpdateTextRecord { name, record } => unimplemented!(),
+            ExecuteMsg::UpdateProfile { name, profile } => {
+                execute_update_profile(deps, info, name, profile)
+            }
+            ExecuteMsg::AddTextRecord { name, record } => {
+                execute_add_text_record(deps, info, name, record)
+            }
+            ExecuteMsg::RemoveTextRecord { name, record_name } => {
+                execute_remove_text_record(deps, info, name, record_name)
+            }
+            ExecuteMsg::UpdateTextRecord { name, record } => {
+                execute_update_text_record(deps, info, name, record)
+            }
             _ => Sg721NameContract::default()
                 .execute(deps, env, info, msg.into())
                 .map_err(|e| e.into()),
