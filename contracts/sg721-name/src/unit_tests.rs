@@ -7,6 +7,7 @@ use cosmwasm_std::{
 use cw721::Cw721Query;
 use cw721_base::Extension;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg, MintMsg};
+use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord};
 use std::marker::PhantomData;
 
@@ -14,6 +15,7 @@ use crate::entry::{execute, instantiate, query};
 use crate::{ContractError, ExecuteMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 const CREATOR: &str = "creator";
+const IMPOSTER: &str = "imposter";
 
 pub fn mock_deps() -> OwnedDeps<MockStorage, MockApi, CustomMockQuerier, Empty> {
     OwnedDeps {
@@ -86,7 +88,7 @@ fn init() {
 }
 
 #[test]
-fn mint_and_update_bio() {
+fn mint_and_update() {
     let contract = Sg721NameContract::default();
     // instantiate sg-names collection
     let mut deps = mock_deps();
@@ -137,6 +139,15 @@ fn mint_and_update_bio() {
     assert_eq!(res.extension, mint_msg.extension);
 
     // update bio
+    // too long
+    let long_bio = Some("a".repeat(600).to_string());
+    let update_bio_msg = ExecuteMsg::UpdateBio {
+        name: token_id.to_string(),
+        bio: long_bio.clone(),
+    };
+    let err = execute(deps.as_mut(), mock_env(), info.clone(), update_bio_msg).unwrap_err();
+    assert_eq!(err.to_string(), ContractError::BioTooLong {}.to_string());
+    // passes
     let bio = Some("I am a test".to_string());
     let update_bio_msg = ExecuteMsg::UpdateBio {
         name: token_id.to_string(),
@@ -159,6 +170,19 @@ fn mint_and_update_bio() {
         name: token_id.to_string(),
         record: record.clone(),
     };
+    // unauthorized
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info(IMPOSTER, &[]),
+        add_record_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        ContractError::Base(Unauthorized {}).to_string()
+    );
+    // passes
     execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap();
     let res = contract
         .parent
@@ -167,12 +191,41 @@ fn mint_and_update_bio() {
     assert_eq!(res.extension.records.len(), 1);
     assert_eq!(res.extension.records[0].verified_at, None);
 
-    // update txt record
+    // add another txt record
+    let record = TextRecord {
+        name: "twitter".to_string(),
+        value: "jackdorsey".to_string(),
+        verified_at: None,
+    };
+    let add_record_msg = ExecuteMsg::AddTextRecord {
+        name: token_id.to_string(),
+        record: record.clone(),
+    };
+    execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension.records.len(), 2);
+    assert_eq!(res.extension.records[0].verified_at, None);
+
+    // add duplicate record RecordNameAlreadyExist
     let record = TextRecord {
         name: "test".to_string(),
         value: "testtesttest".to_string(),
         verified_at: Some(Timestamp::from_seconds(100)),
     };
+    let add_record_msg = ExecuteMsg::AddTextRecord {
+        name: token_id.to_string(),
+        record: record.clone(),
+    };
+    let err = execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        ContractError::RecordNameAlreadyExists {}.to_string()
+    );
+
+    // update txt record
     let update_record_msg = ExecuteMsg::UpdateTextRecord {
         name: token_id.to_string(),
         record: record.clone(),
@@ -182,8 +235,8 @@ fn mint_and_update_bio() {
         .parent
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
-    assert_eq!(res.extension.records.len(), 1);
-    assert_eq!(res.extension.records[0].value, record.value);
+    assert_eq!(res.extension.records.len(), 2);
+    assert_eq!(res.extension.records[1].value, record.value);
 
     // rm txt record
     let rm_record_msg = ExecuteMsg::RemoveTextRecord {
@@ -195,7 +248,10 @@ fn mint_and_update_bio() {
         .parent
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
-    assert_eq!(res.extension.records.len(), 0);
+    assert_eq!(res.extension.records.len(), 1);
+
+    // TODO transfer to friend
+    // resets all records and bio
 }
 
 fn update_profile() {
