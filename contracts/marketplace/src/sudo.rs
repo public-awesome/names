@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use crate::msg::SudoMsg;
-use crate::state::{ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS};
+use crate::state::{ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, SALE_HOOKS, SUDO_PARAMS};
 use cosmwasm_std::{entry_point, Addr, Decimal, DepsMut, Env, Uint128};
 use sg_std::Response;
 
@@ -34,7 +34,19 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
         SudoMsg::RemoveSaleHook { hook } => sudo_remove_sale_hook(deps, api.addr_validate(&hook)?),
         SudoMsg::RemoveAskHook { hook } => sudo_remove_ask_hook(deps, api.addr_validate(&hook)?),
         SudoMsg::RemoveBidHook { hook } => sudo_remove_bid_hook(deps, api.addr_validate(&hook)?),
+        SudoMsg::UpdateNameCollection { collection } => {
+            sudo_update_name_collection(deps, api.addr_validate(&collection)?)
+        }
     }
+}
+
+pub fn sudo_update_name_collection(
+    deps: DepsMut,
+    collection: Addr,
+) -> Result<Response, ContractError> {
+    NAME_COLLECTION.save(deps.storage, &collection)?;
+
+    Ok(Response::new().add_attribute("action", "sudo_update_name_collection"))
 }
 
 /// Only governance can update contract params

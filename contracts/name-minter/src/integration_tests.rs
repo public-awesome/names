@@ -1,71 +1,131 @@
-// #[cfg(test)]
-// mod tests {
-//     use crate::helpers::CwTemplateContract;
-//     use crate::msg::InstantiateMsg;
-//     use cosmwasm_std::{Addr, Coin, Empty, Uint128};
-//     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use crate::msg::InstantiateMsg;
+use cosmwasm_std::{Addr, Uint128};
+use cw_multi_test::{Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
+use sg_multi_test::StargazeApp;
+use sg_std::StargazeMsgWrapper;
 
-//     pub fn contract_template() -> Box<dyn Contract<Empty>> {
-//         let contract = ContractWrapper::new(
-//             crate::contract::execute,
-//             crate::contract::instantiate,
-//             crate::contract::query,
-//         );
-//         Box::new(contract)
-//     }
+pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        crate::contract::execute,
+        crate::contract::instantiate,
+        crate::contract::query,
+    )
+    .with_reply(crate::contract::reply);
+    Box::new(contract)
+}
 
-//     const USER: &str = "USER";
-//     const ADMIN: &str = "ADMIN";
-//     const NATIVE_DENOM: &str = "denom";
+pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        name_marketplace::execute::execute,
+        name_marketplace::execute::instantiate,
+        name_marketplace::query::query,
+    )
+    .with_sudo(name_marketplace::sudo::sudo);
+    Box::new(contract)
+}
 
-//     fn mock_app() -> App {
-//         AppBuilder::new().build(|router, _, storage| {
-//             router
-//                 .bank
-//                 .init_balance(
-//                     storage,
-//                     &Addr::unchecked(USER),
-//                     vec![Coin {
-//                         denom: NATIVE_DENOM.to_string(),
-//                         amount: Uint128::new(1),
-//                     }],
-//                 )
-//                 .unwrap();
-//         })
-//     }
+pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        sg721_name::entry::execute,
+        sg721_name::entry::instantiate,
+        sg721_name::entry::query,
+    );
+    Box::new(contract)
+}
 
-//     fn proper_instantiate() -> (App, CwTemplateContract) {
-//         let mut app = mock_app();
-//         let cw_template_id = app.store_code(contract_template());
+const USER: &str = "USER";
+const ADMIN: &str = "ADMIN";
+const TRADING_FEE_BPS: u64 = 200; // 2%
 
-//         let msg = InstantiateMsg { count: 1i32 };
-//         let cw_template_contract_addr = app
-//             .instantiate_contract(
-//                 cw_template_id,
-//                 Addr::unchecked(ADMIN),
-//                 &msg,
-//                 &[],
-//                 "test",
-//                 None,
-//             )
-//             .unwrap();
+pub fn custom_mock_app() -> StargazeApp {
+    StargazeApp::default()
+}
 
-//         let cw_template_contract = CwTemplateContract(cw_template_contract_addr);
+// 1. Instantiate Name Marketplace
+// 2. Instantiate Name Minter (which instantiates Name Collection)
+// 3. Update Name Marketplace with Name Collection address
+fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
+    let mut app = custom_mock_app();
+    let mkt_id = app.store_code(contract_marketplace());
+    let minter_id = app.store_code(contract_minter());
+    let sg721_id = app.store_code(contract_collection());
 
-//         (app, cw_template_contract)
-//     }
+    // 1. Instantiate Name Marketplace
+    let msg = name_marketplace::msg::InstantiateMsg {
+        trading_fee_bps: TRADING_FEE_BPS,
+        min_price: Uint128::from(5u128),
+    };
+    let marketplace = app
+        .instantiate_contract(
+            mkt_id,
+            Addr::unchecked(ADMIN),
+            &msg,
+            &[],
+            "Name-Marketplace",
+            None,
+        )
+        .unwrap();
+    println!("Marketplace: {}", marketplace);
 
-//     mod count {
-//         use super::*;
-//         use crate::msg::ExecuteMsg;
+    // 2. Instantiate Name Minter (which instantiates Name Collection)
+    let msg = InstantiateMsg {
+        collection_code_id: sg721_id,
+        marketplace_addr: marketplace.to_string(),
+    };
+    let minter = app
+        .instantiate_contract(
+            minter_id,
+            Addr::unchecked(ADMIN),
+            &msg,
+            &[],
+            "Name-Minter",
+            None,
+        )
+        .unwrap();
+    println!("Minter: {}", minter);
 
-//         #[test]
-//         fn count() {
-//             let (mut app, cw_template_contract) = proper_instantiate();
+    let name_collection = "contract2";
 
-//             let msg = ExecuteMsg::Increment {};
-//             let cosmos_msg = cw_template_contract.call(msg).unwrap();
-//             app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
-//         }
-//     }
-// }
+    // 3. Update Name Marketplace with Name Collection address
+    let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {
+        collection: name_collection.to_string(),
+    };
+    let res = app.wasm_sudo(marketplace.clone(), &msg);
+    assert!(res.is_ok());
+
+    (app, marketplace, minter, Addr::unchecked(name_collection))
+}
+
+mod mint {
+    use cosmwasm_std::{coin, coins};
+    use cw_multi_test::BankSudo;
+    use sg_std::NATIVE_DENOM;
+
+    use super::*;
+    use crate::msg::ExecuteMsg;
+
+    #[test]
+    fn mint() {
+        let (mut app, _, minter, _) = instantiate_contracts();
+
+        let user = Addr::unchecked(USER);
+        let four_letter_name_cost = 100000000 * 10;
+
+        let name_fee = coins(four_letter_name_cost, NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: user.to_string(),
+                amount: name_fee.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+
+        let msg = ExecuteMsg::MintAndList {
+            name: "test".to_string(),
+        };
+        let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
+        println!("{:?}", res);
+        // assert!(res.is_ok());
+    }
+}

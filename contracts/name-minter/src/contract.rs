@@ -8,6 +8,8 @@ use cw2::set_contract_version;
 use cw721_base::{Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg};
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use sg721::CollectionInfo;
+use sg721_name::InstantiateMsg as Sg721InstantiateMsg;
 use sg_name::Metadata;
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
@@ -37,13 +39,23 @@ pub fn instantiate(
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
+    let collection_init_msg = Sg721InstantiateMsg {
+        name: "Name Tokens".to_string(),
+        symbol: "NAME".to_string(),
+        minter: info.sender.to_string(),
+        collection_info: CollectionInfo {
+            creator: info.sender.to_string(),
+            description: "Stargaze Names".to_string(),
+            image: "ipfs://example.com".to_string(),
+            external_link: None,
+            explicit_content: false,
+            trading_start_time: None,
+            royalty_info: None,
+        },
+    };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_binary(&Cw721InstantiateMsg {
-            name: "Name Tokens".to_string(),
-            symbol: "NAME".to_string(),
-            minter: info.sender.to_string(),
-        })?,
+        msg: to_binary(&collection_init_msg)?,
         funds: info.funds,
         admin: None,
         label: "Name Collection".to_string(),
