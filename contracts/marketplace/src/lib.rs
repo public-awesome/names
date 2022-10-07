@@ -11,4 +11,4 @@ pub mod sudo;
 mod unit_tests;
 
 pub use error::ContractError;
-pub use helpers::{ExpiryRange, ExpiryRangeError, MarketplaceContract};
+pub use helpers::MarketplaceContract;
