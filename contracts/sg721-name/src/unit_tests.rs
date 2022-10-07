@@ -84,7 +84,7 @@ fn init() {
         collection_info: collection_info,
     };
 
-    instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
 }
 
 #[test]
@@ -106,7 +106,7 @@ fn mint_and_update() {
         name: "SG Names".to_string(),
         symbol: "NAME".to_string(),
         minter: CREATOR.to_string(),
-        collection_info: collection_info,
+        collection_info,
     };
 
     instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
@@ -140,10 +140,10 @@ fn mint_and_update() {
 
     // update bio
     // too long
-    let long_bio = Some("a".repeat(600).to_string());
+    let long_bio = Some("a".repeat(600));
     let update_bio_msg = ExecuteMsg::UpdateBio {
         name: token_id.to_string(),
-        bio: long_bio.clone(),
+        bio: long_bio,
     };
     let err = execute(deps.as_mut(), mock_env(), info.clone(), update_bio_msg).unwrap_err();
     assert_eq!(err.to_string(), ContractError::BioTooLong {}.to_string());
@@ -168,7 +168,7 @@ fn mint_and_update() {
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
-        record: record.clone(),
+        record: record,
     };
     // unauthorized
     let err = execute(
@@ -199,7 +199,7 @@ fn mint_and_update() {
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
-        record: record.clone(),
+        record: record,
     };
     execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap();
     let res = contract
@@ -241,7 +241,7 @@ fn mint_and_update() {
     // rm txt record
     let rm_record_msg = ExecuteMsg::RemoveTextRecord {
         name: token_id.to_string(),
-        record_name: record.name.to_string(),
+        record_name: record.name,
     };
     execute(deps.as_mut(), mock_env(), info.clone(), rm_record_msg).unwrap();
     let res = contract
