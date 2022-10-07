@@ -1,11 +1,11 @@
-use cosmwasm_std::{to_binary, WasmQuery};
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::{Addr, Deps, DepsMut, MessageInfo};
-use cw721::OwnerOfResponse;
-
 use crate::error::ContractError;
+
+use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, MessageInfo, WasmQuery};
+
+use cw721::OwnerOfResponse;
 use cw721_base::Extension;
 use cw_utils::nonpayable;
+
 use sg721_base::{msg::QueryMsg as Sg721QueryMsg, ContractError::Unauthorized};
 use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_std::Response;
@@ -20,7 +20,7 @@ pub fn execute_update_bio(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let token_id = name;
-    if is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) == false {
+    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
         return Err(ContractError::Base(Unauthorized {}));
     }
     validate_bio(bio.clone())?;
@@ -45,7 +45,7 @@ pub fn execute_update_profile(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let token_id = name;
-    if is_sender_token_id_owner(deps.as_ref(), info.sender.clone(), &token_id) == false {
+    if !is_sender_token_id_owner(deps.as_ref(), info.sender.clone(), &token_id) {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -59,7 +59,7 @@ pub fn execute_update_profile(
         }
         .into();
         let res: OwnerOfResponse = deps.querier.query(&req)?;
-        if res.owner != info.sender.to_string() {
+        if res.owner != info.sender {
             return Err(ContractError::NotNFTOwner {});
         }
     }
@@ -84,7 +84,7 @@ pub fn execute_add_text_record(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let token_id = name;
-    if is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) == false {
+    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
         return Err(ContractError::Base(Unauthorized {}));
     }
     validate_and_sanitize_record(&mut record)?;
@@ -115,7 +115,7 @@ pub fn execute_remove_text_record(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let token_id = name;
-    if is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) == false {
+    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -142,7 +142,7 @@ pub fn execute_update_text_record(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let token_id = name;
-    if is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) == false {
+    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
         return Err(ContractError::Base(Unauthorized {}));
     }
     validate_and_sanitize_record(&mut record)?;
@@ -166,7 +166,7 @@ pub fn execute_update_text_record(
 fn is_sender_token_id_owner(deps: Deps, sender: Addr, token_id: &str) -> bool {
     let owner = match Sg721NameContract::default()
         .tokens
-        .load(deps.storage, &token_id)
+        .load(deps.storage, token_id)
     {
         Ok(token_info) => token_info.owner,
         Err(_) => return false,
