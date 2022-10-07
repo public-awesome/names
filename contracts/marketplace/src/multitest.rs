@@ -42,14 +42,14 @@ pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
     Box::new(contract)
 }
 
-pub fn contract_sg721_name() -> Box<dyn Contract<StargazeMsgWrapper>> {
-    let contract = ContractWrapper::new(
-        sg721_name::entry::execute,
-        sg721_name::entry::instantiate,
-        sg721_name::entry::query,
-    );
-    Box::new(contract)
-}
+// pub fn contract_sg721_name() -> Box<dyn Contract<StargazeMsgWrapper>> {
+//     let contract = ContractWrapper::new(
+//         sg721_name::entry::execute,
+//         sg721_name::entry::instantiate,
+//         sg721_name::entry::query,
+//     );
+//     Box::new(contract)
+// }
 
 pub fn setup_block_time(router: &mut StargazeApp, seconds: u64) {
     let mut block = router.block_info();
