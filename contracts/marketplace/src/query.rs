@@ -1,13 +1,10 @@
 use crate::msg::{
-    AskCountResponse, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder,
-    BidsResponse, ParamsResponse, QueryMsg,
+    AskCountResponse, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder, BidsResponse,
+    ParamsResponse, QueryMsg,
 };
-use crate::state::{
-    ask_key, asks, bid_key, bids, BidKey, TokenId, ASK_HOOKS, BID_HOOKS, SALE_HOOKS, SUDO_PARAMS,
-};
+use crate::state::{ask_key, asks, bid_key, bids, BidKey, TokenId, SUDO_PARAMS};
 use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, Env, Order, StdResult};
-use cw_storage_plus::{Bound, PrefixBound};
-use cw_utils::maybe_addr;
+use cw_storage_plus::Bound;
 
 // Query limits
 const DEFAULT_QUERY_LIMIT: u32 = 10;
@@ -78,35 +75,18 @@ pub fn query_asks(
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    // let asks = asks()
-    //     // .idx
-    //     // .collection
-    //     // .prefix(collection.clone())
-    //     .range(
-    //         deps.storage,
-    //         Some(Bound::exclusive((
-    //             collection,
-    //             start_after.unwrap_or_default(),
-    //         ))),
-    //         None,
-    //         Order::Ascending,
-    //     )
-    //     .filter(|item| match item {
-    //         Ok((_, ask)) => match include_inactive {
-    //             Some(true) => true,
-    //             _ => ask.is_active,
-    //         },
-    //         Err(_) => true,
-    //     })
-    //     .take(limit)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
-
     let asks = asks()
-        .range(deps.storage, None, None, Order::Ascending)
+        .range(
+            deps.storage,
+            Some(Bound::exclusive(start_after.unwrap_or_default())),
+            None,
+            Order::Ascending,
+        )
+        .take(limit)
+        .map(|res| res.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(AsksResponse { asks: vec![] })
+    Ok(AsksResponse { asks })
 }
 
 pub fn reverse_query_asks(
@@ -116,100 +96,26 @@ pub fn reverse_query_asks(
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    // let asks = asks()
-    //     .idx
-    //     .collection
-    //     .prefix(collection.clone())
-    //     .range(
-    //         deps.storage,
-    //         None,
-    //         Some(Bound::exclusive((
-    //             collection,
-    //             start_before.unwrap_or_default(),
-    //         ))),
-    //         Order::Descending,
-    //     )
-    //     .filter(|item| match item {
-    //         Ok((_, ask)) => match include_inactive {
-    //             Some(true) => true,
-    //             _ => ask.is_active,
-    //         },
-    //         Err(_) => true,
-    //     })
-    //     .take(limit)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
+    let asks = asks()
+        .range(
+            deps.storage,
+            None,
+            Some(Bound::exclusive(start_before.unwrap_or_default())),
+            Order::Descending,
+        )
+        .take(limit)
+        .map(|res| res.map(|item| item.1))
+        .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(AsksResponse { asks: vec![] })
-}
-
-pub fn query_asks_sorted_by_price(
-    deps: Deps,
-    start_after: Option<AskOffset>,
-    limit: Option<u32>,
-) -> StdResult<AsksResponse> {
-    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-
-    // let start =
-    //     start_after.map(|offset| Bound::exclusive((offset.price.u128(), ask_key(offset.token_id))));
-
-    // let asks = asks()
-    //     .idx
-    //     .collection_price
-    //     .sub_prefix(collection)
-    //     .range(deps.storage, start, None, Order::Ascending)
-    //     .filter(|item| match item {
-    //         Ok((_, ask)) => match include_inactive {
-    //             Some(true) => true,
-    //             _ => ask.is_active,
-    //         },
-    //         Err(_) => true,
-    //     })
-    //     .take(limit)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
-
-    Ok(AsksResponse { asks: vec![] })
-}
-
-pub fn reverse_query_asks_sorted_by_price(
-    deps: Deps,
-    start_before: Option<AskOffset>,
-    limit: Option<u32>,
-) -> StdResult<AsksResponse> {
-    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-
-    // let end = start_before
-    //     .map(|offset| Bound::exclusive((offset.price.u128(), ask_key(offset.token_id))));
-
-    // let asks = asks()
-    //     .idx
-    //     .collection_price
-    //     .sub_prefix(collection)
-    //     .range(deps.storage, None, end, Order::Descending)
-    //     .filter(|item| match item {
-    //         Ok((_, ask)) => match include_inactive {
-    //             Some(true) => true,
-    //             _ => ask.is_active,
-    //         },
-    //         Err(_) => true,
-    //     })
-    //     .take(limit)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
-
-    Ok(AsksResponse { asks: vec![] })
+    Ok(AsksResponse { asks })
 }
 
 pub fn query_ask_count(deps: Deps) -> StdResult<AskCountResponse> {
-    // let count = asks()
-    //     .idx
-    //     .collection
-    //     .prefix(collection)
-    //     .keys_raw(deps.storage, None, None, Order::Ascending)
-    //     .count() as u32;
+    let count = asks()
+        .keys_raw(deps.storage, None, None, Order::Ascending)
+        .count() as u32;
 
-    Ok(AskCountResponse { count: 7 })
+    Ok(AskCountResponse { count })
 }
 
 pub fn query_asks_by_seller(
@@ -275,18 +181,16 @@ pub fn query_bids(
     limit: Option<u32>,
 ) -> StdResult<BidsResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-    // let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
 
-    // let bids = bids()
-    //     .idx
-    //     .collection_token_id
-    //     .prefix((collection, token_id))
-    //     .range(deps.storage, start, None, Order::Ascending)
-    //     .take(limit)
-    //     .map(|item| item.map(|(_, b)| b))
-    //     .collect::<StdResult<Vec<_>>>()?;
+    let bids = bids()
+        .prefix(token_id)
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(BidsResponse { bids: vec![] })
+    Ok(BidsResponse { bids })
 }
 
 pub fn query_bids_sorted_by_price(
@@ -303,16 +207,15 @@ pub fn query_bids_sorted_by_price(
         ))
     });
 
-    // let bids = bids()
-    //     .idx
-    //     .collection_price
-    //     .sub_prefix(collection)
-    //     .range(deps.storage, start, None, Order::Ascending)
-    //     .take(limit)
-    //     .map(|item| item.map(|(_, b)| b))
-    //     .collect::<StdResult<Vec<_>>>()?;
+    let bids = bids()
+        .idx
+        .price
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(BidsResponse { bids: vec![] })
+    Ok(BidsResponse { bids })
 }
 
 pub fn reverse_query_bids_sorted_by_price(
@@ -329,16 +232,15 @@ pub fn reverse_query_bids_sorted_by_price(
         ))
     });
 
-    // let bids = bids()
-    //     .idx
-    //     .collection_price
-    //     .sub_prefix(collection)
-    //     .range(deps.storage, None, end, Order::Descending)
-    //     .take(limit)
-    //     .map(|item| item.map(|(_, b)| b))
-    //     .collect::<StdResult<Vec<_>>>()?;
+    let bids = bids()
+        .idx
+        .price
+        .range(deps.storage, None, end, Order::Descending)
+        .take(limit)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(BidsResponse { bids: vec![] })
+    Ok(BidsResponse { bids })
 }
 
 pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
