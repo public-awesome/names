@@ -7,7 +7,7 @@ mod error;
 pub mod msg;
 
 #[cfg(test)]
-pub mod tests;
+pub mod unit_tests;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg721-name";
@@ -22,8 +22,8 @@ pub mod entry {
     use super::*;
 
     use contract::{
-        execute_add_text_record, execute_remove_text_record, execute_update_bio,
-        execute_update_profile, execute_update_text_record,
+        execute_add_text_record, execute_remove_text_record, execute_transfer_nft,
+        execute_update_bio, execute_update_profile, execute_update_text_record,
     };
     use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
@@ -66,6 +66,10 @@ pub mod entry {
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
             }
+            ExecuteMsg::TransferNft {
+                recipient,
+                token_id,
+            } => execute_transfer_nft(deps, env, info, recipient, token_id),
             _ => Sg721NameContract::default()
                 .execute(deps, env, info, msg.into())
                 .map_err(|e| e.into()),
