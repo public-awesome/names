@@ -8,6 +8,8 @@ use cw2::set_contract_version;
 use cw721_base::{Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg};
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use sg721::CollectionInfo;
+use sg721_name::InstantiateMsg as Sg721InstantiateMsg;
 use sg_name::Metadata;
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
@@ -37,13 +39,23 @@ pub fn instantiate(
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
+    let collection_init_msg = Sg721InstantiateMsg {
+        name: "Name Tokens".to_string(),
+        symbol: "NAME".to_string(),
+        minter: info.sender.to_string(),
+        collection_info: CollectionInfo {
+            creator: info.sender.to_string(),
+            description: "Stargaze Names".to_string(),
+            image: "ipfs://example.com".to_string(),
+            external_link: None,
+            explicit_content: false,
+            trading_start_time: None,
+            royalty_info: None,
+        },
+    };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_binary(&Cw721InstantiateMsg {
-            name: "Name Tokens".to_string(),
-            symbol: "NAME".to_string(),
-            minter: info.sender.to_string(),
-        })?,
+        msg: to_binary(&collection_init_msg)?,
         funds: info.funds,
         admin: None,
         label: "Name Collection".to_string(),
@@ -97,7 +109,7 @@ pub fn execute_mint_and_list(
     let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
-    let mint_msg = MintMsg::<Metadata<Extension>> {
+    let msg = MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
@@ -110,17 +122,17 @@ pub fn execute_mint_and_list(
     };
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
-        msg: to_binary(&mint_msg)?,
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 
-    let list_msg = MarketplaceExecuteMsg::SetAsk {
+    let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
         funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-        msg: to_binary(&list_msg)?,
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 

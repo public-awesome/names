@@ -32,6 +32,7 @@ thiserror = { version = "1.0.31" }
 cw721 = "0.13.4"
 cw721-base = { version = "0.13.4", features = ["library"] }
 sg-name = { path = "../../packages/sg-name" }
+sg721 = { path = "../../../launchpad/packages/sg721" }
 sg721-name = { path = "../sg721-name" }
 name-marketplace = { path = "../marketplace" }
 sg-std = { path = "../../../launchpad/packages/sg-std" }
@@ -39,3 +40,4 @@ sg-std = { path = "../../../launchpad/packages/sg-std" }
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"
 cw-multi-test = "0.13.4"
+sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }

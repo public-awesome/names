@@ -600,8 +600,10 @@ dependencies = [
  "name-marketplace",
  "schemars",
  "serde",
+ "sg-multi-test",
  "sg-name",
  "sg-std",
+ "sg721",
  "sg721-name",
  "thiserror",
 ]
