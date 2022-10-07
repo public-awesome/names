@@ -15,4 +15,7 @@ pub enum ContractError {
 
     #[error("NameNotFound")]
     NameNotFound {},
+
+    #[error("BioTooLong")]
+    BioTooLong {},
 }

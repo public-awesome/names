@@ -5,7 +5,7 @@ use crate::error::ContractError;
 use cw721_base::Extension;
 use cw_utils::nonpayable;
 use sg721_base::ContractError::Unauthorized;
-use sg_name::{Metadata, TextRecord, NFT};
+use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_std::Response;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
@@ -21,13 +21,13 @@ pub fn execute_update_bio(
     if is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) == false {
         return Err(ContractError::Base(Unauthorized {}));
     }
-    // TODO validate bio length
+    validate_bio(bio.clone())?;
 
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.bio = bio.clone();
+                token_info.extension.bio = bio;
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
@@ -151,4 +151,14 @@ fn is_sender_token_id_owner(deps: Deps, sender: Addr, token_id: &str) -> bool {
         Err(_) => return false,
     };
     owner == sender
+}
+
+fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
+    if let Some(bio) = bio {
+        let len = bio.len() as u64;
+        if len > MAX_TEXT_LENGTH {
+            return Err(ContractError::BioTooLong {});
+        }
+    }
+    Ok(())
 }
