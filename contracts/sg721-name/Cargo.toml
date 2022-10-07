@@ -33,6 +33,7 @@ sg721 = { path = "../../../launchpad/packages/sg721" }
 sg721-base = { path = "../../../launchpad/contracts/sg721-base", features = [
   "library",
 ] }
+thiserror = { version = "1.0.31" }
 cw721 = "0.13.4"
 cw721-base = { version = "0.13.4", features = ["library"] }
 

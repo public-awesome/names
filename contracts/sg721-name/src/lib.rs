@@ -1,18 +1,17 @@
+pub use crate::error::ContractError;
 use cw721_base::Extension;
-pub use sg721_base::ContractError;
 use sg_name::Metadata;
 
 pub mod contract;
 mod error;
 pub mod msg;
-pub mod state;
 pub mod tests;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg721-name";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub type Sg721MetadataContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
+pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 pub type InstantiateMsg = sg721::InstantiateMsg;
 pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
 pub type QueryMsg = sg721_base::msg::QueryMsg;
@@ -21,8 +20,9 @@ pub type QueryMsg = sg721_base::msg::QueryMsg;
 pub mod entry {
     use super::*;
 
+    use contract::execute_update_bio;
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
-    use sg721_base::{msg::QueryMsg, ContractError};
+    use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
     use sg_std::Response;
 
     #[entry_point]
@@ -31,10 +31,10 @@ pub mod entry {
         env: Env,
         info: MessageInfo,
         msg: InstantiateMsg,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response, Sg721ContractError> {
         cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-        let res = Sg721MetadataContract::default().instantiate(deps, env, info, msg)?;
+        let res = Sg721NameContract::default().instantiate(deps, env, info, msg)?;
 
         Ok(res
             .add_attribute("contract_name", CONTRACT_NAME)
@@ -49,12 +49,12 @@ pub mod entry {
         msg: ExecuteMsg,
     ) -> Result<Response, ContractError> {
         match msg {
-            ExecuteMsg::UpdateBio { name, bio } => unimplemented!(),
+            ExecuteMsg::UpdateBio { name, bio } => execute_update_bio(deps, info, name, bio),
             ExecuteMsg::UpdateProfile { name, profile } => unimplemented!(),
             ExecuteMsg::AddTextRecord { name, record } => unimplemented!(),
             ExecuteMsg::RemoveTextRecord { name, record_name } => unimplemented!(),
             ExecuteMsg::UpdateTextRecord { name, record } => unimplemented!(),
-            _ => Sg721MetadataContract::default()
+            _ => Sg721NameContract::default()
                 .execute(deps, env, info, msg.into())
                 .map_err(|e| e.into()),
         }
@@ -62,6 +62,6 @@ pub mod entry {
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
-        Sg721MetadataContract::default().query(deps, env, msg)
+        Sg721NameContract::default().query(deps, env, msg)
     }
 }

@@ -986,6 +986,7 @@ dependencies = [
  "sg-std 0.14.0",
  "sg721 0.15.0",
  "sg721-base",
+ "thiserror",
 ]
 
 [[package]]
