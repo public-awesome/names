@@ -18,4 +18,16 @@ pub enum ContractError {
 
     #[error("BioTooLong")]
     BioTooLong {},
+
+    #[error("RecordNameAlreadyExists")]
+    RecordNameAlreadyExists {},
+
+    #[error("RecordNameEmpty")]
+    RecordNameEmpty {},
+
+    #[error("RecordNameTooLong")]
+    RecordNameTooLong {},
+
+    #[error("RecordValueTooLong")]
+    RecordValueTooLong {},
 }
