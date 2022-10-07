@@ -1,15 +1,16 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_slice, to_binary, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
-    QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
+    from_slice, to_binary, ContractInfoResponse, ContractResult, DepsMut, Empty, MessageInfo,
+    OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, Timestamp,
+    WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::Extension;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg, MintMsg};
-use sg_name::Metadata;
+use sg_name::{Metadata, TextRecord};
 use std::marker::PhantomData;
 
-use crate::entry::{execute, instantiate};
+use crate::entry::{execute, instantiate, query};
 use crate::{ContractError, ExecuteMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 const CREATOR: &str = "creator";
@@ -85,9 +86,8 @@ fn init() {
 }
 
 #[test]
-fn mint() {
+fn mint_and_update_bio() {
     let contract = Sg721NameContract::default();
-    let info = mock_info(CREATOR, &[]);
     // instantiate sg-names collection
     let mut deps = mock_deps();
     let info = mock_info(CREATOR, &[]);
@@ -142,12 +142,60 @@ fn mint() {
         name: token_id.to_string(),
         bio: bio.clone(),
     };
-    execute(deps.as_mut(), mock_env(), info, update_bio_msg).unwrap();
+    execute(deps.as_mut(), mock_env(), info.clone(), update_bio_msg).unwrap();
     let res = contract
         .parent
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension.bio, bio);
+
+    // add txt record
+    let record = TextRecord {
+        name: "test".to_string(),
+        value: "test".to_string(),
+        verified_at: Some(Timestamp::from_seconds(100)),
+    };
+    let add_record_msg = ExecuteMsg::AddTextRecord {
+        name: token_id.to_string(),
+        record: record.clone(),
+    };
+    execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension.records.len(), 1);
+    assert_eq!(res.extension.records[0].verified_at, None);
+
+    // update txt record
+    let record = TextRecord {
+        name: "test".to_string(),
+        value: "testtesttest".to_string(),
+        verified_at: Some(Timestamp::from_seconds(100)),
+    };
+    let update_record_msg = ExecuteMsg::UpdateTextRecord {
+        name: token_id.to_string(),
+        record: record.clone(),
+    };
+    execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension.records.len(), 1);
+    assert_eq!(res.extension.records[0].value, record.value);
+
+    // rm txt record
+    let rm_record_msg = ExecuteMsg::RemoveTextRecord {
+        name: token_id.to_string(),
+        record_name: record.name.to_string(),
+    };
+    execute(deps.as_mut(), mock_env(), info, rm_record_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension.records.len(), 0);
 }
 
 fn update_profile() {
@@ -212,9 +260,3 @@ fn update_profile() {
         .execute(deps.as_mut(), mock_env(), info, exec_msg)
         .unwrap();
 }
-
-// add txt record
-
-// rm txt record
-
-// update txt record
