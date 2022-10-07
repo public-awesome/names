@@ -11,6 +11,7 @@ use cosmwasm_std::{Addr, Empty, Timestamp};
 use cw721::{Cw721QueryMsg, OwnerOfResponse};
 use cw721_base::msg::{ExecuteMsg as Cw721ExecuteMsg, MintMsg};
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
+use sg721::CollectionInfo;
 use sg_controllers::HooksResponse;
 use sg_multi_test::StargazeApp;
 use sg_std::StargazeMsgWrapper;
@@ -42,14 +43,14 @@ pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
     Box::new(contract)
 }
 
-// pub fn contract_sg721_name() -> Box<dyn Contract<StargazeMsgWrapper>> {
-//     let contract = ContractWrapper::new(
-//         sg721_name::entry::execute,
-//         sg721_name::entry::instantiate,
-//         sg721_name::entry::query,
-//     );
-//     Box::new(contract)
-// }
+pub fn contract_sg721_name() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        sg721_name::entry::execute,
+        sg721_name::entry::instantiate,
+        sg721_name::entry::query,
+    );
+    Box::new(contract)
+}
 
 pub fn setup_block_time(router: &mut StargazeApp, seconds: u64) {
     let mut block = router.block_info();
@@ -57,96 +58,94 @@ pub fn setup_block_time(router: &mut StargazeApp, seconds: u64) {
     router.set_block(block);
 }
 
-// // Instantiates all needed contracts for testing
-// pub fn setup_contracts(
-//     router: &mut StargazeApp,
-//     creator: &Addr,
-// ) -> Result<(Addr, Addr), ContractError> {
-//     // Instantiate marketplace contract
-//     let marketplace_id = router.store_code(contract_marketplace());
-//     let msg = crate::msg::InstantiateMsg {
-//         trading_fee_bps: TRADING_FEE_BPS,
-//         min_price: Uint128::from(5u128),
-//     };
-//     let marketplace = router
-//         .instantiate_contract(
-//             marketplace_id,
-//             creator.clone(),
-//             &msg,
-//             &[],
-//             "Marketplace",
-//             None,
-//         )
-//         .unwrap();
-//     println!("marketplace: {:?}", marketplace);
+// Instantiates all needed contracts for testing
+pub fn setup_contracts(
+    router: &mut StargazeApp,
+    creator: &Addr,
+) -> Result<(Addr, Addr), ContractError> {
+    // Instantiate marketplace contract
+    let marketplace_id = router.store_code(contract_marketplace());
+    let msg = crate::msg::InstantiateMsg {
+        trading_fee_bps: TRADING_FEE_BPS,
+        min_price: Uint128::from(5u128),
+    };
+    let marketplace = router
+        .instantiate_contract(
+            marketplace_id,
+            creator.clone(),
+            &msg,
+            &[],
+            "Marketplace",
+            None,
+        )
+        .unwrap();
+    // println!("marketplace: {:?}", marketplace);
 
-//     // Setup media contract
-//     let sg721_id = router.store_code(contract_sg721_name());
-//     let msg = Sg721InstantiateMsg {
-//         name: String::from("Test Coin"),
-//         symbol: String::from("TEST"),
-//         minter: creator.to_string(),
-//         collection_info: CollectionInfo {
-//             creator: creator.to_string(),
-//             description: String::from("Stargaze Monkeys"),
-//             image:
-//                 "ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png"
-//                     .to_string(),
-//             external_link: Some("https://example.com/external.html".to_string()),
-//             royalty_info: Some(RoyaltyInfoResponse {
-//                 payment_address: creator.to_string(),
-//                 share: Decimal::percent(10),
-//             }),
-//         },
-//     };
-//     let collection = router
-//         .instantiate_contract(
-//             sg721_id,
-//             creator.clone(),
-//             &msg,
-//             &coins(CREATION_FEE, NATIVE_DENOM),
-//             "NFT",
-//             None,
-//         )
-//         .unwrap();
-//     println!("collection: {:?}", collection);
+    // Setup media contract
+    let sg721_id = router.store_code(contract_sg721_name());
+    let msg = Sg721InstantiateMsg {
+        name: String::from("Test Coin"),
+        symbol: String::from("TEST"),
+        minter: creator.to_string(),
+        collection_info: CollectionInfo {
+            creator: creator.to_string(),
+            description: String::from("Stargaze Monkeys"),
+            image:
+                "ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png"
+                    .to_string(),
+            external_link: Some("https://example.com/external.html".to_string()),
+            royalty_info: None,
+            explicit_content: false,
+            trading_start_time: None,
+        },
+    };
+    let collection = router
+        .instantiate_contract(
+            sg721_id,
+            creator.clone(),
+            &msg,
+            &coins(CREATION_FEE, NATIVE_DENOM),
+            "NFT",
+            None,
+        )
+        .unwrap();
+    // println!("collection: {:?}", collection);
 
-//     Ok((marketplace, collection))
-// }
+    Ok((marketplace, collection))
+}
 
-// pub fn setup_collection(router: &mut StargazeApp, creator: &Addr) -> Result<Addr, ContractError> {
-//     // Setup media contract
-//     let sg721_id = router.store_code(contract_sg721_name());
-//     let msg = Sg721InstantiateMsg {
-//         name: String::from("Test Collection 2"),
-//         symbol: String::from("TEST 2"),
-//         minter: creator.to_string(),
-//         collection_info: CollectionInfo {
-//             creator: creator.to_string(),
-//             description: String::from("Stargaze Monkeys 2"),
-//             image:
-//                 "ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png"
-//                     .to_string(),
-//             external_link: Some("https://example.com/external.html".to_string()),
-//             royalty_info: Some(RoyaltyInfoResponse {
-//                 payment_address: creator.to_string(),
-//                 share: Decimal::percent(10),
-//             }),
-//         },
-//     };
-//     let collection = router
-//         .instantiate_contract(
-//             sg721_id,
-//             creator.clone(),
-//             &msg,
-//             &coins(CREATION_FEE, NATIVE_DENOM),
-//             "NFT",
-//             None,
-//         )
-//         .unwrap();
-//     println!("collection 2: {:?}", collection);
-//     Ok(collection)
-// }
+pub fn setup_collection(router: &mut StargazeApp, creator: &Addr) -> Result<Addr, ContractError> {
+    // Setup media contract
+    let sg721_id = router.store_code(contract_sg721_name());
+    let msg = Sg721InstantiateMsg {
+        name: String::from("Test Collection 2"),
+        symbol: String::from("TEST 2"),
+        minter: creator.to_string(),
+        collection_info: CollectionInfo {
+            creator: creator.to_string(),
+            description: String::from("Stargaze Monkeys 2"),
+            image:
+                "ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png"
+                    .to_string(),
+            external_link: Some("https://example.com/external.html".to_string()),
+            royalty_info: None,
+            explicit_content: false,
+            trading_start_time: None,
+        },
+    };
+    let collection = router
+        .instantiate_contract(
+            sg721_id,
+            creator.clone(),
+            &msg,
+            &coins(CREATION_FEE, NATIVE_DENOM),
+            "NFT",
+            None,
+        )
+        .unwrap();
+    println!("collection 2: {:?}", collection);
+    Ok(collection)
+}
 
 // Intializes accounts with balances
 pub fn setup_accounts(router: &mut StargazeApp) -> Result<(Addr, Addr, Addr), ContractError> {
