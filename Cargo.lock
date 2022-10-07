@@ -942,7 +942,7 @@ dependencies = [
 
 [[package]]
 name = "sg721"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "cosmwasm-std",
  "cw-utils 0.13.4",
@@ -964,7 +964,7 @@ dependencies = [
  "schemars",
  "serde",
  "sg-std 0.14.0",
- "sg721 0.15.0",
+ "sg721 0.16.0",
  "thiserror",
  "url",
 ]
@@ -984,7 +984,7 @@ dependencies = [
  "serde",
  "sg-name",
  "sg-std 0.14.0",
- "sg721 0.15.0",
+ "sg721 0.16.0",
  "sg721-base",
  "thiserror",
 ]
