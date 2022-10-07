@@ -1,67 +1,61 @@
-// #![cfg(test)]
-// use crate::error::ContractError;
-// use crate::helpers::ExpiryRange;
-// use crate::msg::{
-//     AskCountResponse, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse,
-//     CollectionOffset, ParamsResponse, SudoMsg,
-// };
-// use crate::msg::{BidsResponse, ExecuteMsg, QueryMsg};
-// use crate::state::{Bid, SUDO_PARAMS};
-// use cosmwasm_std::testing::{mock_dependencies, mock_env};
-// use cosmwasm_std::{Addr, Empty, Timestamp};
-// use cw721::{Cw721QueryMsg, OwnerOfResponse};
-// use cw721_base::msg::{ExecuteMsg as Cw721ExecuteMsg, MintMsg};
-// use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
-// use sg_controllers::HooksResponse;
-// use sg_multi_test::StargazeApp;
-// use sg_std::StargazeMsgWrapper;
+#![cfg(test)]
+use crate::error::ContractError;
+use crate::msg::{
+    AskCountResponse, AskOffset, AskResponse, AsksResponse, BidOffset, BidResponse, ParamsResponse,
+    SudoMsg,
+};
+use crate::msg::{BidsResponse, ExecuteMsg, QueryMsg};
+use crate::state::{Bid, SUDO_PARAMS};
+use cosmwasm_std::testing::{mock_dependencies, mock_env};
+use cosmwasm_std::{Addr, Empty, Timestamp};
+use cw721::{Cw721QueryMsg, OwnerOfResponse};
+use cw721_base::msg::{ExecuteMsg as Cw721ExecuteMsg, MintMsg};
+use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
+use sg_controllers::HooksResponse;
+use sg_multi_test::StargazeApp;
+use sg_std::StargazeMsgWrapper;
 
-// use cosmwasm_std::{coin, coins, Coin, Decimal, Uint128};
-// use cw_utils::{Duration, Expiration};
-// use sg721::msg::{InstantiateMsg as Sg721InstantiateMsg, RoyaltyInfoResponse};
-// use sg721::state::CollectionInfo;
-// use sg_std::NATIVE_DENOM;
+use cosmwasm_std::{coin, coins, Coin, Decimal, Uint128};
+use cw_utils::{Duration, Expiration};
+// use sg721_name::CollectionInfo;
+use sg721_name::InstantiateMsg as Sg721InstantiateMsg;
+use sg_std::NATIVE_DENOM;
 
-// pub const TOKEN_ID: u32 = 123;
-// pub const CREATION_FEE: u128 = 1_000_000_000;
-// pub const LISTING_FEE: u128 = 0;
-// pub const INITIAL_BALANCE: u128 = 2000;
+pub const TOKEN_ID: u32 = 123;
+pub const CREATION_FEE: u128 = 1_000_000_000;
+pub const INITIAL_BALANCE: u128 = 2000;
 
-// // Governance parameters
-// pub const TRADING_FEE_BPS: u64 = 200; // 2%
-// pub const MIN_EXPIRY: u64 = 24 * 60 * 60; // 24 hours (in seconds)
-// pub const MAX_EXPIRY: u64 = 180 * 24 * 60 * 60; // 6 months (in seconds)
-// pub const MAX_FINDERS_FEE_BPS: u64 = 1000; // 10%
-// pub const BID_REMOVAL_REWARD_BPS: u64 = 500; // 5%
+// Governance parameters
+pub const TRADING_FEE_BPS: u64 = 200; // 2%
 
-// pub fn custom_mock_app() -> StargazeApp {
-//     StargazeApp::default()
-// }
+pub fn custom_mock_app() -> StargazeApp {
+    StargazeApp::default()
+}
 
-// pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
-//     let contract = ContractWrapper::new(
-//         crate::execute::execute,
-//         crate::execute::instantiate,
-//         crate::query::query,
-//     )
-//     .with_sudo(crate::sudo::sudo)
-//     Box::new(contract)
-// }
+pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        crate::execute::execute,
+        crate::execute::instantiate,
+        crate::query::query,
+    )
+    .with_sudo(crate::sudo::sudo);
+    Box::new(contract)
+}
 
-// pub fn contract_sg721() -> Box<dyn Contract<StargazeMsgWrapper>> {
-//     let contract = ContractWrapper::new(
-//         sg721::contract::execute,
-//         sg721::contract::instantiate,
-//         sg721::contract::query,
-//     );
-//     Box::new(contract)
-// }
+pub fn contract_sg721_name() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        sg721_name::entry::execute,
+        sg721_name::entry::instantiate,
+        sg721_name::entry::query,
+    );
+    Box::new(contract)
+}
 
-// pub fn setup_block_time(router: &mut StargazeApp, seconds: u64) {
-//     let mut block = router.block_info();
-//     block.time = Timestamp::from_seconds(seconds);
-//     router.set_block(block);
-// }
+pub fn setup_block_time(router: &mut StargazeApp, seconds: u64) {
+    let mut block = router.block_info();
+    block.time = Timestamp::from_seconds(seconds);
+    router.set_block(block);
+}
 
 // // Instantiates all needed contracts for testing
 // pub fn setup_contracts(
@@ -71,14 +65,8 @@
 //     // Instantiate marketplace contract
 //     let marketplace_id = router.store_code(contract_marketplace());
 //     let msg = crate::msg::InstantiateMsg {
-//         operators: vec!["operator1".to_string()],
 //         trading_fee_bps: TRADING_FEE_BPS,
-//         bid_expiry: ExpiryRange::new(MIN_EXPIRY, MAX_EXPIRY),
 //         min_price: Uint128::from(5u128),
-//         stale_bid_duration: Duration::Time(100),
-//         bid_removal_reward_bps: BID_REMOVAL_REWARD_BPS,
-//         listing_fee: Uint128::from(LISTING_FEE),
-//         collection: "name-collection".to_string(),
 //     };
 //     let marketplace = router
 //         .instantiate_contract(
@@ -93,7 +81,7 @@
 //     println!("marketplace: {:?}", marketplace);
 
 //     // Setup media contract
-//     let sg721_id = router.store_code(contract_sg721());
+//     let sg721_id = router.store_code(contract_sg721_name());
 //     let msg = Sg721InstantiateMsg {
 //         name: String::from("Test Coin"),
 //         symbol: String::from("TEST"),
@@ -128,7 +116,7 @@
 
 // pub fn setup_collection(router: &mut StargazeApp, creator: &Addr) -> Result<Addr, ContractError> {
 //     // Setup media contract
-//     let sg721_id = router.store_code(contract_sg721());
+//     let sg721_id = router.store_code(contract_sg721_name());
 //     let msg = Sg721InstantiateMsg {
 //         name: String::from("Test Collection 2"),
 //         symbol: String::from("TEST 2"),
@@ -160,168 +148,168 @@
 //     Ok(collection)
 // }
 
-// // Intializes accounts with balances
-// pub fn setup_accounts(router: &mut StargazeApp) -> Result<(Addr, Addr, Addr), ContractError> {
-//     let owner: Addr = Addr::unchecked("owner");
-//     let bidder: Addr = Addr::unchecked("bidder");
-//     let creator: Addr = Addr::unchecked("creator");
-//     let creator_funds: Vec<Coin> = coins(CREATION_FEE, NATIVE_DENOM);
-//     let funds: Vec<Coin> = coins(INITIAL_BALANCE, NATIVE_DENOM);
-//     router
-//         .sudo(CwSudoMsg::Bank({
-//             BankSudo::Mint {
-//                 to_address: owner.to_string(),
-//                 amount: funds.clone(),
-//             }
-//         }))
-//         .map_err(|err| println!("{:?}", err))
-//         .ok();
-//     router
-//         .sudo(CwSudoMsg::Bank({
-//             BankSudo::Mint {
-//                 to_address: bidder.to_string(),
-//                 amount: funds.clone(),
-//             }
-//         }))
-//         .map_err(|err| println!("{:?}", err))
-//         .ok();
-//     router
-//         .sudo(CwSudoMsg::Bank({
-//             BankSudo::Mint {
-//                 to_address: creator.to_string(),
-//                 amount: creator_funds.clone(),
-//             }
-//         }))
-//         .map_err(|err| println!("{:?}", err))
-//         .ok();
+// Intializes accounts with balances
+pub fn setup_accounts(router: &mut StargazeApp) -> Result<(Addr, Addr, Addr), ContractError> {
+    let owner: Addr = Addr::unchecked("owner");
+    let bidder: Addr = Addr::unchecked("bidder");
+    let creator: Addr = Addr::unchecked("creator");
+    let creator_funds: Vec<Coin> = coins(CREATION_FEE, NATIVE_DENOM);
+    let funds: Vec<Coin> = coins(INITIAL_BALANCE, NATIVE_DENOM);
+    router
+        .sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: owner.to_string(),
+                amount: funds.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+    router
+        .sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: bidder.to_string(),
+                amount: funds.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+    router
+        .sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: creator.to_string(),
+                amount: creator_funds.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
 
-//     // Check native balances
-//     let owner_native_balances = router.wrap().query_all_balances(owner.clone()).unwrap();
-//     assert_eq!(owner_native_balances, funds);
-//     let bidder_native_balances = router.wrap().query_all_balances(bidder.clone()).unwrap();
-//     assert_eq!(bidder_native_balances, funds);
-//     let creator_native_balances = router.wrap().query_all_balances(creator.clone()).unwrap();
-//     assert_eq!(creator_native_balances, creator_funds);
+    // Check native balances
+    let owner_native_balances = router.wrap().query_all_balances(owner.clone()).unwrap();
+    assert_eq!(owner_native_balances, funds);
+    let bidder_native_balances = router.wrap().query_all_balances(bidder.clone()).unwrap();
+    assert_eq!(bidder_native_balances, funds);
+    let creator_native_balances = router.wrap().query_all_balances(creator.clone()).unwrap();
+    assert_eq!(creator_native_balances, creator_funds);
 
-//     Ok((owner, bidder, creator))
-// }
+    Ok((owner, bidder, creator))
+}
 
-// pub fn add_funds_for_incremental_fee(
-//     router: &mut StargazeApp,
-//     receiver: &Addr,
-//     fee_amount: u128,
-//     fee_count: u128,
-// ) -> Result<(), ContractError> {
-//     let fee_funds = coins(fee_amount * fee_count, NATIVE_DENOM);
-//     router
-//         .sudo(CwSudoMsg::Bank({
-//             BankSudo::Mint {
-//                 to_address: receiver.to_string(),
-//                 amount: fee_funds,
-//             }
-//         }))
-//         .map_err(|err| println!("{:?}", err))
-//         .ok();
-//     Ok(())
-// }
+pub fn add_funds_for_incremental_fee(
+    router: &mut StargazeApp,
+    receiver: &Addr,
+    fee_amount: u128,
+    fee_count: u128,
+) -> Result<(), ContractError> {
+    let fee_funds = coins(fee_amount * fee_count, NATIVE_DENOM);
+    router
+        .sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: receiver.to_string(),
+                amount: fee_funds,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+    Ok(())
+}
 
-// pub fn setup_second_bidder_account(router: &mut StargazeApp) -> Result<Addr, ContractError> {
-//     let bidder2: Addr = Addr::unchecked("bidder2");
-//     let funds: Vec<Coin> = coins(CREATION_FEE + INITIAL_BALANCE, NATIVE_DENOM);
-//     router
-//         .sudo(CwSudoMsg::Bank({
-//             BankSudo::Mint {
-//                 to_address: bidder2.to_string(),
-//                 amount: funds.clone(),
-//             }
-//         }))
-//         .map_err(|err| println!("{:?}", err))
-//         .ok();
+pub fn setup_second_bidder_account(router: &mut StargazeApp) -> Result<Addr, ContractError> {
+    let bidder2: Addr = Addr::unchecked("bidder2");
+    let funds: Vec<Coin> = coins(CREATION_FEE + INITIAL_BALANCE, NATIVE_DENOM);
+    router
+        .sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: bidder2.to_string(),
+                amount: funds.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
 
-//     // Check native balances
-//     let bidder_native_balances = router.wrap().query_all_balances(bidder2.clone()).unwrap();
-//     assert_eq!(bidder_native_balances, funds);
+    // Check native balances
+    let bidder_native_balances = router.wrap().query_all_balances(bidder2.clone()).unwrap();
+    assert_eq!(bidder_native_balances, funds);
 
-//     Ok(bidder2)
-// }
+    Ok(bidder2)
+}
 
-// // Mints an NFT for a creator
-// pub fn mint(router: &mut StargazeApp, creator: &Addr, collection: &Addr, token_id: u32) {
-//     let mint_for_creator_msg = Cw721ExecuteMsg::Mint(MintMsg {
-//         token_id: token_id.to_string(),
-//         owner: creator.clone().to_string(),
-//         token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
-//         extension: Empty {},
-//     });
-//     let res = router.execute_contract(
-//         creator.clone(),
-//         collection.clone(),
-//         &mint_for_creator_msg,
-//         &[],
-//     );
-//     assert!(res.is_ok());
-// }
+// Mints an NFT for a creator
+pub fn mint(router: &mut StargazeApp, creator: &Addr, collection: &Addr, token_id: u32) {
+    let mint_for_creator_msg = Cw721ExecuteMsg::Mint(MintMsg {
+        token_id: token_id.to_string(),
+        owner: creator.clone().to_string(),
+        token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
+        extension: Empty {},
+    });
+    let res = router.execute_contract(
+        creator.clone(),
+        collection.clone(),
+        &mint_for_creator_msg,
+        &[],
+    );
+    assert!(res.is_ok());
+}
 
-// pub fn mint_for(
-//     router: &mut StargazeApp,
-//     owner: &Addr,
-//     creator: &Addr,
-//     collection: &Addr,
-//     token_id: u32,
-// ) {
-//     let mint_for_creator_msg = Cw721ExecuteMsg::Mint(MintMsg {
-//         token_id: token_id.to_string(),
-//         owner: owner.to_string(),
-//         token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
-//         extension: Empty {},
-//     });
-//     let res = router.execute_contract(
-//         creator.clone(),
-//         collection.clone(),
-//         &mint_for_creator_msg,
-//         &[],
-//     );
-//     assert!(res.is_ok());
-// }
+pub fn mint_for(
+    router: &mut StargazeApp,
+    owner: &Addr,
+    creator: &Addr,
+    collection: &Addr,
+    token_id: u32,
+) {
+    let mint_for_creator_msg = Cw721ExecuteMsg::Mint(MintMsg {
+        token_id: token_id.to_string(),
+        owner: owner.to_string(),
+        token_uri: Some("https://starships.example.com/Starship/Enterprise.json".into()),
+        extension: Empty {},
+    });
+    let res = router.execute_contract(
+        creator.clone(),
+        collection.clone(),
+        &mint_for_creator_msg,
+        &[],
+    );
+    assert!(res.is_ok());
+}
 
-// pub fn approve(
-//     router: &mut StargazeApp,
-//     creator: &Addr,
-//     collection: &Addr,
-//     marketplace: &Addr,
-//     token_id: u32,
-// ) {
-//     let approve_msg = Cw721ExecuteMsg::<Empty>::Approve {
-//         spender: marketplace.to_string(),
-//         token_id: token_id.to_string(),
-//         expires: None,
-//     };
-//     let res = router.execute_contract(creator.clone(), collection.clone(), &approve_msg, &[]);
-//     assert!(res.is_ok());
-// }
+pub fn approve(
+    router: &mut StargazeApp,
+    creator: &Addr,
+    collection: &Addr,
+    marketplace: &Addr,
+    token_id: u32,
+) {
+    let approve_msg = Cw721ExecuteMsg::<Empty>::Approve {
+        spender: marketplace.to_string(),
+        token_id: token_id.to_string(),
+        expires: None,
+    };
+    let res = router.execute_contract(creator.clone(), collection.clone(), &approve_msg, &[]);
+    assert!(res.is_ok());
+}
 
-// fn transfer(
-//     router: &mut StargazeApp,
-//     creator: &Addr,
-//     recipient: &Addr,
-//     collection: &Addr,
-//     token_id: u32,
-// ) {
-//     let transfer_msg = Cw721ExecuteMsg::<Empty>::TransferNft {
-//         recipient: recipient.to_string(),
-//         token_id: token_id.to_string(),
-//     };
-//     let res = router.execute_contract(creator.clone(), collection.clone(), &transfer_msg, &[]);
-//     assert!(res.is_ok());
-// }
+fn transfer(
+    router: &mut StargazeApp,
+    creator: &Addr,
+    recipient: &Addr,
+    collection: &Addr,
+    token_id: u32,
+) {
+    let transfer_msg = Cw721ExecuteMsg::<Empty>::TransferNft {
+        recipient: recipient.to_string(),
+        token_id: token_id.to_string(),
+    };
+    let res = router.execute_contract(creator.clone(), collection.clone(), &transfer_msg, &[]);
+    assert!(res.is_ok());
+}
 
-// pub fn burn(router: &mut StargazeApp, creator: &Addr, collection: &Addr, token_id: u32) {
-//     let transfer_msg = Cw721ExecuteMsg::<Empty>::Burn {
-//         token_id: token_id.to_string(),
-//     };
-//     let res = router.execute_contract(creator.clone(), collection.clone(), &transfer_msg, &[]);
-//     assert!(res.is_ok());
-// }
+pub fn burn(router: &mut StargazeApp, creator: &Addr, collection: &Addr, token_id: u32) {
+    let transfer_msg = Cw721ExecuteMsg::<Empty>::Burn {
+        token_id: token_id.to_string(),
+    };
+    let res = router.execute_contract(creator.clone(), collection.clone(), &transfer_msg, &[]);
+    assert!(res.is_ok());
+}
 
 // #[test]
 // fn try_set_accept_bid() {
@@ -342,7 +330,7 @@
 
 //     // Should error with expiry lower than min
 //     let set_ask = ExecuteMsg::SetAsk {
-//         token_id: TOKEN_ID,
+//         token_id: TOKEN_ID.to_string(),
 //         funds_recipient: None,
 //     };
 //     let res = router.execute_contract(
@@ -355,7 +343,7 @@
 
 //     // An asking price is made by the creator
 //     let set_ask = ExecuteMsg::SetAsk {
-//         token_id: TOKEN_ID,
+//         token_id: TOKEN_ID.to_string(),
 //         funds_recipient: None,
 //     };
 //     let res = router.execute_contract(
@@ -369,69 +357,9 @@
 //     // Transfer nft from creator to owner. Creates a stale ask that needs to be updated
 //     transfer(&mut router, &creator, &owner, &collection, TOKEN_ID);
 
-//     // Should error on non-admin trying to update active state
-//     let update_ask_state = ExecuteMsg::SyncAsk {
-//         token_id: TOKEN_ID,
-//     };
-//     router
-//         .execute_contract(creator.clone(), marketplace.clone(), &update_ask_state, &[])
-//         .unwrap_err();
-
-//     // Should not error on admin updating active state to false
-//     let res = router.execute_contract(
-//         Addr::unchecked("operator1"),
-//         marketplace.clone(),
-//         &update_ask_state,
-//         &[],
-//     );
-//     assert!(res.is_ok());
-
-//     // Should error when ask is unchanged
-//     router
-//         .execute_contract(
-//             Addr::unchecked("operator1"),
-//             marketplace.clone(),
-//             &update_ask_state,
-//             &[],
-//         )
-//         .unwrap_err();
-
-//     let ask_msg = QueryMsg::Ask {
-//         token_id: TOKEN_ID,
-//     };
-//     let res: AskResponse = router
-//         .wrap()
-//         .query_wasm_smart(marketplace.clone(), &ask_msg)
-//         .unwrap();
-//     assert!(!res.ask.unwrap().is_active);
-
-//     // Reset active state
-//     transfer(&mut router, &owner, &creator, &collection, TOKEN_ID);
-//     // after transfer, needs another approval
-//     approve(&mut router, &creator, &collection, &marketplace, TOKEN_ID);
-//     let update_ask_state = ExecuteMsg::SyncAsk {
-//         token_id: TOKEN_ID,
-//     };
-//     let res = router.execute_contract(
-//         Addr::unchecked("operator1"),
-//         marketplace.clone(),
-//         &update_ask_state,
-//         &[],
-//     );
-//     assert!(res.is_ok());
-//     let ask_msg = QueryMsg::Ask {
-//         token_id: TOKEN_ID,
-//     };
-//     let res: AskResponse = router
-//         .wrap()
-//         .query_wasm_smart(marketplace.clone(), &ask_msg)
-//         .unwrap();
-//     assert!(res.ask.unwrap().is_active);
-
 //     // Bidder makes bid
 //     let set_bid_msg = ExecuteMsg::SetBid {
-//         token_id: TOKEN_ID,
-//         expires: router.block_info().time.plus_seconds(MIN_EXPIRY + 1),
+//         token_id: TOKEN_ID.to_string(),
 //     };
 //     let res = router.execute_contract(
 //         bidder.clone(),
@@ -454,7 +382,7 @@
 
 //     // Creator accepts bid
 //     let accept_bid_msg = ExecuteMsg::AcceptBid {
-//         token_id: TOKEN_ID,
+//         token_id: TOKEN_ID.to_string(),
 //         bidder: bidder.to_string(),
 //     };
 //     let res = router.execute_contract(creator.clone(), marketplace.clone(), &accept_bid_msg, &[]);

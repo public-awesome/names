@@ -16,7 +16,6 @@ pub type InstantiateMsg = sg721::InstantiateMsg;
 pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
 pub type QueryMsg = sg721_base::msg::QueryMsg;
 
-#[cfg(not(feature = "library"))]
 pub mod entry {
     use super::*;
 
@@ -24,11 +23,11 @@ pub mod entry {
         execute_add_text_record, execute_remove_text_record, execute_update_bio,
         execute_update_profile, execute_update_text_record,
     };
-    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
     use sg_std::Response;
 
-    #[entry_point]
+    #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn instantiate(
         deps: DepsMut,
         env: Env,
@@ -44,7 +43,7 @@ pub mod entry {
             .add_attribute("contract_version", CONTRACT_VERSION))
     }
 
-    #[entry_point]
+    #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn execute(
         deps: DepsMut,
         env: Env,
@@ -71,7 +70,7 @@ pub mod entry {
         }
     }
 
-    #[entry_point]
+    #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         Sg721NameContract::default().query(deps, env, msg)
     }
