@@ -2,6 +2,11 @@ use cw721_base::Extension;
 pub use sg721_base::ContractError;
 use sg_name::Metadata;
 
+pub mod contract;
+mod error;
+pub mod msg;
+pub mod state;
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg721-name";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");

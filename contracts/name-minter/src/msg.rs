@@ -12,13 +12,6 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     MintAndList { name: String },
-    // TODO: update
-    // only owner can update, make sure sender == owner
-    UpdateBio { name: String, bio: Option<String> },
-    UpdateProfile { name: String, profile: Option<NFT> },
-    AddTextRecord { name: String, record: TextRecord },
-    RemoveTextRecord { name: String, record_name: String },
-    UpdateTextRecord { name: String, record: TextRecord },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

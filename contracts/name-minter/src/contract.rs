@@ -84,11 +84,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
-        ExecuteMsg::UpdateBio { name, bio } => todo!(),
-        ExecuteMsg::UpdateProfile { name, profile } => todo!(),
-        ExecuteMsg::AddTextRecord { name, record } => todo!(),
-        ExecuteMsg::RemoveTextRecord { name, record_name } => todo!(),
-        ExecuteMsg::UpdateTextRecord { name, record } => todo!(),
     }
 }
 
