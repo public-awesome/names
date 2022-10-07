@@ -7,7 +7,7 @@ mod error;
 pub mod msg;
 
 #[cfg(test)]
-pub mod tests;
+pub mod unit_tests;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg721-name";
