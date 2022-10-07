@@ -53,7 +53,6 @@ sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
 sg721-name = { path = "../sg721-name", features = ["library"] }
 sg721 = { path = "../../../launchpad/packages/sg721" }
 
-
 [profile.release]
 rpath = false
 lto = true

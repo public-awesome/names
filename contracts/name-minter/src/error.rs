@@ -10,7 +10,7 @@ pub enum ContractError {
     #[error("{0}")]
     PaymentError(#[from] PaymentError),
 
-    #[error("Unauthorized")]
+    #[error("Name Minter: Unauthorized")]
     Unauthorized {},
 
     #[error("Invalid reply ID")]
