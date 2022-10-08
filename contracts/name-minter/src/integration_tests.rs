@@ -98,6 +98,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
 
 mod mint {
     use cosmwasm_std::{coin, coins};
+    use cw721::Cw721ExecuteMsg;
     use cw_multi_test::BankSudo;
     use sg_std::NATIVE_DENOM;
 
@@ -106,9 +107,7 @@ mod mint {
 
     #[test]
     fn mint() {
-        let (mut app, _, minter, _) = instantiate_contracts();
-
-        println!("{:?}", minter);
+        let (mut app, mkt, minter, collection) = instantiate_contracts();
 
         let user = Addr::unchecked(USER);
         let four_letter_name_cost = 100000000 * 10;
@@ -123,11 +122,25 @@ mod mint {
         .map_err(|err| println!("{:?}", err))
         .ok();
 
-        let msg = ExecuteMsg::MintAndList {
-            name: "test".to_string(),
+        let name = "test";
+
+        // approve marketplace to transfer items in collection
+        let approve_msg = Cw721ExecuteMsg::Approve {
+            spender: mkt.to_string(),
+            token_id: name.to_string(),
+            expires: None,
         };
-        let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
+        let res = app
+            .execute_contract(user.clone(), collection, &approve_msg, &[])
+            .unwrap();
         println!("{:?}", res);
         // assert!(res.is_ok());
+
+        // let msg = ExecuteMsg::MintAndList {
+        //     name: name.to_string(),
+        // };
+        // let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
+        // println!("{:?}", res);
+        // // assert!(res.is_ok());
     }
 }

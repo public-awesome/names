@@ -108,6 +108,8 @@ pub fn execute_mint_and_list(
 
     let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
+    let collection = NAME_COLLECTION.load(deps.storage)?;
+    let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
     let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
@@ -121,7 +123,18 @@ pub fn execute_mint_and_list(
         },
     });
     let mint_msg_exec = WasmMsg::Execute {
-        contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
+        contract_addr: collection.to_string(),
+        msg: to_binary(&msg)?,
+        funds: vec![],
+    };
+
+    let msg = Sg721ExecuteMsg::Approve {
+        spender: marketplace.to_string(),
+        token_id: name.to_string(),
+        expires: None,
+    };
+    let approve_msg_exec = WasmMsg::Execute {
+        contract_addr: collection.to_string(),
         msg: to_binary(&msg)?,
         funds: vec![],
     };
@@ -131,7 +144,7 @@ pub fn execute_mint_and_list(
         funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
-        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        contract_addr: marketplace.to_string(),
         msg: to_binary(&msg)?,
         funds: vec![],
     };
@@ -140,6 +153,7 @@ pub fn execute_mint_and_list(
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
+        .add_message(approve_msg_exec)
         .add_message(list_msg_exec))
 }
 
