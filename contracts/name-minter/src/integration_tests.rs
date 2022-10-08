@@ -280,6 +280,15 @@ mod execute {
             BIDDER.to_string()
         );
 
-        // TODO: check if user got the bid amount
+        // check if user got the bid amount
+        // check if fees were paid out to community pool
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
+        assert_eq!(
+            res.amount,
+            Uint128::from((100000000u128 * 10) - 100000000u128)
+        );
     }
 }
