@@ -5,11 +5,11 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721_base::{ExecuteMsg as Cw721ExecuteMsg, Extension, MintMsg};
+use cw721_base::Extension;
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
-use sg721::CollectionInfo;
-use sg721_name::InstantiateMsg as Sg721InstantiateMsg;
+use sg721::{CollectionInfo, MintMsg};
+use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::Metadata;
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
@@ -109,7 +109,7 @@ pub fn execute_mint_and_list(
     let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
-    let msg = Cw721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
+    let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
