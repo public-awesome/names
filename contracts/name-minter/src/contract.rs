@@ -30,7 +30,7 @@ const BASE_PRICE: u128 = 100000000;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -42,7 +42,7 @@ pub fn instantiate(
     let collection_init_msg = Sg721InstantiateMsg {
         name: "Name Tokens".to_string(),
         symbol: "NAME".to_string(),
-        minter: info.sender.to_string(),
+        minter: env.contract.address.to_string(),
         collection_info: CollectionInfo {
             creator: info.sender.to_string(),
             description: "Stargaze Names".to_string(),
