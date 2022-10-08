@@ -1,6 +1,7 @@
 use crate::msg::InstantiateMsg;
 use cosmwasm_std::{Addr, Uint128};
 use cw_multi_test::{Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
+use name_marketplace::msg::{AskResponse, QueryMsg as MarketplaceQueryMsg};
 use sg_multi_test::StargazeApp;
 use sg_std::StargazeMsgWrapper;
 
@@ -99,6 +100,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
 mod mint {
     use cosmwasm_std::coins;
     use cw_multi_test::BankSudo;
+    use name_marketplace::msg::AskResponse;
     use sg_std::NATIVE_DENOM;
 
     use super::*;
@@ -106,7 +108,7 @@ mod mint {
 
     #[test]
     fn mint() {
-        let (mut app, _, minter, _) = instantiate_contracts();
+        let (mut app, mkt, minter, _) = instantiate_contracts();
 
         let user = Addr::unchecked(USER);
         let four_letter_name_cost = 100000000 * 10;
@@ -129,6 +131,16 @@ mod mint {
         let res = app.execute_contract(user, minter, &msg, &name_fee);
         assert!(res.is_ok());
 
-        // TODO: check if name is listed
+        // check if name is listed in marketplace
+        let res: AskResponse = app
+            .wrap()
+            .query_wasm_smart(
+                mkt,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: name.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.ask.unwrap().token_id, name);
     }
 }
