@@ -2,7 +2,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg};
 use cosmwasm_std::{coins, Addr, Uint128};
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
-    AskResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
+    AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
 };
 use sg_multi_test::StargazeApp;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
@@ -141,55 +141,85 @@ fn mint_and_list() -> (StargazeApp, Addr) {
     (app, mkt)
 }
 
-mod execute {
-    use cosmwasm_std::coins;
-    use cw_multi_test::BankSudo;
-    use name_marketplace::msg::BidResponse;
-    use sg_std::NATIVE_DENOM;
+fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
+    let bidder = Addr::unchecked(BIDDER);
 
+    // give bidder some funds
+    let amount = coins(100000000, NATIVE_DENOM);
+    app.sudo(CwSudoMsg::Bank({
+        BankSudo::Mint {
+            to_address: bidder.to_string(),
+            amount: amount.clone(),
+        }
+    }))
+    .map_err(|err| println!("{:?}", err))
+    .ok();
+
+    let msg = MarketplaceExecuteMsg::SetBid {
+        token_id: NAME.to_string(),
+    };
+    let res = app.execute_contract(bidder.clone(), mkt.clone(), &msg, &amount);
+    assert!(res.is_ok());
+
+    // query if bid exists
+    let res: BidResponse = app
+        .wrap()
+        .query_wasm_smart(
+            mkt.clone(),
+            &MarketplaceQueryMsg::Bid {
+                token_id: NAME.to_string(),
+                bidder: bidder.to_string(),
+            },
+        )
+        .unwrap();
+    let bid = res.bid.unwrap();
+    assert_eq!(bid.token_id, NAME.to_string());
+    assert_eq!(bid.bidder, BIDDER.to_string());
+
+    app
+}
+mod execute {
     use super::*;
 
     #[test]
-    fn mint() {
+    fn test_mint() {
         mint_and_list();
     }
 
     #[test]
-    fn bid() {
-        let (mut app, mkt) = mint_and_list();
+    fn test_bid() {
+        let (app, mkt) = mint_and_list();
+        bid(app, mkt);
+    }
 
-        let bidder = Addr::unchecked(BIDDER);
+    #[test]
+    fn accept_bid() {
+        let (app, mkt) = mint_and_list();
+        let mut new_app = bid(app, mkt.clone());
 
-        // give bidder some funds
-        let amount = coins(100000000, NATIVE_DENOM);
-        app.sudo(CwSudoMsg::Bank({
-            BankSudo::Mint {
-                to_address: bidder.to_string(),
-                amount: amount.clone(),
-            }
-        }))
-        .map_err(|err| println!("{:?}", err))
-        .ok();
-
-        let msg = MarketplaceExecuteMsg::SetBid {
+        let msg = MarketplaceExecuteMsg::AcceptBid {
             token_id: NAME.to_string(),
+            bidder: BIDDER.to_string(),
         };
-        let res = app.execute_contract(bidder.clone(), mkt.clone(), &msg, &amount);
-        assert!(res.is_ok());
-
-        // query if bid exists
-        let res: BidResponse = app
-            .wrap()
-            .query_wasm_smart(
-                mkt,
-                &MarketplaceQueryMsg::Bid {
-                    token_id: NAME.to_string(),
-                    bidder: bidder.to_string(),
-                },
-            )
+        let res = new_app
+            .execute_contract(Addr::unchecked(USER), mkt, &msg, &[])
             .unwrap();
-        let bid = res.bid.unwrap();
-        assert_eq!(bid.token_id, NAME.to_string());
-        assert_eq!(bid.bidder, BIDDER.to_string());
+        println!("{:?}", res);
+        // assert!(res.is_ok());
+
+        // // query if bid exists
+        // let res: BidResponse = app
+        //     .wrap()
+        //     .query_wasm_smart(
+        //         mkt.clone(),
+        //         &MarketplaceQueryMsg::Bid {
+        //             token_id: NAME.to_string(),
+        //             bidder: bidder.to_string(),
+        //         },
+        //     )
+        //     .unwrap();
+        // let bid = res.bid.unwrap();
+        // assert_eq!(bid.token_id, NAME.to_string());
+        // assert_eq!(bid.bidder, BIDDER.to_string());
     }
 }
