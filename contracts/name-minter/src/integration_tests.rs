@@ -33,8 +33,8 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
     Box::new(contract)
 }
 
-const USER: &str = "USER";
-const ADMIN: &str = "ADMIN";
+const USER: &str = "user";
+const ADMIN: &str = "admin";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 
 pub fn custom_mock_app() -> StargazeApp {
@@ -107,6 +107,8 @@ mod mint {
     #[test]
     fn mint() {
         let (mut app, _, minter, _) = instantiate_contracts();
+
+        println!("{:?}", minter);
 
         let user = Addr::unchecked(USER);
         let four_letter_name_cost = 100000000 * 10;

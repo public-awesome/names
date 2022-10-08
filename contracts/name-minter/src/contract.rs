@@ -109,7 +109,7 @@ pub fn execute_mint_and_list(
     let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
-    let mint_msg = MintMsg::<Metadata<Extension>> {
+    let msg = MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
@@ -122,17 +122,17 @@ pub fn execute_mint_and_list(
     };
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
-        msg: to_binary(&mint_msg)?,
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 
-    let list_msg = MarketplaceExecuteMsg::SetAsk {
+    let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
         funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-        msg: to_binary(&list_msg)?,
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 
