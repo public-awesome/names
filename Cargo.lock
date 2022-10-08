@@ -604,6 +604,7 @@ dependencies = [
  "sg-name",
  "sg-std",
  "sg721",
+ "sg721-base",
  "sg721-name",
  "thiserror",
 ]
