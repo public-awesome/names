@@ -128,7 +128,7 @@ pub fn execute_set_bid(
         bids().remove(deps.storage, bid_key)?;
         let refund_bidder = BankMsg::Send {
             to_address: bidder.to_string(),
-            amount: vec![coin(existing_bid.price.u128(), NATIVE_DENOM)],
+            amount: vec![coin(existing_bid.amount.u128(), NATIVE_DENOM)],
         };
         res = res.add_message(refund_bidder)
     }
@@ -169,7 +169,7 @@ pub fn execute_remove_bid(
 
     let refund_bidder_msg = BankMsg::Send {
         to_address: bid.bidder.to_string(),
-        amount: vec![coin(bid.price.u128(), NATIVE_DENOM)],
+        amount: vec![coin(bid.amount.u128(), NATIVE_DENOM)],
     };
 
     let event = Event::new("remove-bid")
@@ -208,7 +208,7 @@ pub fn execute_accept_bid(
     let mut res = Response::new();
 
     // Transfer funds and NFT
-    finalize_sale(deps.as_ref(), ask, bid.price, bidder.clone(), &mut res)?;
+    finalize_sale(deps.as_ref(), ask, bid.amount, bidder.clone(), &mut res)?;
 
     // create a new ask for the same token at the current block height
     let ask = Ask {
@@ -221,7 +221,7 @@ pub fn execute_accept_bid(
     let event = Event::new("accept-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
-        .add_attribute("price", bid.price.to_string());
+        .add_attribute("price", bid.amount.to_string());
 
     Ok(res.add_event(event))
 }

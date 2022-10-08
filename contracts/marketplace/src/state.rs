@@ -63,16 +63,16 @@ pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
 pub struct Bid {
     pub token_id: TokenId,
     pub bidder: Addr,
-    pub price: Uint128,
+    pub amount: Uint128,
     pub height: u64,
 }
 
 impl Bid {
-    pub fn new(token_id: TokenId, bidder: Addr, price: Uint128, height: u64) -> Self {
+    pub fn new(token_id: TokenId, bidder: Addr, amount: Uint128, height: u64) -> Self {
         Bid {
             token_id,
             bidder,
-            price,
+            amount,
             height,
         }
     }
@@ -107,7 +107,7 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
             "bids",
             "bids__collection_token_id",
         ),
-        price: MultiIndex::new(|d: &Bid| d.price.u128(), "bids", "bids__collection_price"),
+        price: MultiIndex::new(|d: &Bid| d.amount.u128(), "bids", "bids__collection_price"),
         bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
         height: MultiIndex::new(|d: &Bid| d.height, "bids", "bids__height"),
     };
