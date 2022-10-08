@@ -13,7 +13,7 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{must_pay, nonpayable};
-use sg_std::{Response, SubMsg, NATIVE_DENOM};
+use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
@@ -269,15 +269,16 @@ fn payout(
 ) -> StdResult<()> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
-    // Append Fair Burn message
+    // send fees to community pool
     let network_fee = payment * params.trading_fee_percent / Uint128::from(100u128);
-    // TODO: send fees to community pool
-    // fair_burn(network_fee.u128(), None, res);
-
     if payment < network_fee {
         return Err(StdError::generic_err("Fees exceed payment"));
     }
-    // If token doesn't support royalties, pay seller in full
+    let community_pool_msg =
+        create_fund_community_pool_msg(vec![coin(network_fee.u128(), NATIVE_DENOM)]);
+    res.messages.push(SubMsg::new(community_pool_msg));
+
+    // pay seller
     let seller_share_msg = BankMsg::Send {
         to_address: payment_recipient.to_string(),
         amount: vec![coin(
