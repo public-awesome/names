@@ -1,6 +1,6 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use cosmwasm_std::{coins, Addr, Uint128};
-use cw721::OwnerOfResponse;
+use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
@@ -124,7 +124,7 @@ fn mint_and_list() -> (StargazeApp, Addr) {
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
     };
-    let res = app.execute_contract(user, minter, &msg, &name_fee);
+    let res = app.execute_contract(user.clone(), minter, &msg, &name_fee);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
@@ -139,17 +139,27 @@ fn mint_and_list() -> (StargazeApp, Addr) {
         .unwrap();
     assert_eq!(res.ask.unwrap().token_id, name);
 
-    let res: OwnerOfResponse = app
+    // check if token minted
+    let res: NumTokensResponse = app
         .wrap()
         .query_wasm_smart(
-            name_collection,
-            &sg721_base::msg::QueryMsg::OwnerOf {
-                token_id: NAME.to_string(),
-                include_expired: None,
-            },
+            name_collection.clone(),
+            &sg721_base::msg::QueryMsg::NumTokens {},
         )
         .unwrap();
-    assert_eq!(res.owner, USER.to_string());
+    assert_eq!(res.count, 1);
+
+    // let res: OwnerOfResponse = app
+    //     .wrap()
+    //     .query_wasm_smart(
+    //         name_collection,
+    //         &sg721_base::msg::QueryMsg::OwnerOf {
+    //             token_id: NAME.to_string(),
+    //             include_expired: None,
+    //         },
+    //     )
+    //     .unwrap();
+    // assert_eq!(res.owner, user);
 
     (app, mkt)
 }
