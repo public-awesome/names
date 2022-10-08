@@ -101,7 +101,7 @@ pub fn execute(
 
 pub fn execute_mint_and_list(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
@@ -129,29 +129,6 @@ pub fn execute_mint_and_list(
         funds: vec![],
     };
 
-    let msg = Sg721ExecuteMsg::ApproveAll {
-        operator: marketplace.to_string(),
-        expires: None,
-    };
-    let exec_approve_all_marketplace = WasmMsg::Execute {
-        contract_addr: collection.to_string(),
-        msg: to_binary(&msg)?,
-        funds: vec![],
-    };
-
-    // // NOTE: does not work because approve chcks if sender == owner
-    // // and sender cannot be the contract itself
-    // let msg = Sg721ExecuteMsg::Approve {
-    //     spender: marketplace.to_string(),
-    //     token_id: name.to_string(),
-    //     expires: None,
-    // };
-    // let exec_approve_mkt_spender = WasmMsg::Execute {
-    //     contract_addr: collection.to_string(),
-    //     msg: to_binary(&msg)?,
-    //     funds: vec![],
-    // };
-
     let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
         funds_recipient: Some(info.sender.to_string()),
@@ -166,8 +143,6 @@ pub fn execute_mint_and_list(
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
-        // .add_message(exec_approve_all_marketplace)
-        // .add_message(approve_msg_exec)
         .add_message(list_msg_exec))
 }
 
