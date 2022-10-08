@@ -90,17 +90,18 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, env, info, name.trim()),
     }
 }
 
 pub fn execute_mint_and_list(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
@@ -128,12 +129,30 @@ pub fn execute_mint_and_list(
         funds: vec![],
     };
 
-    let msg = Sg721ExecuteMsg::Approve {
-        spender: marketplace.to_string(),
-        token_id: name.to_string(),
+    // NOTE: does not work because approve chcks if sender == owner
+    // and sender cannot be the contract itself
+    //
+    // let msg = Sg721ExecuteMsg::Approve {
+    //     // spender: marketplace.to_string(),
+    //     spender: env.contract.address.to_string(),
+    //     token_id: name.to_string(),
+    //     expires: None,
+    // };
+    let msg = Sg721ExecuteMsg::ApproveAll {
+        operator: env.contract.address.to_string(),
         expires: None,
     };
-    let approve_msg_exec = WasmMsg::Execute {
+    let approve_all_msg_exec1 = WasmMsg::Execute {
+        contract_addr: collection.to_string(),
+        msg: to_binary(&msg)?,
+        funds: vec![],
+    };
+
+    let msg = Sg721ExecuteMsg::ApproveAll {
+        operator: marketplace.to_string(),
+        expires: None,
+    };
+    let approve_all_msg_exec2 = WasmMsg::Execute {
         contract_addr: collection.to_string(),
         msg: to_binary(&msg)?,
         funds: vec![],
@@ -153,7 +172,8 @@ pub fn execute_mint_and_list(
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
-        .add_message(approve_msg_exec)
+        .add_message(approve_all_msg_exec1)
+        .add_message(approve_all_msg_exec2)
         .add_message(list_msg_exec))
 }
 

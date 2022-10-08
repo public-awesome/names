@@ -107,7 +107,7 @@ mod mint {
 
     #[test]
     fn mint() {
-        let (mut app, mkt, minter, collection) = instantiate_contracts();
+        let (mut app, _, minter, _) = instantiate_contracts();
 
         let user = Addr::unchecked(USER);
         let four_letter_name_cost = 100000000 * 10;
