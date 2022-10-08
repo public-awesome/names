@@ -6,13 +6,13 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, BankMsg, Coin, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
-    StdError, StdResult, Storage, Uint128, WasmMsg,
+    coin, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, MessageInfo, StdError,
+    StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{maybe_addr, must_pay, nonpayable, Duration};
+use cw_utils::{must_pay, nonpayable};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -43,15 +43,6 @@ pub fn instantiate(
     Ok(Response::new())
 }
 
-pub struct AskInfo {
-    token_id: TokenId,
-    funds_recipient: Option<Addr>,
-}
-
-pub struct BidInfo {
-    token_id: TokenId,
-}
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -62,19 +53,8 @@ pub fn execute(
     let api = deps.api;
 
     match msg {
-        ExecuteMsg::SetAsk {
-            token_id,
-            funds_recipient,
-        } => execute_set_ask(
-            deps,
-            env,
-            info,
-            AskInfo {
-                token_id,
-                funds_recipient: maybe_addr(api, funds_recipient)?,
-            },
-        ),
-        ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, BidInfo { token_id }),
+        ExecuteMsg::SetAsk { token_id } => execute_set_ask(deps, env, info, token_id),
+        ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, token_id),
         ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, token_id),
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, token_id, api.addr_validate(&bidder)?)
@@ -88,13 +68,9 @@ pub fn execute_set_ask(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    ask_info: AskInfo,
+    token_id: TokenId,
 ) -> Result<Response, ContractError> {
     // TODO: only name minter should be able to call this..
-    let AskInfo {
-        token_id,
-        funds_recipient,
-    } = ask_info;
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
@@ -113,7 +89,6 @@ pub fn execute_set_ask(
     let ask = Ask {
         token_id: token_id.clone(),
         seller: seller.clone(),
-        funds_recipient,
         height: env.block.height,
     };
     store_ask(deps.storage, &ask)?;
@@ -128,36 +103,17 @@ pub fn execute_set_ask(
     Ok(Response::new().add_event(event))
 }
 
-// TODO: use internally after bid is accepted?
-/// Removes the ask on a particular NFT
-fn _execute_remove_ask(
-    deps: DepsMut,
-    info: MessageInfo,
-    token_id: TokenId,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-    let collection = NAME_COLLECTION.load(deps.storage)?;
-    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
-
-    let key = ask_key(token_id.clone());
-    asks().remove(deps.storage, key)?;
-
-    let event = Event::new("remove-ask")
-        .add_attribute("collection", collection.to_string())
-        .add_attribute("token_id", token_id);
-
-    Ok(Response::new().add_event(event))
-}
-
 /// Places a bid on a listed or unlisted NFT. The bid is escrowed in the contract.
 pub fn execute_set_bid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    bid_info: BidInfo,
+    token_id: TokenId,
 ) -> Result<Response, ContractError> {
-    let BidInfo { token_id } = bid_info;
     let params = SUDO_PARAMS.load(deps.storage)?;
+
+    let ask_key = ask_key(token_id.clone());
+    asks().load(deps.storage, ask_key)?;
 
     let bid_price = must_pay(&info, NATIVE_DENOM)?;
     if bid_price < params.min_price {
@@ -167,7 +123,6 @@ pub fn execute_set_bid(
     let bidder = info.sender;
     let mut res = Response::new();
     let bid_key = bid_key(token_id.clone(), &bidder);
-    let ask_key = ask_key(token_id.clone());
 
     if let Some(existing_bid) = bids().may_load(deps.storage, bid_key.clone())? {
         bids().remove(deps.storage, bid_key)?;
@@ -177,8 +132,6 @@ pub fn execute_set_bid(
         };
         res = res.add_message(refund_bidder)
     }
-
-    let existing_ask = asks().may_load(deps.storage, ask_key.clone())?;
 
     let save_bid = |store| -> StdResult<_> {
         let bid = Bid::new(
@@ -190,8 +143,7 @@ pub fn execute_set_bid(
         store_bid(store, &bid)?;
         Ok(Some(bid))
     };
-
-    let bid = save_bid(deps.storage)?;
+    save_bid(deps.storage)?;
 
     let event = Event::new("set-bid")
         .add_attribute("token_id", token_id)
@@ -231,7 +183,8 @@ pub fn execute_remove_bid(
     Ok(res)
 }
 
-/// Seller can accept a bid which transfers funds as well as the token. The bid may or may not be associated with an ask.
+/// Seller can accept a bid which transfers funds as well as the token.
+/// The bid is removed, then a new ask is created for the same token.
 pub fn execute_accept_bid(
     deps: DepsMut,
     env: Env,
@@ -243,23 +196,11 @@ pub fn execute_accept_bid(
     let collection = NAME_COLLECTION.load(deps.storage)?;
     only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
-    let bid_key = bid_key(token_id.clone(), &bidder);
     let ask_key = ask_key(token_id.clone());
+    let bid_key = bid_key(token_id.clone(), &bidder);
 
+    let ask = asks().load(deps.storage, ask_key)?;
     let bid = bids().load(deps.storage, bid_key.clone())?;
-
-    let ask = if let Some(existing_ask) = asks().may_load(deps.storage, ask_key.clone())? {
-        asks().remove(deps.storage, ask_key)?;
-        existing_ask
-    } else {
-        // Create a temporary Ask
-        Ask {
-            token_id: token_id.clone(),
-            seller: info.sender,
-            funds_recipient: None,
-            height: env.block.height,
-        }
-    };
 
     // Remove accepted bid
     bids().remove(deps.storage, bid_key)?;
@@ -268,6 +209,14 @@ pub fn execute_accept_bid(
 
     // Transfer funds and NFT
     finalize_sale(deps.as_ref(), ask, bid.price, bidder.clone(), &mut res)?;
+
+    // create a new ask for the same token at the current block height
+    let ask = Ask {
+        token_id: token_id.clone(),
+        seller: bidder.clone(),
+        height: env.block.height,
+    };
+    store_ask(deps.storage, &ask)?;
 
     let event = Event::new("accept-bid")
         .add_attribute("token_id", token_id)
@@ -285,14 +234,7 @@ fn finalize_sale(
     buyer: Addr,
     res: &mut Response,
 ) -> StdResult<()> {
-    payout(
-        deps,
-        price,
-        ask.funds_recipient
-            .clone()
-            .unwrap_or_else(|| ask.seller.clone()),
-        res,
-    )?;
+    payout(deps, price, ask.seller.clone(), res)?;
 
     let cw721_transfer_msg = Cw721ExecuteMsg::TransferNft {
         token_id: ask.token_id.to_string(),
@@ -329,6 +271,7 @@ fn payout(
 
     // Append Fair Burn message
     let network_fee = payment * params.trading_fee_percent / Uint128::from(100u128);
+    // TODO: send fees to community pool
     // fair_burn(network_fee.u128(), None, res);
 
     if payment < network_fee {

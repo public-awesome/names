@@ -23,6 +23,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_COLLECTION_REPLY_ID: u64 = 1;
 
+// TODO: make these sudo params
 const MIN_NAME_LENGTH: u64 = 3;
 const MAX_NAME_LENGTH: u64 = 63;
 const BASE_PRICE: u128 = 100000000;
@@ -131,7 +132,6 @@ pub fn execute_mint_and_list(
 
     let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
-        funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),

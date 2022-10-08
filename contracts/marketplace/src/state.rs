@@ -27,7 +27,6 @@ pub type TokenId = String;
 pub struct Ask {
     pub token_id: TokenId,
     pub seller: Addr,
-    pub funds_recipient: Option<Addr>,
     pub height: u64,
 }
 

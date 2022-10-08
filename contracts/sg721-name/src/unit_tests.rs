@@ -81,7 +81,7 @@ fn init() {
         name: "SG Names".to_string(),
         symbol: "NAME".to_string(),
         minter: CREATOR.to_string(),
-        collection_info: collection_info,
+        collection_info,
     };
 
     instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
@@ -168,7 +168,7 @@ fn mint_and_update() {
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
-        record: record,
+        record,
     };
     // unauthorized
     let err = execute(
@@ -199,7 +199,7 @@ fn mint_and_update() {
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
-        record: record,
+        record,
     };
     execute(deps.as_mut(), mock_env(), info.clone(), add_record_msg).unwrap();
     let res = contract

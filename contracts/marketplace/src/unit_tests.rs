@@ -1,5 +1,4 @@
 #[cfg(test)]
-use crate::error::ContractError;
 use crate::execute::{execute, instantiate};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::{query_asks_by_seller, query_bids_by_bidder};
@@ -24,7 +23,6 @@ fn ask_indexed_map() {
     let ask = Ask {
         token_id: TOKEN_ID.to_string(),
         seller: seller.clone(),
-        funds_recipient: None,
         height: 5,
     };
     let key = ask_key(TOKEN_ID.to_string());
@@ -34,7 +32,6 @@ fn ask_indexed_map() {
     let ask2 = Ask {
         token_id: TOKEN_ID_NEXT.to_string(),
         seller: seller.clone(),
-        funds_recipient: None,
         height: 5,
     };
     let key2 = ask_key(TOKEN_ID_NEXT.to_string());
@@ -126,27 +123,14 @@ fn try_set_bid() {
     let mut deps = mock_dependencies();
     setup_contract(deps.as_mut());
 
-    let broke = mock_info("broke", &[]);
     let bidder = mock_info("bidder", &coins(1000, NATIVE_DENOM));
 
+    // Bidder calls SetBid before an Ask is set, fails
     let set_bid_msg = ExecuteMsg::SetBid {
         token_id: TOKEN_ID.to_string(),
     };
-
-    // Broke bidder calls Set Bid and gets an error
-    let err = execute(deps.as_mut(), mock_env(), broke, set_bid_msg).unwrap_err();
-    assert_eq!(
-        err,
-        ContractError::BidPaymentError(cw_utils::PaymentError::NoFunds {})
-    );
-
-    let set_bid_msg = ExecuteMsg::SetBid {
-        token_id: TOKEN_ID.to_string(),
-    };
-
-    // Bidder calls SetBid before an Ask is set, still succeeds
     let res = execute(deps.as_mut(), mock_env(), bidder, set_bid_msg);
-    assert!(res.is_ok());
+    assert!(res.is_err());
 }
 
 #[test]
@@ -156,7 +140,6 @@ fn try_set_ask() {
 
     let set_ask = ExecuteMsg::SetAsk {
         token_id: TOKEN_ID.to_string(),
-        funds_recipient: None,
     };
 
     // Reject if not called by the media owner

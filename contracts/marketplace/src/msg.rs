@@ -17,10 +17,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// List name NFT on the marketplace by creating a new ask
     /// Only the name minter can call this.
-    SetAsk {
-        token_id: TokenId,
-        funds_recipient: Option<String>,
-    },
+    SetAsk { token_id: TokenId },
     /// Place a bid on an existing ask
     SetBid { token_id: TokenId },
     /// Remove an existing bid from an ask
@@ -31,8 +28,7 @@ pub enum ExecuteMsg {
     /// If not paid, transfer ownership to the highest bidder.
     ProcessFees {},
     // TODO: what do you do when a name is transferred and allowances are gone?
-    // Privileged operation to change the active state of an ask when an NFT is transferred
-    // SyncAsk { token_id: TokenId },
+    // Always do an allowance before a transfer? Transfer checks for allowance?
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -200,6 +196,7 @@ pub struct ParamsResponse {
 #[serde(rename_all = "snake_case")]
 pub struct SaleHookMsg {
     pub token_id: u32,
+    pub price: Coin,
     pub seller: String,
     pub buyer: String,
 }
@@ -208,6 +205,7 @@ impl SaleHookMsg {
     pub fn new(token_id: u32, price: Coin, seller: String, buyer: String) -> Self {
         SaleHookMsg {
             token_id,
+            price,
             seller,
             buyer,
         }
