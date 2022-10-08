@@ -26,7 +26,7 @@ const INIT_COLLECTION_REPLY_ID: u64 = 1;
 // TODO: make these sudo params
 const MIN_NAME_LENGTH: u64 = 3;
 const MAX_NAME_LENGTH: u64 = 63;
-const BASE_PRICE: u128 = 100000000;
+const BASE_PRICE: u128 = 100_000_000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

@@ -42,7 +42,10 @@ const USER: &str = "user";
 const BIDDER: &str = "bidder";
 const ADMIN: &str = "admin";
 const NAME: &str = "bobo";
+
 const TRADING_FEE_BPS: u64 = 200; // 2%
+const BASE_PRICE: u128 = 100_000_000;
+const BID_AMOUNT: u128 = 1_000_000_000;
 
 pub fn custom_mock_app() -> StargazeApp {
     StargazeApp::default()
@@ -130,7 +133,7 @@ fn mint_and_list() -> (StargazeApp, Addr, Addr, Addr) {
     let res = app.execute_contract(user.clone(), collection.clone(), &approve_all_msg, &[]);
     assert!(res.is_ok());
 
-    let four_letter_name_cost = 100000000 * 10;
+    let four_letter_name_cost = BASE_PRICE * 10;
 
     // give user some funds
     let name_fee = coins(four_letter_name_cost, NATIVE_DENOM);
@@ -180,7 +183,7 @@ fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
     let bidder = Addr::unchecked(BIDDER);
 
     // give bidder some funds
-    let amount = coins(100000000, NATIVE_DENOM);
+    let amount = coins(BID_AMOUNT, NATIVE_DENOM);
     app.sudo(CwSudoMsg::Bank({
         BankSudo::Mint {
             to_address: bidder.to_string(),
@@ -289,17 +292,14 @@ mod execute {
         );
 
         // check if user got the bid amount
-        // check if fees were paid out to community pool
         let res = app
             .wrap()
             .query_balance(USER.to_string(), NATIVE_DENOM)
             .unwrap();
-        println!("{:?}", res.amount);
-        assert_eq!(
-            res.amount,
-            Uint128::from((100000000u128 * 10) - 100000000u128)
-        );
+        let protocol_fee = 20_000_000u128;
+        assert_eq!(res.amount, Uint128::from(BID_AMOUNT - protocol_fee));
 
+        // TODO: check if fees were paid out to community pool
         // TODO: check if a new ask was created
     }
 

@@ -283,8 +283,6 @@ fn payout(
         create_fund_community_pool_msg(vec![coin(network_fee.u128(), NATIVE_DENOM)]);
     res.messages.push(SubMsg::new(community_pool_msg));
 
-    println!("Paying fee {}", network_fee);
-
     // pay seller
     let seller_share_msg = BankMsg::Send {
         to_address: payment_recipient.to_string(),
