@@ -41,3 +41,4 @@ sg-std = { path = "../../../launchpad/packages/sg-std" }
 cosmwasm-schema = "1.0.0"
 cw-multi-test = "0.13.4"
 sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
+sg721-base = { path = "../../../launchpad/contracts/sg721-base" }

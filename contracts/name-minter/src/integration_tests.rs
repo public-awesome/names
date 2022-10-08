@@ -1,5 +1,6 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use cosmwasm_std::{coins, Addr, Uint128};
+use cw721::OwnerOfResponse;
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
@@ -102,7 +103,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
 }
 
 fn mint_and_list() -> (StargazeApp, Addr) {
-    let (mut app, mkt, minter, _) = instantiate_contracts();
+    let (mut app, mkt, minter, name_collection) = instantiate_contracts();
 
     let user = Addr::unchecked(USER);
     let four_letter_name_cost = 100000000 * 10;
@@ -137,6 +138,18 @@ fn mint_and_list() -> (StargazeApp, Addr) {
         )
         .unwrap();
     assert_eq!(res.ask.unwrap().token_id, name);
+
+    let res: OwnerOfResponse = app
+        .wrap()
+        .query_wasm_smart(
+            name_collection,
+            &sg721_base::msg::QueryMsg::OwnerOf {
+                token_id: NAME.to_string(),
+                include_expired: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(res.owner, USER.to_string());
 
     (app, mkt)
 }
