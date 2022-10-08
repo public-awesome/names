@@ -172,8 +172,8 @@ pub fn execute_mint_and_list(
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
-        .add_message(approve_all_msg_exec1)
-        .add_message(approve_all_msg_exec2)
+        // .add_message(approve_all_msg_exec1)
+        // .add_message(approve_all_msg_exec2)
         .add_message(list_msg_exec))
 }
 

@@ -97,8 +97,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
 }
 
 mod mint {
-    use cosmwasm_std::{coin, coins};
-    use cw721::Cw721ExecuteMsg;
+    use cosmwasm_std::coins;
     use cw_multi_test::BankSudo;
     use sg_std::NATIVE_DENOM;
 
@@ -127,8 +126,9 @@ mod mint {
         let msg = ExecuteMsg::MintAndList {
             name: name.to_string(),
         };
-        let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
-        println!("{:?}", res);
-        // assert!(res.is_ok());
+        let res = app.execute_contract(user, minter, &msg, &name_fee);
+        assert!(res.is_ok());
+
+        // TODO: check if name is listed
     }
 }
