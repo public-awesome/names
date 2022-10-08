@@ -8,6 +8,7 @@ use sg_name::{TextRecord, NFT};
 // Add execute msgs related to bio, profile, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg<T> {
     /// Update bio
     UpdateBio {

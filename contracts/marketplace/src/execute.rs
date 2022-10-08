@@ -98,15 +98,16 @@ pub fn execute_set_ask(
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
-    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
+    // TODO: change to only_minter?
+    // only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
-    // Check if this contract is approved to transfer the token
-    Cw721Contract(collection.clone()).approval(
-        &deps.querier,
-        token_id.clone(),
-        env.contract.address.to_string(),
-        None,
-    )?;
+    // // Check if this contract is approved to transfer the token
+    // Cw721Contract(collection.clone()).approval(
+    //     &deps.querier,
+    //     token_id.clone(),
+    //     env.contract.address.to_string(),
+    //     None,
+    // )?;
 
     let seller = info.sender;
     let ask = Ask {

@@ -5,9 +5,11 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721_base::{Extension, InstantiateMsg as Cw721InstantiateMsg, MintMsg};
+use cw721_base::Extension;
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use sg721::{CollectionInfo, MintMsg};
+use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::Metadata;
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
@@ -28,7 +30,7 @@ const BASE_PRICE: u128 = 100000000;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -37,13 +39,23 @@ pub fn instantiate(
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
+    let collection_init_msg = Sg721InstantiateMsg {
+        name: "Name Tokens".to_string(),
+        symbol: "NAME".to_string(),
+        minter: env.contract.address.to_string(),
+        collection_info: CollectionInfo {
+            creator: info.sender.to_string(),
+            description: "Stargaze Names".to_string(),
+            image: "ipfs://example.com".to_string(),
+            external_link: None,
+            explicit_content: false,
+            trading_start_time: None,
+            royalty_info: None,
+        },
+    };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_binary(&Cw721InstantiateMsg {
-            name: "Name Tokens".to_string(),
-            symbol: "NAME".to_string(),
-            minter: info.sender.to_string(),
-        })?,
+        msg: to_binary(&collection_init_msg)?,
         funds: info.funds,
         admin: None,
         label: "Name Collection".to_string(),
@@ -78,17 +90,18 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, env, info, name.trim()),
     }
 }
 
 pub fn execute_mint_and_list(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
@@ -96,8 +109,10 @@ pub fn execute_mint_and_list(
 
     let price = validate_payment(name.len(), &info)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
+    let collection = NAME_COLLECTION.load(deps.storage)?;
+    let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
-    let mint_msg = MintMsg::<Metadata<Extension>> {
+    let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
@@ -107,20 +122,49 @@ pub fn execute_mint_and_list(
             records: vec![],
             extension: None,
         },
-    };
+    });
     let mint_msg_exec = WasmMsg::Execute {
-        contract_addr: NAME_COLLECTION.load(deps.storage)?.to_string(),
-        msg: to_binary(&mint_msg)?,
+        contract_addr: collection.to_string(),
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 
-    let list_msg = MarketplaceExecuteMsg::SetAsk {
+    // NOTE: does not work because approve chcks if sender == owner
+    // and sender cannot be the contract itself
+    //
+    // let msg = Sg721ExecuteMsg::Approve {
+    //     // spender: marketplace.to_string(),
+    //     spender: env.contract.address.to_string(),
+    //     token_id: name.to_string(),
+    //     expires: None,
+    // };
+    let msg = Sg721ExecuteMsg::ApproveAll {
+        operator: env.contract.address.to_string(),
+        expires: None,
+    };
+    let approve_all_msg_exec1 = WasmMsg::Execute {
+        contract_addr: collection.to_string(),
+        msg: to_binary(&msg)?,
+        funds: vec![],
+    };
+
+    let msg = Sg721ExecuteMsg::ApproveAll {
+        operator: marketplace.to_string(),
+        expires: None,
+    };
+    let approve_all_msg_exec2 = WasmMsg::Execute {
+        contract_addr: collection.to_string(),
+        msg: to_binary(&msg)?,
+        funds: vec![],
+    };
+
+    let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
         funds_recipient: Some(info.sender.to_string()),
     };
     let list_msg_exec = WasmMsg::Execute {
-        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-        msg: to_binary(&list_msg)?,
+        contract_addr: marketplace.to_string(),
+        msg: to_binary(&msg)?,
         funds: vec![],
     };
 
@@ -128,6 +172,8 @@ pub fn execute_mint_and_list(
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
+        // .add_message(approve_all_msg_exec1)
+        // .add_message(approve_all_msg_exec2)
         .add_message(list_msg_exec))
 }
 
