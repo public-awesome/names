@@ -40,6 +40,7 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 
 const USER: &str = "user";
 const BIDDER: &str = "bidder";
+const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const NAME: &str = "bobo";
 
@@ -179,8 +180,8 @@ fn mint_and_list() -> (StargazeApp, Addr, Addr, Addr) {
     (app, mkt, minter, collection)
 }
 
-fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
-    let bidder = Addr::unchecked(BIDDER);
+fn bid(mut app: StargazeApp, mkt: Addr, collection: Addr, bidder: &str) -> StargazeApp {
+    let bidder = Addr::unchecked(bidder);
 
     // give bidder some funds
     let amount = coins(BID_AMOUNT, NATIVE_DENOM);
@@ -192,6 +193,20 @@ fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
     }))
     .map_err(|err| println!("{:?}", err))
     .ok();
+
+    // TODO: why doesn't this work?
+    // // set approval for bidder, for specific token
+    // let msg = Sg721NameExecuteMsg::Approve {
+    //     spender: mkt.to_string(),
+    //     token_id: NAME.to_string(),
+    //     expires: None,
+    // };
+    let msg = Sg721NameExecuteMsg::ApproveAll {
+        operator: mkt.to_string(),
+        expires: None,
+    };
+    let res = app.execute_contract(bidder.clone(), collection, &msg, &[]);
+    assert!(res.is_ok());
 
     let msg = MarketplaceExecuteMsg::SetBid {
         token_id: NAME.to_string(),
@@ -212,11 +227,12 @@ fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
         .unwrap();
     let bid = res.bid.unwrap();
     assert_eq!(bid.token_id, NAME.to_string());
-    assert_eq!(bid.bidder, BIDDER.to_string());
-    // assert_eq!(bid.amount, amount[0].amount);
+    assert_eq!(bid.bidder, bidder.to_string());
+    assert_eq!(bid.amount, amount[0].amount);
 
     app
 }
+
 mod execute {
     use cw721::OperatorsResponse;
 
@@ -249,14 +265,14 @@ mod execute {
 
     #[test]
     fn test_bid() {
-        let (app, mkt, _, _) = mint_and_list();
-        bid(app, mkt);
+        let (app, mkt, _, collection) = mint_and_list();
+        bid(app, mkt, collection, BIDDER);
     }
 
     #[test]
     fn test_accept_bid() {
         let (app, mkt, _, collection) = mint_and_list();
-        let mut app = bid(app, mkt.clone());
+        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER);
 
         // user (owner) starts off with 0 internet funny money
         let res = app
@@ -276,7 +292,7 @@ mod execute {
         let res: BidResponse = app
             .wrap()
             .query_wasm_smart(
-                mkt,
+                mkt.clone(),
                 &MarketplaceQueryMsg::Bid {
                     token_id: NAME.to_string(),
                     bidder: BIDDER.to_string(),
@@ -299,9 +315,41 @@ mod execute {
         let protocol_fee = 20_000_000u128;
         assert_eq!(res.amount, Uint128::from(BID_AMOUNT - protocol_fee));
 
-        // TODO: check if fees were paid out to community pool
-        // TODO: check if a new ask was created
+        // confirm that a new ask was created
+        let res: AskResponse = app
+            .wrap()
+            .query_wasm_smart(
+                mkt,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        let ask = res.ask.unwrap();
+        assert_eq!(ask.token_id, NAME);
+        assert_eq!(ask.seller, BIDDER.to_string());
     }
 
-    // TODO: test two sales cycles in a row to check if approvals work
+    //  test two sales cycles in a row to check if approvals work
+    #[test]
+    fn test_two_sales_cycles() {
+        let (app, mkt, _, collection) = mint_and_list();
+        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER);
+
+        let msg = MarketplaceExecuteMsg::AcceptBid {
+            token_id: NAME.to_string(),
+            bidder: BIDDER.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(USER), mkt.clone(), &msg, &[]);
+        assert!(res.is_ok());
+
+        let mut app = bid(app, mkt.clone(), collection, BIDDER2);
+
+        let msg = MarketplaceExecuteMsg::AcceptBid {
+            token_id: NAME.to_string(),
+            bidder: BIDDER2.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(BIDDER), mkt, &msg, &[]);
+        assert!(res.is_ok());
+    }
 }
