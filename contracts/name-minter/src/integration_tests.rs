@@ -179,9 +179,7 @@ fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
     app
 }
 mod execute {
-    use cw721::AllNftInfoResponse;
-    use cw721_base::Extension;
-    use sg_name::Metadata;
+    use cw721::OwnerOfResponse;
 
     use super::*;
 
@@ -207,17 +205,17 @@ mod execute {
             bidder: BIDDER.to_string(),
         };
 
-        let res: AllNftInfoResponse<Metadata<Extension>> = new_app
+        let res: OwnerOfResponse = new_app
             .wrap()
             .query_wasm_smart(
                 name_collection,
-                &cw721_base::msg::QueryMsg::AllNftInfo {
+                &sg721_base::msg::QueryMsg::OwnerOf {
                     token_id: NAME.to_string(),
                     include_expired: None,
                 },
             )
             .unwrap();
-        assert_eq!(res.access.owner, USER.to_string());
+        assert_eq!(res.owner, USER.to_string());
 
         let res = new_app
             .execute_contract(Addr::unchecked(USER), mkt, &msg, &[])
