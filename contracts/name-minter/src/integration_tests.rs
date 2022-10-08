@@ -73,7 +73,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
             None,
         )
         .unwrap();
-    println!("Marketplace: {}", marketplace);
+    // println!("Marketplace: {}", marketplace);
 
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
@@ -90,7 +90,7 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
             None,
         )
         .unwrap();
-    println!("Minter: {}", minter);
+    // println!("Minter: {}", minter);
 
     let name_collection = "contract2";
 
@@ -104,8 +104,8 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
     (app, marketplace, minter, Addr::unchecked(name_collection))
 }
 
-fn mint_and_list() -> (StargazeApp, Addr) {
-    let (mut app, mkt, minter, name_collection) = instantiate_contracts();
+fn mint_and_list() -> (StargazeApp, Addr, Addr, Addr) {
+    let (mut app, mkt, minter, collection) = instantiate_contracts();
 
     let user = Addr::unchecked(USER);
     let four_letter_name_cost = 100000000 * 10;
@@ -124,7 +124,8 @@ fn mint_and_list() -> (StargazeApp, Addr) {
     let msg = ExecuteMsg::MintAndList {
         name: NAME.to_string(),
     };
-    let res = app.execute_contract(user.clone(), minter, &msg, &name_fee);
+    let res = app.execute_contract(user.clone(), minter.clone(), &msg, &name_fee);
+    // println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
@@ -142,17 +143,14 @@ fn mint_and_list() -> (StargazeApp, Addr) {
     // check if token minted
     let res: NumTokensResponse = app
         .wrap()
-        .query_wasm_smart(
-            name_collection.clone(),
-            &sg721_base::msg::QueryMsg::NumTokens {},
-        )
+        .query_wasm_smart(collection.clone(), &sg721_base::msg::QueryMsg::NumTokens {})
         .unwrap();
     assert_eq!(res.count, 1);
 
     let res: OwnerOfResponse = app
         .wrap()
         .query_wasm_smart(
-            name_collection,
+            collection.clone(),
             &sg721_base::msg::QueryMsg::OwnerOf {
                 token_id: NAME.to_string(),
                 include_expired: None,
@@ -161,7 +159,7 @@ fn mint_and_list() -> (StargazeApp, Addr) {
         .unwrap();
     assert_eq!(res.owner, user.to_string());
 
-    (app, mkt)
+    (app, mkt, minter, collection)
 }
 
 fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
@@ -202,63 +200,93 @@ fn bid(mut app: StargazeApp, mkt: Addr) -> StargazeApp {
     app
 }
 mod execute {
-    use cw721::OwnerOfResponse;
+    use cw721::{ApprovalsResponse, OperatorsResponse, OwnerOfResponse};
 
     use super::*;
 
     #[test]
-    fn test_mint() {
-        mint_and_list();
-    }
+    fn check_approvals() {
+        // Transfer permissions for accept bid:
+        // 1. Owner has to be the sender, so cannot do this
+        // owner == "user", sender == "contract0" (marketplace)
+        // 2. Approval has to exist with spender == sender
+        // so spender == "contract0" (marketplace)
+        // but, cannot use marketplace for approval unless it is set as an operator
+        // otherwise, only owners can set approvals
+        // thus, need to do things:
+        // 1. set marketplace as operator
+        // 2. set approval for it
 
-    #[test]
-    fn test_bid() {
-        let (app, mkt) = mint_and_list();
-        bid(app, mkt);
-    }
+        let (app, _, minter, collection) = mint_and_list();
 
-    #[test]
-    fn accept_bid() {
-        let (app, mkt) = mint_and_list();
-        let mut new_app = bid(app, mkt.clone());
-        let name_collection = "contract2";
-
-        let msg = MarketplaceExecuteMsg::AcceptBid {
-            token_id: NAME.to_string(),
-            bidder: BIDDER.to_string(),
-        };
-
-        let res: OwnerOfResponse = new_app
+        // check operators
+        let res: OperatorsResponse = app
             .wrap()
             .query_wasm_smart(
-                name_collection,
-                &sg721_base::msg::QueryMsg::OwnerOf {
+                collection.clone(),
+                &sg721_base::msg::QueryMsg::AllOperators {
+                    owner: minter.to_string(),
+                    include_expired: None,
+                    start_after: None,
+                    limit: None,
+                },
+            )
+            .unwrap();
+        println!("{:?}", res);
+
+        // check approval
+        let res: ApprovalsResponse = app
+            .wrap()
+            .query_wasm_smart(
+                collection,
+                &sg721_base::msg::QueryMsg::Approvals {
                     token_id: NAME.to_string(),
                     include_expired: None,
                 },
             )
             .unwrap();
-        assert_eq!(res.owner, USER.to_string());
-
-        let res = new_app
-            .execute_contract(Addr::unchecked(USER), mkt, &msg, &[])
-            .unwrap();
         println!("{:?}", res);
-        // assert!(res.is_ok());
-
-        // // query if bid exists
-        // let res: BidResponse = app
-        //     .wrap()
-        //     .query_wasm_smart(
-        //         mkt.clone(),
-        //         &MarketplaceQueryMsg::Bid {
-        //             token_id: NAME.to_string(),
-        //             bidder: bidder.to_string(),
-        //         },
-        //     )
-        //     .unwrap();
-        // let bid = res.bid.unwrap();
-        // assert_eq!(bid.token_id, NAME.to_string());
-        // assert_eq!(bid.bidder, BIDDER.to_string());
     }
+
+    // #[test]
+    // fn test_mint() {
+    //     mint_and_list();
+    // }
+
+    // #[test]
+    // fn test_bid() {
+    //     let (app, mkt) = mint_and_list();
+    //     bid(app, mkt);
+    // }
+
+    // #[test]
+    // fn test_accept_bid() {
+    //     let (app, mkt, _) = mint_and_list();
+    //     let mut new_app = bid(app, mkt.clone());
+
+    //     let msg = MarketplaceExecuteMsg::AcceptBid {
+    //         token_id: NAME.to_string(),
+    //         bidder: BIDDER.to_string(),
+    //     };
+    //     let res = new_app
+    //         .execute_contract(Addr::unchecked(USER), mkt, &msg, &[])
+    //         .unwrap();
+    //     println!("{:?}", res);
+    //     // assert!(res.is_ok());
+
+    //     // // query if bid exists
+    //     // let res: BidResponse = app
+    //     //     .wrap()
+    //     //     .query_wasm_smart(
+    //     //         mkt.clone(),
+    //     //         &MarketplaceQueryMsg::Bid {
+    //     //             token_id: NAME.to_string(),
+    //     //             bidder: bidder.to_string(),
+    //     //         },
+    //     //     )
+    //     //     .unwrap();
+    //     // let bid = res.bid.unwrap();
+    //     // assert_eq!(bid.token_id, NAME.to_string());
+    //     // assert_eq!(bid.bidder, BIDDER.to_string());
+    // }
 }
