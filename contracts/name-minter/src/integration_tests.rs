@@ -1,11 +1,13 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use cosmwasm_std::{coins, Addr, Uint128};
-use cw721::{NumTokensResponse, OwnerOfResponse};
+use cw721::{NftInfoResponse, NumTokensResponse, OwnerOfResponse};
+use cw721_base::Extension;
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
 };
 use sg_multi_test::StargazeApp;
+use sg_name::Metadata;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
@@ -119,10 +121,8 @@ fn mint_and_list() -> (StargazeApp, Addr) {
     .map_err(|err| println!("{:?}", err))
     .ok();
 
-    let name = "test";
-
     let msg = ExecuteMsg::MintAndList {
-        name: name.to_string(),
+        name: NAME.to_string(),
     };
     let res = app.execute_contract(user.clone(), minter, &msg, &name_fee);
     assert!(res.is_ok());
@@ -133,11 +133,11 @@ fn mint_and_list() -> (StargazeApp, Addr) {
         .query_wasm_smart(
             mkt.clone(),
             &MarketplaceQueryMsg::Ask {
-                token_id: name.to_string(),
+                token_id: NAME.to_string(),
             },
         )
         .unwrap();
-    assert_eq!(res.ask.unwrap().token_id, name);
+    assert_eq!(res.ask.unwrap().token_id, NAME);
 
     // check if token minted
     let res: NumTokensResponse = app
@@ -149,17 +149,17 @@ fn mint_and_list() -> (StargazeApp, Addr) {
         .unwrap();
     assert_eq!(res.count, 1);
 
-    // let res: OwnerOfResponse = app
-    //     .wrap()
-    //     .query_wasm_smart(
-    //         name_collection,
-    //         &sg721_base::msg::QueryMsg::OwnerOf {
-    //             token_id: NAME.to_string(),
-    //             include_expired: None,
-    //         },
-    //     )
-    //     .unwrap();
-    // assert_eq!(res.owner, user);
+    let res: OwnerOfResponse = app
+        .wrap()
+        .query_wasm_smart(
+            name_collection,
+            &sg721_base::msg::QueryMsg::OwnerOf {
+                token_id: NAME.to_string(),
+                include_expired: None,
+            },
+        )
+        .unwrap();
+    assert_eq!(res.owner, user.to_string());
 
     (app, mkt)
 }
