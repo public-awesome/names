@@ -1,9 +1,11 @@
-use crate::msg::InstantiateMsg;
-use cosmwasm_std::{Addr, Uint128};
-use cw_multi_test::{Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
-use name_marketplace::msg::{AskResponse, QueryMsg as MarketplaceQueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg};
+use cosmwasm_std::{coins, Addr, Uint128};
+use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
+use name_marketplace::msg::{
+    AskResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
+};
 use sg_multi_test::StargazeApp;
-use sg_std::StargazeMsgWrapper;
+use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
@@ -35,7 +37,9 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 }
 
 const USER: &str = "user";
+const BIDDER: &str = "bidder";
 const ADMIN: &str = "admin";
+const NAME: &str = "bobo";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 
 pub fn custom_mock_app() -> StargazeApp {
@@ -97,50 +101,95 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
     (app, marketplace, minter, Addr::unchecked(name_collection))
 }
 
-mod mint {
+fn mint_and_list() -> (StargazeApp, Addr) {
+    let (mut app, mkt, minter, _) = instantiate_contracts();
+
+    let user = Addr::unchecked(USER);
+    let four_letter_name_cost = 100000000 * 10;
+
+    // give user some funds
+    let name_fee = coins(four_letter_name_cost, NATIVE_DENOM);
+    app.sudo(CwSudoMsg::Bank({
+        BankSudo::Mint {
+            to_address: user.to_string(),
+            amount: name_fee.clone(),
+        }
+    }))
+    .map_err(|err| println!("{:?}", err))
+    .ok();
+
+    let name = "test";
+
+    let msg = ExecuteMsg::MintAndList {
+        name: name.to_string(),
+    };
+    let res = app.execute_contract(user, minter, &msg, &name_fee);
+    assert!(res.is_ok());
+
+    // check if name is listed in marketplace
+    let res: AskResponse = app
+        .wrap()
+        .query_wasm_smart(
+            mkt.clone(),
+            &MarketplaceQueryMsg::Ask {
+                token_id: name.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(res.ask.unwrap().token_id, name);
+
+    (app, mkt)
+}
+
+mod execute {
     use cosmwasm_std::coins;
     use cw_multi_test::BankSudo;
-    use name_marketplace::msg::AskResponse;
+    use name_marketplace::msg::BidResponse;
     use sg_std::NATIVE_DENOM;
 
     use super::*;
-    use crate::msg::ExecuteMsg;
 
     #[test]
     fn mint() {
-        let (mut app, mkt, minter, _) = instantiate_contracts();
+        mint_and_list();
+    }
 
-        let user = Addr::unchecked(USER);
-        let four_letter_name_cost = 100000000 * 10;
+    #[test]
+    fn bid() {
+        let (mut app, mkt) = mint_and_list();
 
-        let name_fee = coins(four_letter_name_cost, NATIVE_DENOM);
+        let bidder = Addr::unchecked(BIDDER);
+
+        // give bidder some funds
+        let amount = coins(100000000, NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
-                to_address: user.to_string(),
-                amount: name_fee.clone(),
+                to_address: bidder.to_string(),
+                amount: amount.clone(),
             }
         }))
         .map_err(|err| println!("{:?}", err))
         .ok();
 
-        let name = "test";
-
-        let msg = ExecuteMsg::MintAndList {
-            name: name.to_string(),
+        let msg = MarketplaceExecuteMsg::SetBid {
+            token_id: NAME.to_string(),
         };
-        let res = app.execute_contract(user, minter, &msg, &name_fee);
+        let res = app.execute_contract(bidder.clone(), mkt.clone(), &msg, &amount);
         assert!(res.is_ok());
 
-        // check if name is listed in marketplace
-        let res: AskResponse = app
+        // query if bid exists
+        let res: BidResponse = app
             .wrap()
             .query_wasm_smart(
                 mkt,
-                &MarketplaceQueryMsg::Ask {
-                    token_id: name.to_string(),
+                &MarketplaceQueryMsg::Bid {
+                    token_id: NAME.to_string(),
+                    bidder: bidder.to_string(),
                 },
             )
             .unwrap();
-        assert_eq!(res.ask.unwrap().token_id, name);
+        let bid = res.bid.unwrap();
+        assert_eq!(bid.token_id, NAME.to_string());
+        assert_eq!(bid.bidder, BIDDER.to_string());
     }
 }
