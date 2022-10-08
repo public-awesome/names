@@ -53,13 +53,15 @@ pub fn execute(
     let api = deps.api;
 
     match msg {
-        ExecuteMsg::SetAsk { token_id } => execute_set_ask(deps, env, info, token_id),
+        ExecuteMsg::SetAsk { token_id, seller } => {
+            execute_set_ask(deps, env, info, token_id, api.addr_validate(&seller)?)
+        }
         ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, token_id),
         ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, token_id),
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, token_id, api.addr_validate(&bidder)?)
         }
-        ExecuteMsg::ProcessFees {} => todo!(),
+        ExecuteMsg::ProcessRenewals { height } => todo!(),
     }
 }
 
@@ -67,8 +69,9 @@ pub fn execute(
 pub fn execute_set_ask(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     token_id: TokenId,
+    seller: Addr,
 ) -> Result<Response, ContractError> {
     // TODO: only name minter should be able to call this..
 
@@ -85,7 +88,9 @@ pub fn execute_set_ask(
     //     None,
     // )?;
 
-    let seller = info.sender;
+    // TODO: seller is set as marketplace since its making this call
+    // it should be the actual seller
+
     let ask = Ask {
         token_id: token_id.clone(),
         seller: seller.clone(),
@@ -277,6 +282,8 @@ fn payout(
     let community_pool_msg =
         create_fund_community_pool_msg(vec![coin(network_fee.u128(), NATIVE_DENOM)]);
     res.messages.push(SubMsg::new(community_pool_msg));
+
+    println!("Paying fee {}", network_fee);
 
     // pay seller
     let seller_share_msg = BankMsg::Send {

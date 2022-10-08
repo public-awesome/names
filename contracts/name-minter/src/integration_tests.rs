@@ -295,10 +295,10 @@ mod execute {
             .query_balance(USER.to_string(), NATIVE_DENOM)
             .unwrap();
         println!("{:?}", res.amount);
-        // assert_eq!(
-        //     res.amount,
-        //     Uint128::from((100000000u128 * 10) - 100000000u128)
-        // );
+        assert_eq!(
+            res.amount,
+            Uint128::from((100000000u128 * 10) - 100000000u128)
+        );
 
         // TODO: check if a new ask was created
     }

@@ -140,6 +140,7 @@ fn try_set_ask() {
 
     let set_ask = ExecuteMsg::SetAsk {
         token_id: TOKEN_ID.to_string(),
+        seller: CREATOR.to_string(),
     };
 
     // Reject if not called by the media owner

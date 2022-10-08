@@ -17,7 +17,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// List name NFT on the marketplace by creating a new ask
     /// Only the name minter can call this.
-    SetAsk { token_id: TokenId },
+    SetAsk { token_id: TokenId, seller: String },
     /// Place a bid on an existing ask
     SetBid { token_id: TokenId },
     /// Remove an existing bid from an ask
@@ -26,10 +26,11 @@ pub enum ExecuteMsg {
     AcceptBid { token_id: TokenId, bidder: String },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
-    ProcessFees {},
-    // TODO: what do you do when a name is transferred and allowances are gone?
-    // Always do an allowance before a transfer? Transfer checks for allowance?
+    ProcessRenewals { height: u64 },
 }
+
+// TODO: what do you do when a name is transferred and allowances are gone?
+// Always do an allowance before a transfer? Transfer checks for allowance?
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

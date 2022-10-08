@@ -132,6 +132,7 @@ pub fn execute_mint_and_list(
 
     let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
+        seller: info.sender.to_string(),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),
