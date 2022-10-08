@@ -124,23 +124,11 @@ mod mint {
 
         let name = "test";
 
-        // approve marketplace to transfer items in collection
-        let approve_msg = Cw721ExecuteMsg::Approve {
-            spender: mkt.to_string(),
-            token_id: name.to_string(),
-            expires: None,
+        let msg = ExecuteMsg::MintAndList {
+            name: name.to_string(),
         };
-        let res = app
-            .execute_contract(user.clone(), collection, &approve_msg, &[])
-            .unwrap();
+        let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
         println!("{:?}", res);
         // assert!(res.is_ok());
-
-        // let msg = ExecuteMsg::MintAndList {
-        //     name: name.to_string(),
-        // };
-        // let res = app.execute_contract(user, minter, &msg, &name_fee).unwrap();
-        // println!("{:?}", res);
-        // // assert!(res.is_ok());
     }
 }
