@@ -204,11 +204,17 @@ fn mint_and_list() -> (StargazeApp, Addr, Addr, Addr) {
     (app, mkt, minter, collection)
 }
 
-fn bid(mut app: StargazeApp, mkt: Addr, collection: Addr, bidder: &str) -> StargazeApp {
+fn bid(
+    mut app: StargazeApp,
+    mkt: Addr,
+    collection: Addr,
+    bidder: &str,
+    amount: u128,
+) -> StargazeApp {
     let bidder = Addr::unchecked(bidder);
 
     // give bidder some funds
-    let amount = coins(BID_AMOUNT, NATIVE_DENOM);
+    let amount = coins(amount, NATIVE_DENOM);
     app.sudo(CwSudoMsg::Bank({
         BankSudo::Mint {
             to_address: bidder.to_string(),
@@ -290,13 +296,13 @@ mod execute {
     #[test]
     fn test_bid() {
         let (app, mkt, _, collection) = mint_and_list();
-        bid(app, mkt, collection, BIDDER);
+        bid(app, mkt, collection, BIDDER, BID_AMOUNT);
     }
 
     #[test]
     fn test_accept_bid() {
         let (app, mkt, _, collection) = mint_and_list();
-        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER);
+        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER, BID_AMOUNT);
 
         // user (owner) starts off with 0 internet funny money
         let res = app
@@ -358,7 +364,7 @@ mod execute {
     #[test]
     fn test_two_sales_cycles() {
         let (app, mkt, _, collection) = mint_and_list();
-        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER);
+        let mut app = bid(app, mkt.clone(), collection.clone(), BIDDER, BID_AMOUNT);
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
             token_id: NAME.to_string(),
@@ -367,7 +373,7 @@ mod execute {
         let res = app.execute_contract(Addr::unchecked(USER), mkt.clone(), &msg, &[]);
         assert!(res.is_ok());
 
-        let mut app = bid(app, mkt.clone(), collection, BIDDER2);
+        let mut app = bid(app, mkt.clone(), collection, BIDDER2, BID_AMOUNT);
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
             token_id: NAME.to_string(),
@@ -375,5 +381,39 @@ mod execute {
         };
         let res = app.execute_contract(Addr::unchecked(BIDDER), mkt, &msg, &[]);
         assert!(res.is_ok());
+    }
+}
+
+mod query {
+    use name_marketplace::msg::{AsksResponse, BidsResponse};
+
+    use super::*;
+
+    #[test]
+    fn query_recent_asks() {
+        let (app, mkt, _, _) = mint_and_list();
+
+        let msg = MarketplaceQueryMsg::RecentAsks {
+            start_after: None,
+            limit: None,
+        };
+        let res: AsksResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();
+        assert_eq!(res.asks.len(), 1);
+        println!("{:?}", res.asks);
+    }
+
+    #[test]
+    fn query_top_bids() {
+        let (app, mkt, _, collection) = mint_and_list();
+        let app = bid(app, mkt.clone(), collection.clone(), BIDDER, BID_AMOUNT);
+        let app = bid(app, mkt.clone(), collection, BIDDER2, BID_AMOUNT * 5);
+
+        let msg = MarketplaceQueryMsg::ReverseBidsSortedByPrice {
+            start_before: None,
+            limit: None,
+        };
+        let res: BidsResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();
+        assert_eq!(res.bids.len(), 2);
+        assert_eq!(res.bids[0].amount.u128(), BID_AMOUNT * 5);
     }
 }
