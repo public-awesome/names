@@ -1,7 +1,10 @@
 [package]
 name = "sg721-name"
 version = "0.1.0"
-authors = ["Shane Vitarana <s@noreply.publicawesome.come>","John Y <j@noreply.publicawesome.come>"]
+authors = [
+  "Shane Vitarana <s@noreply.publicawesome.com>",
+  "John Y <j@noreply.publicawesome.com>",
+]
 edition = "2018"
 
 exclude = [
@@ -21,10 +24,10 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = { version = "1.0.0" }
-cw-storage-plus = "0.13.4"
-cw-utils = "0.13.4"
-cw2 = "0.13.4"
+cosmwasm-std = { version = "1.1.4" }
+cw-storage-plus = "0.15.0"
+cw-utils = "0.15.0"
+cw2 = "0.15.0"
 schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 sg-name = { path = "../../packages/sg-name" }
@@ -34,8 +37,8 @@ sg721-base = { path = "../../../launchpad/contracts/sg721-base", features = [
   "library",
 ] }
 thiserror = { version = "1.0.31" }
-cw721 = "0.13.4"
-cw721-base = { version = "0.13.4", features = ["library"] }
+cw721 = "0.15.0"
+cw721-base = { version = "0.15.0", features = ["library"] }
 
 [dev-dependencies]
-cosmwasm-schema = { version = "1.0.0" }
+cosmwasm-schema = { version = "1.1.4" }
