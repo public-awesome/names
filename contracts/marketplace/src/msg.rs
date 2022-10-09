@@ -41,6 +41,8 @@ pub enum SudoMsg {
         trading_fee_bps: Option<u64>,
         min_price: Option<Uint128>,
     },
+    /// Update the contract address of the name minter
+    UpdateNameMinter { minter: String },
     /// Update the contract address of the name collection
     UpdateNameCollection { collection: String },
     /// Add a new hook to be informed of all asks

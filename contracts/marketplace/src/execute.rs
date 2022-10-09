@@ -1,7 +1,8 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION, NAME_MINTER,
+    SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -69,16 +70,16 @@ pub fn execute(
 pub fn execute_set_ask(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     token_id: TokenId,
     seller: Addr,
 ) -> Result<Response, ContractError> {
-    // TODO: only name minter should be able to call this..
+    let minter = NAME_MINTER.load(deps.storage)?;
+    if info.sender != minter {
+        return Err(ContractError::UnauthorizedMinter {});
+    }
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
-
-    // TODO: change to only_minter?
-    // only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
 
     // // Check if this contract is approved to transfer the token
     // Cw721Contract(collection.clone()).approval(
@@ -87,9 +88,6 @@ pub fn execute_set_ask(
     //     env.contract.address.to_string(),
     //     None,
     // )?;
-
-    // TODO: seller is set as marketplace since its making this call
-    // it should be the actual seller
 
     let ask = Ask {
         token_id: token_id.clone(),

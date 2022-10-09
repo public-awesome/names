@@ -54,7 +54,8 @@ pub fn custom_mock_app() -> StargazeApp {
 
 // 1. Instantiate Name Marketplace
 // 2. Instantiate Name Minter (which instantiates Name Collection)
-// 3. Update Name Marketplace with Name Collection address
+// 3. Update Name Marketplace with Name Minter address
+// 4. Update Name Marketplace with Name Collection address
 fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
@@ -95,7 +96,14 @@ fn instantiate_contracts() -> (StargazeApp, Addr, Addr, Addr) {
 
     let collection = "contract2";
 
-    // 3. Update Name Marketplace with Name Collection address
+    // 3. Update Name Marketplace with Name Minter address
+    let msg = name_marketplace::msg::SudoMsg::UpdateNameMinter {
+        minter: minter.to_string(),
+    };
+    let res = app.wasm_sudo(marketplace.clone(), &msg);
+    assert!(res.is_ok());
+
+    // 4. Update Name Marketplace with Name Collection address
     let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {
         collection: collection.to_string(),
     };

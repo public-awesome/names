@@ -18,6 +18,7 @@ pub const ASK_HOOKS: Hooks = Hooks::new("ask-hooks");
 pub const BID_HOOKS: Hooks = Hooks::new("bid-hooks");
 pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 
+pub const NAME_MINTER: Item<Addr> = Item::new("name-minter");
 pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
 
 pub type TokenId = String;
