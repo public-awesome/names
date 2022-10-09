@@ -65,28 +65,56 @@ pub fn execute(
             execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
         ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
-        ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, env, &token_id),
-        ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, env, &token_id),
+        ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
+        ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
     }
 }
 
 pub fn execute_fund_renewal(
     deps: DepsMut,
-    _env: Env,
+    info: MessageInfo,
     token_id: &str,
 ) -> Result<Response, ContractError> {
-    let ask_key = ask_key(token_id);
-    asks().load(deps.storage, ask_key)?;
+    let payment = must_pay(&info, NATIVE_DENOM)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+    // TODO: should anyone be able to fund a renewal?
+    // if ask.seller != info.sender {
+    //     return Err(ContractError::Unauthorized {});
+    // }
+    ask.renewal_fund += payment;
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
 
     Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
 }
 
 pub fn execute_refund_renewal(
-    _deps: DepsMut,
-    _env: Env,
+    deps: DepsMut,
+    info: MessageInfo,
     token_id: &str,
 ) -> Result<Response, ContractError> {
-    Ok(Response::new().add_event(Event::new("refund-renewal").add_attribute("token_id", token_id)))
+    nonpayable(&info)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+
+    if ask.seller != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    if ask.renewal_fund.is_zero() {
+        return Err(ContractError::NoRenewalFund {});
+    }
+
+    let msg = BankMsg::Send {
+        to_address: ask.seller.to_string(),
+        amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
+    };
+
+    ask.renewal_fund = Uint128::zero();
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
+
+    Ok(Response::new()
+        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
+        .add_message(msg))
 }
 
 pub fn execute_process_renewal(
