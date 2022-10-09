@@ -394,16 +394,20 @@ mod query {
         let (app, mkt, _, _) = mint_and_list();
 
         let msg = MarketplaceQueryMsg::AskCount {};
-        let res: AskCountResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();
+        let res: AskCountResponse = app.wrap().query_wasm_smart(mkt.clone(), &msg).unwrap();
         assert_eq!(res.count, 1);
 
+        // TODO:
+        // mint and list another name at a different block height
+        // now we have enough data to test query
+
         // FIXME: this is not working, should sort by decreasing height
-        // let msg = MarketplaceQueryMsg::RecentAsks {
-        //     start_after: None,
-        //     limit: None,
-        // };
-        // let res: AsksResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();
-        // assert_eq!(res.asks.len(), 1);
+        let msg = MarketplaceQueryMsg::RecentAsks {
+            start_after: None,
+            limit: None,
+        };
+        let res: AsksResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();
+        assert_eq!(res.asks.len(), 1);
     }
 
     #[test]

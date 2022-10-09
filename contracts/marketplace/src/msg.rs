@@ -123,7 +123,7 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     RecentAsks {
-        start_after: Option<u64>,
+        start_after: Option<(u64, TokenId)>,
         limit: Option<u32>,
     },
     /// Get data for a specific bid
