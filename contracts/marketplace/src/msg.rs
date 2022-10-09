@@ -97,7 +97,7 @@ impl BidOffset {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    /// Get the current ask for specific NFT
+    /// Get the current ask for specific name
     /// Return type: `CurrentAskResponse`
     Ask { token_id: TokenId },
     /// Get all asks for a collection
@@ -106,7 +106,7 @@ pub enum QueryMsg {
         start_after: Option<Id>,
         limit: Option<u32>,
     },
-    /// Get all asks for a collection in reverse
+    /// Get all asks in reverse
     /// Return type: `AsksResponse`
     ReverseAsks {
         start_before: Option<Id>,

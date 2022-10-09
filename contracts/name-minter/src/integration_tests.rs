@@ -397,18 +397,16 @@ mod query {
     use super::*;
 
     #[test]
-    fn query_ask_count() {
+    fn query_ask() {
         let mut app = instantiate_contracts();
 
         mint_and_list(&mut app, NAME);
 
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack");
-
-        let msg = MarketplaceQueryMsg::AskCount {};
-        let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.count, 2);
+        let msg = MarketplaceQueryMsg::Ask {
+            token_id: NAME.to_string(),
+        };
+        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.ask.unwrap().token_id, NAME.to_string());
     }
 
     #[test]
@@ -445,6 +443,21 @@ mod query {
         };
         let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.asks[0].id, 2);
+    }
+
+    #[test]
+    fn query_ask_count() {
+        let mut app = instantiate_contracts();
+
+        mint_and_list(&mut app, NAME);
+
+        let height = app.block_info().height;
+        update_block_height(&mut app, height + 1);
+        mint_and_list(&mut app, "hack");
+
+        let msg = MarketplaceQueryMsg::AskCount {};
+        let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.count, 2);
     }
 
     #[test]
