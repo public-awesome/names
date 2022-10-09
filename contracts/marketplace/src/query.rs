@@ -138,7 +138,7 @@ pub fn query_asks_by_seller(
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start = start_after.map(|start| Bound::exclusive(ask_key(start)));
+    let start = start_after.map(|start| Bound::exclusive(ask_key(&start)));
 
     let asks = asks()
         .idx
@@ -153,7 +153,7 @@ pub fn query_asks_by_seller(
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<AskResponse> {
-    let ask = asks().may_load(deps.storage, ask_key(token_id))?;
+    let ask = asks().may_load(deps.storage, ask_key(&token_id))?;
 
     Ok(AskResponse { ask })
 }
@@ -172,7 +172,7 @@ pub fn query_bids_by_bidder(
 ) -> StdResult<BidsResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start = start_after.map(|start| Bound::exclusive(bid_key(start, &bidder)));
+    let start = start_after.map(|start| Bound::exclusive(bid_key(&start, &bidder)));
 
     let bids = bids()
         .idx
@@ -215,7 +215,7 @@ pub fn query_bids_sorted_by_price(
     let start: Option<Bound<(u128, BidKey)>> = start_after.map(|offset| {
         Bound::exclusive((
             offset.price.u128(),
-            bid_key(offset.token_id, &offset.bidder),
+            bid_key(&offset.token_id, &offset.bidder),
         ))
     });
 
@@ -240,7 +240,7 @@ pub fn reverse_query_bids_sorted_by_price(
     let end: Option<Bound<(u128, BidKey)>> = start_before.map(|offset| {
         Bound::exclusive((
             offset.price.u128(),
-            bid_key(offset.token_id, &offset.bidder),
+            bid_key(&offset.token_id, &offset.bidder),
         ))
     });
 

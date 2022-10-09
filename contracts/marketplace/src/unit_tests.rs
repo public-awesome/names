@@ -25,8 +25,9 @@ fn ask_indexed_map() {
         id: 1,
         seller: seller.clone(),
         height: 5,
+        renewal_fund: Uint128::zero(),
     };
-    let key = ask_key(TOKEN_ID.to_string());
+    let key = ask_key(TOKEN_ID);
     let res = asks().save(deps.as_mut().storage, key.clone(), &ask);
     assert!(res.is_ok());
 
@@ -35,8 +36,9 @@ fn ask_indexed_map() {
         id: 2,
         seller: seller.clone(),
         height: 5,
+        renewal_fund: Uint128::zero(),
     };
-    let key2 = ask_key(TOKEN_ID_NEXT.to_string());
+    let key2 = ask_key(TOKEN_ID_NEXT);
     let res = asks().save(deps.as_mut().storage, key2, &ask2);
     assert!(res.is_ok());
 
@@ -59,7 +61,7 @@ fn bid_indexed_map() {
         amount: Uint128::from(500u128),
         height: 6,
     };
-    let key = bid_key(TOKEN_ID.to_string(), &bidder);
+    let key = bid_key(TOKEN_ID, &bidder);
     let res = bids().save(deps.as_mut().storage, key.clone(), &bid);
     assert!(res.is_ok());
 
@@ -69,7 +71,7 @@ fn bid_indexed_map() {
         amount: Uint128::from(500u128),
         height: 6,
     };
-    let key2 = bid_key(TOKEN_ID_NEXT.to_string(), &bidder);
+    let key2 = bid_key(TOKEN_ID_NEXT, &bidder);
     let res = bids().save(deps.as_mut().storage, key2, &bid2);
     assert!(res.is_ok());
 
