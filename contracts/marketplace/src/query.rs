@@ -86,18 +86,13 @@ pub fn query_recent_asks(
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    // let start = start_after.map(|s| Bound::Exclusive(s));
-    // let start: Option<Bound<(u64, TokenId)>> = None;
+    let start: Option<Bound<(u64, TokenId)>> =
+        Some(Bound::exclusive(start_after.unwrap_or_default()));
 
     let asks = asks()
         .idx
         .height
-        .range(
-            deps.storage,
-            Some(Bound::exclusive(start_after.unwrap_or_default())),
-            None,
-            Order::Descending,
-        )
+        .range(deps.storage, None, None, Order::Descending)
         .take(limit)
         .map(|res| res.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()?;
