@@ -33,9 +33,6 @@ pub enum ExecuteMsg {
     RefundRenewal { token_id: TokenId },
 }
 
-// TODO: what do you do when a name is transferred and allowances are gone?
-// Always do an allowance before a transfer? Transfer checks for allowance?
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum SudoMsg {
@@ -51,10 +48,10 @@ pub enum SudoMsg {
     UpdateNameCollection { collection: String },
     /// Add a new hook to be informed of all asks
     AddAskHook { hook: String },
-    /// Add a new hook to be informed of all bids
-    AddBidHook { hook: String },
     /// Remove a ask hook
     RemoveAskHook { hook: String },
+    /// Add a new hook to be informed of all bids
+    AddBidHook { hook: String },
     /// Remove a bid hook
     RemoveBidHook { hook: String },
     /// Add a new hook to be informed of all trades
