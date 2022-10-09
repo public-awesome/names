@@ -7,13 +7,13 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, MessageInfo, StdError,
-    StdResult, Storage, Uint128, WasmMsg,
+    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
+    StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{must_pay, nonpayable};
+use cw_utils::{may_pay, must_pay, nonpayable};
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -81,6 +81,8 @@ pub fn execute_set_ask(
         return Err(ContractError::UnauthorizedMinter {});
     }
 
+    let funds = may_pay(&info, NATIVE_DENOM)?;
+
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
     // // Check if this contract is approved to transfer the token
@@ -96,6 +98,7 @@ pub fn execute_set_ask(
         id: increment_asks(deps.storage)?,
         seller: seller.clone(),
         height: env.block.height,
+        renewal_fund: funds,
     };
     store_ask(deps.storage, &ask)?;
 
@@ -218,6 +221,15 @@ pub fn execute_accept_bid(
 
     let mut res = Response::new();
 
+    // Return renewal funds if there's any
+    if !ask.renewal_fund.is_zero() {
+        let msg = BankMsg::Send {
+            to_address: ask.seller.to_string(),
+            amount: coins(ask.renewal_fund.u128(), NATIVE_DENOM),
+        };
+        res = res.add_message(msg);
+    }
+
     // Transfer funds and NFT
     finalize_sale(
         deps.as_ref(),
@@ -233,6 +245,7 @@ pub fn execute_accept_bid(
         id: ask.id,
         seller: bidder.clone(),
         height: env.block.height,
+        renewal_fund: Uint128::zero(),
     };
     store_ask(deps.storage, &ask)?;
 

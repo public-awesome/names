@@ -55,6 +55,7 @@ pub struct Ask {
     pub id: u64,
     pub seller: Addr,
     pub height: u64,
+    pub renewal_fund: Uint128,
 }
 
 /// Primary key for asks: token_id

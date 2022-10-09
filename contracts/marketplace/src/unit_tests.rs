@@ -25,6 +25,7 @@ fn ask_indexed_map() {
         id: 1,
         seller: seller.clone(),
         height: 5,
+        renewal_fund: Uint128::zero(),
     };
     let key = ask_key(TOKEN_ID.to_string());
     let res = asks().save(deps.as_mut().storage, key.clone(), &ask);
@@ -35,6 +36,7 @@ fn ask_indexed_map() {
         id: 2,
         seller: seller.clone(),
         height: 5,
+        renewal_fund: Uint128::zero(),
     };
     let key2 = ask_key(TOKEN_ID_NEXT.to_string());
     let res = asks().save(deps.as_mut().storage, key2, &ask2);
