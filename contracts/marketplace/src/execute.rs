@@ -1,5 +1,6 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::hooks::prepare_ask_hook;
+use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
     NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
@@ -169,15 +170,17 @@ pub fn execute_set_ask(
     queue.push(token_id.to_string());
     RENEWAL_QUEUE.save(deps.storage, env.block.height + BLOCKS_PER_YEAR, &queue)?;
 
+    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
+
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())
         .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
 
-    Ok(Response::new().add_event(event))
+    Ok(Response::new().add_event(event).add_submessages(hook))
 }
 
-/// Places a bid on a listed or unlisted NFT. The bid is escrowed in the contract.
+/// Places a bid on a name. The bid is escrowed in the contract.
 pub fn execute_set_bid(
     deps: DepsMut,
     env: Env,

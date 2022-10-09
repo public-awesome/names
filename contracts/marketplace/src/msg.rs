@@ -206,17 +206,15 @@ pub struct ParamsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct SaleHookMsg {
-    pub token_id: u32,
-    pub price: Coin,
+    pub token_id: String,
     pub seller: String,
     pub buyer: String,
 }
 
 impl SaleHookMsg {
-    pub fn new(token_id: u32, price: Coin, seller: String, buyer: String) -> Self {
+    pub fn new(token_id: &str, seller: String, buyer: String) -> Self {
         SaleHookMsg {
-            token_id,
-            price,
+            token_id: token_id.to_string(),
             seller,
             buyer,
         }
