@@ -129,6 +129,7 @@ pub fn query_ask_count(deps: Deps) -> StdResult<AskCountResponse> {
     Ok(AskCountResponse { count })
 }
 
+// TODO: figure out how to paginate by `Id` instead of `TokenId`
 pub fn query_asks_by_seller(
     deps: Deps,
     seller: Addr,

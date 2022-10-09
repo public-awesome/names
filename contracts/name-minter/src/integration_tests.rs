@@ -139,9 +139,7 @@ fn update_block_height(app: &mut StargazeApp, height: u64) {
     app.set_block(block);
 }
 
-fn mint_and_list(app: &mut StargazeApp, name: &str) {
-    let user = Addr::unchecked(USER);
-
+fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
     // set approval for user, for all tokens
     // approve_all is needed because we don't know the token_id before-hand
     let approve_all_msg = Sg721NameExecuteMsg::ApproveAll {
@@ -149,7 +147,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str) {
         expires: None,
     };
     let res = app.execute_contract(
-        user.clone(),
+        Addr::unchecked(user),
         Addr::unchecked(COLLECTION),
         &approve_all_msg,
         &[],
@@ -172,7 +170,12 @@ fn mint_and_list(app: &mut StargazeApp, name: &str) {
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
     };
-    let res = app.execute_contract(user.clone(), Addr::unchecked(MINTER), &msg, &name_fee);
+    let res = app.execute_contract(
+        Addr::unchecked(user),
+        Addr::unchecked(MINTER),
+        &msg,
+        &name_fee,
+    );
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
@@ -272,7 +275,7 @@ mod execute {
     fn check_approvals() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
 
         // check operators
         let res: OperatorsResponse = app
@@ -294,14 +297,14 @@ mod execute {
     fn test_mint() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
     }
 
     #[test]
     fn test_bid() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
     }
 
@@ -309,7 +312,7 @@ mod execute {
     fn test_accept_bid() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
 
         // user (owner) starts off with 0 internet funny money
@@ -370,7 +373,7 @@ mod execute {
     fn test_two_sales_cycles() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
@@ -400,7 +403,7 @@ mod query {
     fn query_ask() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
@@ -413,11 +416,11 @@ mod query {
     fn query_asks() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack");
+        mint_and_list(&mut app, "hack", USER);
 
         let msg = MarketplaceQueryMsg::Asks {
             start_after: None,
@@ -431,11 +434,11 @@ mod query {
     fn query_reverse_asks() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack");
+        mint_and_list(&mut app, "hack", USER);
 
         let msg = MarketplaceQueryMsg::ReverseAsks {
             start_before: Some(5),
@@ -446,14 +449,33 @@ mod query {
     }
 
     #[test]
-    fn query_ask_count() {
+    fn query_asks_by_seller() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack");
+        mint_and_list(&mut app, "hack", "user2");
+
+        let msg = MarketplaceQueryMsg::AsksBySeller {
+            seller: USER.to_string(),
+            start_after: None,
+            limit: None,
+        };
+        let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.asks.len(), 1);
+    }
+
+    #[test]
+    fn query_ask_count() {
+        let mut app = instantiate_contracts();
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let height = app.block_info().height;
+        update_block_height(&mut app, height + 1);
+        mint_and_list(&mut app, "hack", USER);
 
         let msg = MarketplaceQueryMsg::AskCount {};
         let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
@@ -464,7 +486,7 @@ mod query {
     fn query_top_bids() {
         let mut app = instantiate_contracts();
 
-        mint_and_list(&mut app, NAME);
+        mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
         bid(&mut app, BIDDER2, BID_AMOUNT * 5);
 
@@ -475,5 +497,28 @@ mod query {
         let res: BidsResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.bids.len(), 2);
         assert_eq!(res.bids[0].amount.u128(), BID_AMOUNT * 5);
+    }
+
+    #[test]
+    fn query_renewal_queue() {
+        let mut app = instantiate_contracts();
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let height = app.block_info().height;
+        update_block_height(&mut app, height + 1);
+        mint_and_list(&mut app, "hack", USER);
+
+        let res: RenewalQueueResponse = app
+            .wrap()
+            .query_wasm_smart(
+                MKT,
+                &MarketplaceQueryMsg::RenewalQueue {
+                    height: app.block_info().height + BLOCKS_PER_YEAR,
+                },
+            )
+            .unwrap();
+        assert_eq!(res.queue.len(), 1);
+        assert_eq!(res.queue[0], "hack".to_string());
     }
 }
