@@ -1,8 +1,8 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION, NAME_MINTER,
-    RENEWAL_QUEUE, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION,
+    NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -93,6 +93,7 @@ pub fn execute_set_ask(
 
     let ask = Ask {
         token_id: token_id.to_string(),
+        id: increment_asks(deps.storage)?,
         seller: seller.clone(),
         height: env.block.height,
     };
@@ -209,7 +210,7 @@ pub fn execute_accept_bid(
     let ask_key = ask_key(token_id.clone());
     let bid_key = bid_key(token_id.clone(), &bidder);
 
-    let ask = asks().load(deps.storage, ask_key)?;
+    let ask = asks().load(deps.storage, ask_key.clone())?;
     let bid = bids().load(deps.storage, bid_key.clone())?;
 
     // Remove accepted bid
@@ -220,9 +221,13 @@ pub fn execute_accept_bid(
     // Transfer funds and NFT
     finalize_sale(deps.as_ref(), ask, bid.amount, bidder.clone(), &mut res)?;
 
+    // Remove processed ask
+    asks().remove(deps.storage, ask_key)?;
+
     // create a new ask for the same token at the current block height
     let ask = Ask {
         token_id: token_id.clone(),
+        id: increment_asks(deps.storage)?,
         seller: bidder.clone(),
         height: env.block.height,
     };

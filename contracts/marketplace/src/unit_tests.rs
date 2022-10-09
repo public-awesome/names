@@ -22,6 +22,7 @@ fn ask_indexed_map() {
 
     let ask = Ask {
         token_id: TOKEN_ID.to_string(),
+        id: 1,
         seller: seller.clone(),
         height: 5,
     };
@@ -31,6 +32,7 @@ fn ask_indexed_map() {
 
     let ask2 = Ask {
         token_id: TOKEN_ID_NEXT.to_string(),
+        id: 2,
         seller: seller.clone(),
         height: 5,
     };

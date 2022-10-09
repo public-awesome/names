@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, Decimal, Uint128};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sg_controllers::Hooks;
@@ -24,17 +24,37 @@ pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
 /// height -> [name1, name2, etc.]
 pub const RENEWAL_QUEUE: Map<u64, Vec<TokenId>> = Map::new("rq");
 
+pub const ASK_COUNT: Item<u64> = Item::new("ask-count");
+
+pub fn ask_count(storage: &dyn Storage) -> StdResult<u64> {
+    Ok(ASK_COUNT.may_load(storage)?.unwrap_or_default())
+}
+
+pub fn increment_asks(storage: &mut dyn Storage) -> StdResult<u64> {
+    let val = ask_count(storage)? + 1;
+    ASK_COUNT.save(storage, &val)?;
+    Ok(val)
+}
+
+pub fn decrement_asks(storage: &mut dyn Storage) -> StdResult<u64> {
+    let val = ask_count(storage)? - 1;
+    ASK_COUNT.save(storage, &val)?;
+    Ok(val)
+}
+
 pub type TokenId = String;
 
 /// Represents an ask on the marketplace
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Ask {
     pub token_id: TokenId,
+    pub id: u64,
     pub seller: Addr,
     pub height: u64,
 }
 
 /// Primary key for asks: token_id
+/// Name reverse lookup can happen in O(1) time
 pub type AskKey = TokenId;
 /// Convenience ask key constructor
 pub fn ask_key(token_id: TokenId) -> AskKey {
@@ -43,19 +63,25 @@ pub fn ask_key(token_id: TokenId) -> AskKey {
 
 /// Defines indices for accessing Asks
 pub struct AskIndicies<'a> {
+    /// Unique incrementing id for each ask
+    /// This allows pagination when `token_id`s are strings
+    pub id: UniqueIndex<'a, u64, Ask, AskKey>,
+    /// Index by seller
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
+    /// Keeps track of whene renewal has to happen
     pub height: MultiIndex<'a, u64, Ask, AskKey>,
 }
 
 impl<'a> IndexList<Ask> for AskIndicies<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Ask>> + '_> {
-        let v: Vec<&dyn Index<Ask>> = vec![&self.seller];
+        let v: Vec<&dyn Index<Ask>> = vec![&self.id, &self.seller, &self.height];
         Box::new(v.into_iter())
     }
 }
 
 pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
     let indexes = AskIndicies {
+        id: UniqueIndex::new(|d| d.id, "ask__id"),
         seller: MultiIndex::new(|d: &Ask| d.seller.clone(), "asks", "asks__seller"),
         height: MultiIndex::new(|d: &Ask| d.height, "asks", "asks__height"),
     };
