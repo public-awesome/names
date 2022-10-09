@@ -27,6 +27,10 @@ pub enum ExecuteMsg {
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
     ProcessRenewals { height: u64 },
+    /// Fund renewal of a name
+    FundRenewal { token_id: TokenId },
+    /// Refund a renewal of a name
+    RefundRenewal { token_id: TokenId },
 }
 
 // TODO: what do you do when a name is transferred and allowances are gone?

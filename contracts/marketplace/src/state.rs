@@ -62,8 +62,8 @@ pub struct Ask {
 /// Name reverse lookup can happen in O(1) time
 pub type AskKey = TokenId;
 /// Convenience ask key constructor
-pub fn ask_key(token_id: TokenId) -> AskKey {
-    token_id
+pub fn ask_key(token_id: &str) -> AskKey {
+    token_id.to_string()
 }
 
 /// Defines indices for accessing Asks
@@ -103,9 +103,9 @@ pub struct Bid {
 }
 
 impl Bid {
-    pub fn new(token_id: TokenId, bidder: Addr, amount: Uint128, height: u64) -> Self {
+    pub fn new(token_id: &str, bidder: Addr, amount: Uint128, height: u64) -> Self {
         Bid {
-            token_id,
+            token_id: token_id.to_string(),
             bidder,
             amount,
             height,
@@ -116,8 +116,8 @@ impl Bid {
 /// Primary key for bids: (token_id, bidder)
 pub type BidKey = (TokenId, Addr);
 /// Convenience bid key constructor
-pub fn bid_key(token_id: TokenId, bidder: &Addr) -> BidKey {
-    (token_id, bidder.clone())
+pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
+    (token_id.to_string(), bidder.clone())
 }
 
 /// Defines incides for accessing bids

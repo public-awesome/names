@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION,
+    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
     NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
@@ -59,13 +59,45 @@ pub fn execute(
         ExecuteMsg::SetAsk { token_id, seller } => {
             execute_set_ask(deps, env, info, &token_id, api.addr_validate(&seller)?)
         }
-        ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, token_id),
-        ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, token_id),
+        ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, &token_id),
+        ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, &token_id),
         ExecuteMsg::AcceptBid { token_id, bidder } => {
-            execute_accept_bid(deps, env, info, token_id, api.addr_validate(&bidder)?)
+            execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
-        ExecuteMsg::ProcessRenewals { height } => todo!(),
+        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
+        ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, env, &token_id),
+        ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, env, &token_id),
     }
+}
+
+pub fn execute_fund_renewal(
+    deps: DepsMut,
+    _env: Env,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    let ask_key = ask_key(token_id);
+    asks().load(deps.storage, ask_key)?;
+
+    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
+}
+
+pub fn execute_refund_renewal(
+    _deps: DepsMut,
+    _env: Env,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    Ok(Response::new().add_event(Event::new("refund-renewal").add_attribute("token_id", token_id)))
+}
+
+pub fn execute_process_renewal(
+    _deps: DepsMut,
+    _env: Env,
+    height: u64,
+) -> Result<Response, ContractError> {
+    println!("Processing renewals at height {}", height);
+
+    Ok(Response::new()
+        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
 }
 
 /// A seller may set an Ask on their NFT to list it on Marketplace
@@ -122,11 +154,11 @@ pub fn execute_set_bid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    token_id: TokenId,
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
-    let ask_key = ask_key(token_id.clone());
+    let ask_key = ask_key(token_id);
     asks().load(deps.storage, ask_key)?;
 
     let bid_price = must_pay(&info, NATIVE_DENOM)?;
@@ -136,7 +168,7 @@ pub fn execute_set_bid(
 
     let bidder = info.sender;
     let mut res = Response::new();
-    let bid_key = bid_key(token_id.clone(), &bidder);
+    let bid_key = bid_key(token_id, &bidder);
 
     if let Some(existing_bid) = bids().may_load(deps.storage, bid_key.clone())? {
         bids().remove(deps.storage, bid_key)?;
@@ -148,12 +180,7 @@ pub fn execute_set_bid(
     }
 
     let save_bid = |store| -> StdResult<_> {
-        let bid = Bid::new(
-            token_id.clone(),
-            bidder.clone(),
-            bid_price,
-            env.block.height,
-        );
+        let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.height);
         store_bid(store, &bid)?;
         Ok(Some(bid))
     };
@@ -172,12 +199,12 @@ pub fn execute_remove_bid(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    token_id: TokenId,
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let bidder = info.sender;
 
-    let key = bid_key(token_id.clone(), &bidder);
+    let key = bid_key(token_id, &bidder);
     let bid = bids().load(deps.storage, key.clone())?;
     bids().remove(deps.storage, key)?;
 
@@ -203,15 +230,15 @@ pub fn execute_accept_bid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    token_id: TokenId,
+    token_id: &str,
     bidder: Addr,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let collection = NAME_COLLECTION.load(deps.storage)?;
-    only_owner(deps.as_ref(), &info, &collection, token_id.clone())?;
+    only_owner(deps.as_ref(), &info, &collection, token_id)?;
 
-    let ask_key = ask_key(token_id.clone());
-    let bid_key = bid_key(token_id.clone(), &bidder);
+    let ask_key = ask_key(token_id);
+    let bid_key = bid_key(token_id, &bidder);
 
     let ask = asks().load(deps.storage, ask_key)?;
     let bid = bids().load(deps.storage, bid_key.clone())?;
@@ -241,7 +268,7 @@ pub fn execute_accept_bid(
 
     // Update Ask with new seller and height
     let ask = Ask {
-        token_id: token_id.clone(),
+        token_id: token_id.to_string(),
         id: ask.id,
         seller: bidder.clone(),
         height: env.block.height,
@@ -323,11 +350,11 @@ fn payout(
 }
 
 fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
-    bids().save(store, bid_key(bid.token_id.clone(), &bid.bidder), bid)
+    bids().save(store, bid_key(&bid.token_id, &bid.bidder), bid)
 }
 
 fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
-    asks().save(store, ask_key(ask.token_id.clone()), ask)
+    asks().save(store, ask_key(&ask.token_id), ask)
 }
 
 /// Checks to enfore only NFT owner can call
@@ -335,7 +362,7 @@ fn only_owner(
     deps: Deps,
     info: &MessageInfo,
     collection: &Addr,
-    token_id: TokenId,
+    token_id: &str,
 ) -> Result<OwnerOfResponse, ContractError> {
     let res = Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id, false)?;
     if res.owner != info.sender {
