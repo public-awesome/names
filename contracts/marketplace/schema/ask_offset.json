@@ -12,9 +12,7 @@
       "$ref": "#/definitions/Uint128"
     },
     "token_id": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
+      "type": "string"
     }
   },
   "definitions": {

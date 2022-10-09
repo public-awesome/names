@@ -1,14 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InstantiateMsg",
+  "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "count"
+    "collection_addr"
   ],
   "properties": {
-    "count": {
-      "type": "integer",
-      "format": "int32"
+    "collection_addr": {
+      "type": "string"
     }
   }
 }
