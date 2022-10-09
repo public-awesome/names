@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    /// Fair Burn fee for winning bids
+    /// Community pool fee for winning bids
     /// 0.25% = 25, 0.5% = 50, 1% = 100, 2.5% = 250
     pub trading_fee_bps: u64,
     /// Min value for bids and asks
@@ -27,10 +27,11 @@ pub enum ExecuteMsg {
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
     ProcessRenewals { height: u64 },
+    /// Fund renewal of a name
+    FundRenewal { token_id: TokenId },
+    /// Refund a renewal of a name
+    RefundRenewal { token_id: TokenId },
 }
-
-// TODO: what do you do when a name is transferred and allowances are gone?
-// Always do an allowance before a transfer? Transfer checks for allowance?
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -47,10 +48,10 @@ pub enum SudoMsg {
     UpdateNameCollection { collection: String },
     /// Add a new hook to be informed of all asks
     AddAskHook { hook: String },
-    /// Add a new hook to be informed of all bids
-    AddBidHook { hook: String },
     /// Remove a ask hook
     RemoveAskHook { hook: String },
+    /// Add a new hook to be informed of all bids
+    AddBidHook { hook: String },
     /// Remove a bid hook
     RemoveBidHook { hook: String },
     /// Add a new hook to be informed of all trades
@@ -205,17 +206,15 @@ pub struct ParamsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct SaleHookMsg {
-    pub token_id: u32,
-    pub price: Coin,
+    pub token_id: String,
     pub seller: String,
     pub buyer: String,
 }
 
 impl SaleHookMsg {
-    pub fn new(token_id: u32, price: Coin, seller: String, buyer: String) -> Self {
+    pub fn new(token_id: &str, seller: String, buyer: String) -> Self {
         SaleHookMsg {
-            token_id,
-            price,
+            token_id: token_id.to_string(),
             seller,
             buyer,
         }

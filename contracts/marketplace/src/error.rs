@@ -8,6 +8,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("Unauthorized")]
+    Unauthorized {},
+
     #[error("UnauthorizedMinter")]
     UnauthorizedMinter {},
 
@@ -22,6 +25,9 @@ pub enum ContractError {
 
     #[error("InvalidDuration")]
     InvalidDuration {},
+
+    #[error("NoRenewalFund")]
+    NoRenewalFund {},
 
     #[error("AskExpired")]
     AskExpired {},
