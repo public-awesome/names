@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::hooks::{prepare_ask_hook, prepare_bid_hook};
+use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
@@ -242,12 +242,15 @@ pub fn execute_remove_bid(
         amount: vec![coin(bid.amount.u128(), NATIVE_DENOM)],
     };
 
+    let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Delete)?;
+
     let event = Event::new("remove-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder);
 
     let res = Response::new()
         .add_message(refund_bidder_msg)
+        .add_submessages(hook)
         .add_event(event);
 
     Ok(res)
@@ -336,6 +339,9 @@ fn finalize_sale(
         funds: vec![],
     };
     res.messages.push(SubMsg::new(exec_cw721_transfer));
+
+    res.messages
+        .append(&mut prepare_sale_hook(deps, &ask, buyer.clone())?);
 
     let event = Event::new("finalize-sale")
         .add_attribute("token_id", ask.token_id.to_string())
