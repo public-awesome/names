@@ -272,8 +272,87 @@ fn mint_and_update() {
     assert_eq!(res.owner, FRIEND.to_string());
 }
 
-#[test]
-fn update_profile() {
-    unimplemented!("TODO");
-    // stub mock nft collection to return OwnerOfResponse nft
+mod profile {
+    use cw721::NumTokensResponse;
+
+    use super::*;
+
+    use cw721_base::msg::QueryMsg as Cw721QueryMsg;
+
+    pub type Sg721BaseContract<'a> = sg721_base::Sg721Contract<'a, Extension>;
+
+    #[test]
+    fn update_profile() {
+        let mut deps = mock_deps();
+        let info = mock_info(CREATOR, &[]);
+        let sg721_base_contract = Sg721BaseContract::default();
+
+        // instantiate normal nft collection
+        let collection_info = CollectionInfo {
+            creator: "nobody".to_string(),
+            description: "nobody is home".to_string(),
+            image: "ipfs://wonderland".to_string(),
+            external_link: None,
+            explicit_content: false,
+            trading_start_time: None,
+            royalty_info: None,
+        };
+        let init_msg = InstantiateMsg {
+            name: "Typical NFT Collection".to_string(),
+            symbol: "TYP".to_string(),
+            minter: CREATOR.to_string(),
+            collection_info,
+        };
+        sg721_base_contract
+            .instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg)
+            .unwrap();
+        let nft_addr = mock_env().contract.address;
+
+        // mint nft
+        let token_id = "Enterprise";
+
+        let mint_msg = MintMsg::<Extension> {
+            token_id: token_id.to_string(),
+            owner: info.sender.to_string(),
+            token_uri: None,
+            extension: None,
+        };
+        let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
+        sg721_base_contract
+            .execute(deps.as_mut(), mock_env(), info.clone(), exec_msg)
+            .unwrap();
+
+        // // result in binary
+        // let res: NumTokensResponse = sg721_base_contract
+        //     .query(deps, mock_env(), sg721_base::msg::QueryMsg::NumTokens {})
+        //     .unwrap();
+        // assert_eq!(res.count, 1);
+        // assert!(false);
+
+        let res: NumTokensResponse = deps
+            .as_ref()
+            .querier
+            .query_wasm_smart(nft_addr, &Cw721QueryMsg::NumTokens {});
+
+        // instantiate sg-names collection
+        // let collection_info = CollectionInfo {
+        //     creator: "bobo".to_string(),
+        //     description: "bobo name da best".to_string(),
+        //     image: "ipfs://something".to_string(),
+        //     external_link: None,
+        //     explicit_content: false,
+        //     trading_start_time: None,
+        //     royalty_info: None,
+        // };
+        // let init_msg = InstantiateMsg {
+        //     name: "SG Names".to_string(),
+        //     symbol: "NAME".to_string(),
+        //     minter: CREATOR.to_string(),
+        //     collection_info,
+        // };
+
+        // instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+        // stub mock nft collection to return OwnerOfResponse nft
+    }
 }
