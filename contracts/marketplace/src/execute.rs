@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::hooks::prepare_ask_hook;
+use crate::hooks::{prepare_ask_hook, prepare_bid_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
@@ -210,19 +210,17 @@ pub fn execute_set_bid(
         res = res.add_message(refund_bidder)
     }
 
-    let save_bid = |store| -> StdResult<_> {
-        let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.height);
-        store_bid(store, &bid)?;
-        Ok(Some(bid))
-    };
-    save_bid(deps.storage)?;
+    let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.height);
+    store_bid(deps.storage, &bid)?;
+
+    let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Create)?;
 
     let event = Event::new("set-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("bid_price", bid_price.to_string());
 
-    Ok(res.add_event(event))
+    Ok(res.add_event(event).add_submessages(hook))
 }
 
 /// Removes a bid made by the bidder. Bidders can only remove their own bids
