@@ -1,4 +1,4 @@
-use crate::state::{Ask, Bid, SudoParams, TokenId};
+use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_std::{to_binary, Addr, Binary, Coin, StdResult, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -103,13 +103,13 @@ pub enum QueryMsg {
     /// Get all asks for a collection
     /// Return type: `AsksResponse`
     Asks {
-        start_after: Option<TokenId>,
+        start_after: Option<Id>,
         limit: Option<u32>,
     },
     /// Get all asks for a collection in reverse
     /// Return type: `AsksResponse`
     ReverseAsks {
-        start_before: Option<TokenId>,
+        start_before: Option<Id>,
         limit: Option<u32>,
     },
     /// Count of all asks
@@ -120,10 +120,6 @@ pub enum QueryMsg {
     AsksBySeller {
         seller: Seller,
         start_after: Option<TokenId>,
-        limit: Option<u32>,
-    },
-    RecentAsks {
-        start_after: Option<(u64, TokenId)>,
         limit: Option<u32>,
     },
     /// Get data for a specific bid

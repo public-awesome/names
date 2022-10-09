@@ -2,16 +2,16 @@ use crate::msg::{
     AskCountResponse, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder, BidsResponse,
     ParamsResponse, QueryMsg, RenewalQueueResponse,
 };
-use crate::state::{ask_key, asks, bid_key, bids, BidKey, TokenId, RENEWAL_QUEUE, SUDO_PARAMS};
+use crate::state::{ask_key, asks, bid_key, bids, BidKey, Id, TokenId, RENEWAL_QUEUE, SUDO_PARAMS};
 use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, Env, Order, StdResult};
-use cw_storage_plus::{Bound, PrefixBound};
+use cw_storage_plus::Bound;
 
 // Query limits
 const DEFAULT_QUERY_LIMIT: u32 = 10;
 const MAX_QUERY_LIMIT: u32 = 100;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let api = deps.api;
 
     match msg {
@@ -31,9 +31,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
-        QueryMsg::RecentAsks { start_after, limit } => {
-            to_binary(&query_recent_asks(deps, env, start_after, limit)?)
-        }
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
@@ -78,59 +75,16 @@ pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueRes
     Ok(RenewalQueueResponse { queue })
 }
 
-// FIXME: include pagination by height
-// do this on with the indexer?
-pub fn query_recent_asks(
-    deps: Deps,
-    env: Env,
-    start_after: Option<(u64, TokenId)>,
-    limit: Option<u32>,
-) -> StdResult<AsksResponse> {
-    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-
-    let start: Option<Bound<(u64, TokenId)>> =
-        Some(Bound::exclusive(start_after.unwrap_or_default()));
-
-    println!("height {:?}", env.block.height);
-
-    // let asks = asks()
-    //     .idx
-    //     .height
-    //     .prefix_range(
-    //         deps.storage,
-    //         Some(PrefixBound::inclusive(env.block.height)),
-    //         None,
-    //         Order::Descending,
-    //     )
-    //     .take(limit)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
-
-    let asks = asks()
-        // .idx
-        // .height
-        // .prefix_range(
-        //     deps.storage,
-        //     None,
-        //     Some(PrefixBound::inclusive(env.block.height)),
-        //     Order::Descending,
-        // )
-        .range(deps.storage, None, None, Order::Ascending)
-        .take(limit)
-        .map(|res| res.map(|item| item.1))
-        .collect::<StdResult<Vec<_>>>()?;
-
-    Ok(AsksResponse { asks })
-}
-
 pub fn query_asks(
     deps: Deps,
-    start_after: Option<TokenId>,
+    start_after: Option<Id>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     let asks = asks()
+        .idx
+        .id
         .range(
             deps.storage,
             Some(Bound::exclusive(start_after.unwrap_or_default())),
@@ -146,12 +100,14 @@ pub fn query_asks(
 
 pub fn reverse_query_asks(
     deps: Deps,
-    start_before: Option<TokenId>,
+    start_before: Option<Id>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     let asks = asks()
+        .idx
+        .id
         .range(
             deps.storage,
             None,

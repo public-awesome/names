@@ -42,7 +42,11 @@ pub fn decrement_asks(storage: &mut dyn Storage) -> StdResult<u64> {
     Ok(val)
 }
 
+/// Type for storing the `ask`
 pub type TokenId = String;
+
+/// Type for `ask` unique secondary index
+pub type Id = u64;
 
 /// Represents an ask on the marketplace
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
