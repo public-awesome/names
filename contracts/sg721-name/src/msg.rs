@@ -1,14 +1,13 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, Timestamp};
 use cw721::Expiration;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use sg721::{ExecuteMsg as Sg721ExecuteMsg, MintMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
+use cw721_base::MintMsg;
+use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
 use sg_name::{TextRecord, NFT};
 
 // Add execute msgs related to bio, profile, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg<T> {
     /// Update bio
     UpdateBio {
@@ -85,8 +84,8 @@ pub enum ExecuteMsg<T> {
     FreezeCollectionInfo,
 }
 
-impl<T> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T> {
-    fn from(msg: ExecuteMsg<T>) -> Sg721ExecuteMsg<T> {
+impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
+    fn from(msg: ExecuteMsg<T>) -> Sg721ExecuteMsg<T, E> {
         match msg {
             ExecuteMsg::TransferNft {
                 recipient,

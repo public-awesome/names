@@ -4,8 +4,8 @@ use cosmwasm_std::{
     QuerierResult, QueryRequest, SystemError, SystemResult, Timestamp, WasmQuery,
 };
 use cw721::Cw721Query;
-use cw721_base::Extension;
-use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg, MintMsg};
+use cw721_base::{Extension, MintMsg};
+use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord};
 use std::marker::PhantomData;

@@ -5,10 +5,10 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721_base::Extension;
+use cw721_base::{Extension, MintMsg};
 use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
-use sg721::{CollectionInfo, MintMsg};
+use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::Metadata;
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};

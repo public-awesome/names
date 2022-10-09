@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::error::ContractError;
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
@@ -8,7 +10,7 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
+    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
     StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -307,7 +309,7 @@ pub fn execute_refund_renewal(
 
 /// Anyone can call this to process renewals for a block and earn a reward
 pub fn execute_process_renewal(
-    deps: DepsMut,
+    _deps: DepsMut,
     env: Env,
     height: u64,
 ) -> Result<Response, ContractError> {
@@ -430,7 +432,8 @@ fn only_owner(
     collection: &Addr,
     token_id: &str,
 ) -> Result<OwnerOfResponse, ContractError> {
-    let res = Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id, false)?;
+    let res = Cw721Contract::<Empty, Empty>(collection.clone(), PhantomData, PhantomData)
+        .owner_of(&deps.querier, token_id, false)?;
     if res.owner != info.sender {
         return Err(ContractError::UnauthorizedOwner {});
     }

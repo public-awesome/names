@@ -87,8 +87,12 @@ impl<'a> IndexList<Ask> for AskIndicies<'a> {
 pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
     let indexes = AskIndicies {
         id: UniqueIndex::new(|d| d.id, "ask__id"),
-        seller: MultiIndex::new(|d: &Ask| d.seller.clone(), "asks", "asks__seller"),
-        height: MultiIndex::new(|d: &Ask| d.height, "asks", "asks__height"),
+        seller: MultiIndex::new(
+            |_pk: &[u8], d: &Ask| d.seller.clone(),
+            "asks",
+            "asks__seller",
+        ),
+        height: MultiIndex::new(|_pk: &[u8], d: &Ask| d.height, "asks", "asks__height"),
     };
     IndexedMap::new("asks", indexes)
 }
@@ -138,13 +142,21 @@ impl<'a> IndexList<Bid> for BidIndicies<'a> {
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
     let indexes = BidIndicies {
         token_id: MultiIndex::new(
-            |d: &Bid| d.token_id.clone(),
+            |_pk: &[u8], d: &Bid| d.token_id.clone(),
             "bids",
             "bids__collection_token_id",
         ),
-        price: MultiIndex::new(|d: &Bid| d.amount.u128(), "bids", "bids__collection_price"),
-        bidder: MultiIndex::new(|d: &Bid| d.bidder.clone(), "bids", "bids__bidder"),
-        height: MultiIndex::new(|d: &Bid| d.height, "bids", "bids__height"),
+        price: MultiIndex::new(
+            |_pk: &[u8], d: &Bid| d.amount.u128(),
+            "bids",
+            "bids__collection_price",
+        ),
+        bidder: MultiIndex::new(
+            |_pk: &[u8], d: &Bid| d.bidder.clone(),
+            "bids",
+            "bids__bidder",
+        ),
+        height: MultiIndex::new(|_pk: &[u8], d: &Bid| d.height, "bids", "bids__height"),
     };
     IndexedMap::new("bids", indexes)
 }

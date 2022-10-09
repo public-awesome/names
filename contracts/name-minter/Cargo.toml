@@ -21,6 +21,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
+cosmwasm-schema = "1.1.4"
 cosmwasm-std = "1.1.4"
 cosmwasm-storage = "1.1.4"
 cw-storage-plus = "0.15.0"
@@ -38,7 +39,6 @@ name-marketplace = { path = "../marketplace" }
 sg-std = { path = "../../../launchpad/packages/sg-std" }
 
 [dev-dependencies]
-cosmwasm-schema = "1.1.4"
 cw-multi-test = "0.15.0"
 sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
 sg721-base = { path = "../../../launchpad/contracts/sg721-base" }

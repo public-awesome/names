@@ -1,9 +1,8 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
-use cosmwasm_std::{to_binary, Addr, Binary, Coin, StdResult, Uint128};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Uint128};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     /// Community pool fee for winning bids
     /// 0.25% = 25, 0.5% = 50, 1% = 100, 2.5% = 250
@@ -12,8 +11,7 @@ pub struct InstantiateMsg {
     pub min_price: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     /// List name NFT on the marketplace by creating a new ask
     /// Only the name minter can call this.
@@ -33,8 +31,7 @@ pub enum ExecuteMsg {
     ProcessRenewals { height: u64 },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum SudoMsg {
     /// Update the contract parameters
     /// Can only be called by governance
@@ -65,7 +62,7 @@ pub type Bidder = String;
 pub type Seller = String;
 
 /// Offset for ask pagination
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct AskOffset {
     pub price: Uint128,
     pub token_id: TokenId,
@@ -78,7 +75,7 @@ impl AskOffset {
 }
 
 /// Offset for bid pagination
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct BidOffset {
     pub price: Uint128,
     pub token_id: TokenId,
@@ -95,8 +92,7 @@ impl BidOffset {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     /// Get the current ask for specific name
     /// Return type: `CurrentAskResponse`
@@ -168,43 +164,42 @@ pub enum QueryMsg {
     RenewalQueue { height: u64 },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct RenewalQueueResponse {
     pub queue: Vec<TokenId>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct AskResponse {
     pub ask: Option<Ask>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct AsksResponse {
     pub asks: Vec<Ask>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct AskCountResponse {
     pub count: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct BidResponse {
     pub bid: Option<Bid>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct BidsResponse {
     pub bids: Vec<Bid>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ParamsResponse {
     pub params: SudoParams,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct SaleHookMsg {
     pub token_id: String,
     pub seller: String,
@@ -228,22 +223,19 @@ impl SaleHookMsg {
 }
 
 // This is just a helper to properly serialize the above message
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum SaleExecuteMsg {
     SaleHook(SaleHookMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum HookAction {
     Create,
     Update,
     Delete,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct AskHookMsg {
     pub ask: Ask,
 }
@@ -265,16 +257,14 @@ impl AskHookMsg {
 }
 
 // This is just a helper to properly serialize the above message
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum AskHookExecuteMsg {
     AskCreatedHook(AskHookMsg),
     AskUpdatedHook(AskHookMsg),
     AskDeletedHook(AskHookMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct BidHookMsg {
     pub bid: Bid,
 }
@@ -296,8 +286,7 @@ impl BidHookMsg {
 }
 
 // This is just a helper to properly serialize the above message
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum BidExecuteMsg {
     BidCreatedHook(BidHookMsg),
     BidUpdatedHook(BidHookMsg),
