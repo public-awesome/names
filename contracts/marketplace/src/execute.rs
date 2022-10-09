@@ -65,68 +65,10 @@ pub fn execute(
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
-        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
+        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
     }
-}
-
-pub fn execute_fund_renewal(
-    deps: DepsMut,
-    info: MessageInfo,
-    token_id: &str,
-) -> Result<Response, ContractError> {
-    let payment = must_pay(&info, NATIVE_DENOM)?;
-
-    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
-    // TODO: should anyone be able to fund a renewal?
-    // if ask.seller != info.sender {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-    ask.renewal_fund += payment;
-    asks().save(deps.storage, ask_key(token_id), &ask)?;
-
-    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
-}
-
-pub fn execute_refund_renewal(
-    deps: DepsMut,
-    info: MessageInfo,
-    token_id: &str,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-
-    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
-
-    if ask.seller != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-    if ask.renewal_fund.is_zero() {
-        return Err(ContractError::NoRenewalFund {});
-    }
-
-    let msg = BankMsg::Send {
-        to_address: ask.seller.to_string(),
-        amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
-    };
-
-    ask.renewal_fund = Uint128::zero();
-    asks().save(deps.storage, ask_key(token_id), &ask)?;
-
-    Ok(Response::new()
-        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
-        .add_message(msg))
-}
-
-pub fn execute_process_renewal(
-    _deps: DepsMut,
-    _env: Env,
-    height: u64,
-) -> Result<Response, ContractError> {
-    println!("Processing renewals at height {}", height);
-
-    Ok(Response::new()
-        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
 }
 
 /// A seller may set an Ask on their NFT to list it on Marketplace
@@ -314,6 +256,95 @@ pub fn execute_accept_bid(
         .add_attribute("price", bid.amount.to_string());
 
     Ok(res.add_event(event))
+}
+
+pub fn execute_fund_renewal(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    let payment = must_pay(&info, NATIVE_DENOM)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+    // TODO: should anyone be able to fund a renewal?
+    // if ask.seller != info.sender {
+    //     return Err(ContractError::Unauthorized {});
+    // }
+    ask.renewal_fund += payment;
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
+
+    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
+}
+
+pub fn execute_refund_renewal(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+
+    if ask.seller != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    if ask.renewal_fund.is_zero() {
+        return Err(ContractError::NoRenewalFund {});
+    }
+
+    let msg = BankMsg::Send {
+        to_address: ask.seller.to_string(),
+        amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
+    };
+
+    ask.renewal_fund = Uint128::zero();
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
+
+    Ok(Response::new()
+        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
+        .add_message(msg))
+}
+
+/// Anyone can call this to process renewals for a block and earn a reward
+pub fn execute_process_renewal(
+    deps: DepsMut,
+    env: Env,
+    height: u64,
+) -> Result<Response, ContractError> {
+    println!("Processing renewals at height {}", height);
+
+    if height > env.block.height {
+        return Err(ContractError::CannotProcessFutureHeight {});
+    }
+
+    // // TODO: add renewal processing logic
+    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+    // for name in renewal_queue.iter() {
+    //     let ask = asks().load(deps.storage, ask_key(name))?;
+    //     if ask.renewal_fund.is_zero() {
+    //         continue;
+    //         // transfer ownership to name service
+    //         // list in marketplace for 0.5% of bid price
+    //         // if no bids, list for original price
+    //     }
+
+    //     // charge renewal fee
+    //     // pay out reward to operator
+    //     // reset ask
+
+    //     // Update Ask with new height
+    //     let ask = Ask {
+    //         token_id: name.to_string(),
+    //         id: ask.id,
+    //         seller: ask.seller,
+    //         height: env.block.height,
+    //         renewal_fund: Uint128::zero(),
+    //     };
+    //     store_ask(deps.storage, &ask)?;
+    // }
+
+    Ok(Response::new()
+        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
 }
 
 /// Transfers funds and NFT, updates bid

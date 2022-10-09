@@ -24,13 +24,13 @@ pub enum ExecuteMsg {
     RemoveBid { token_id: TokenId },
     /// Accept a bid on an existing ask
     AcceptBid { token_id: TokenId, bidder: String },
-    /// Check if expired names have been paid for, and collect fees.
-    /// If not paid, transfer ownership to the highest bidder.
-    ProcessRenewals { height: u64 },
     /// Fund renewal of a name
     FundRenewal { token_id: TokenId },
     /// Refund a renewal of a name
     RefundRenewal { token_id: TokenId },
+    /// Check if expired names have been paid for, and collect fees.
+    /// If not paid, transfer ownership to the highest bidder.
+    ProcessRenewals { height: u64 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

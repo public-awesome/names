@@ -47,6 +47,9 @@ pub enum ContractError {
     #[error("BidNotStale")]
     BidNotStale {},
 
+    #[error("CannotProcessFutureHeight")]
+    CannotProcessFutureHeight {},
+
     #[error("InvalidFinder: {0}")]
     InvalidFinder(String),
 
