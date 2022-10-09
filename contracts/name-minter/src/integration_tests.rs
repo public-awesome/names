@@ -4,6 +4,7 @@ use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
+    RenewalQueueResponse,
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
@@ -47,6 +48,8 @@ const NAME: &str = "bobo";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
+
+const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
 
 pub fn custom_mock_app() -> StargazeApp {
     StargazeApp::default()
@@ -172,6 +175,19 @@ fn mint_and_list() -> (StargazeApp, Addr, Addr, Addr) {
         )
         .unwrap();
     assert_eq!(res.ask.unwrap().token_id, NAME);
+
+    // check if name is in the renewal queue
+    let res: RenewalQueueResponse = app
+        .wrap()
+        .query_wasm_smart(
+            mkt.clone(),
+            &MarketplaceQueryMsg::RenewalQueue {
+                height: 12345 + BLOCKS_PER_YEAR,
+            },
+        )
+        .unwrap();
+    assert_eq!(res.queue.len(), 1);
+    assert_eq!(res.queue[0], NAME);
 
     // check if token minted
     let res: NumTokensResponse = app

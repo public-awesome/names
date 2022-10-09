@@ -163,6 +163,13 @@ pub enum QueryMsg {
     /// Get the config for the contract
     /// Return type: `ParamsResponse`
     Params {},
+    /// Get the renewal queue for a specific height
+    RenewalQueue { height: u64 },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RenewalQueueResponse {
+    pub queue: Vec<TokenId>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

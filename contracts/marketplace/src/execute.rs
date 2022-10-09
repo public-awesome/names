@@ -2,7 +2,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, TokenId, NAME_COLLECTION, NAME_MINTER,
-    SUDO_PARAMS,
+    RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -22,6 +22,8 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
+// TODO: add to sudo params
+const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -55,7 +57,7 @@ pub fn execute(
 
     match msg {
         ExecuteMsg::SetAsk { token_id, seller } => {
-            execute_set_ask(deps, env, info, token_id, api.addr_validate(&seller)?)
+            execute_set_ask(deps, env, info, &token_id, api.addr_validate(&seller)?)
         }
         ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, token_id),
         ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, token_id),
@@ -71,7 +73,7 @@ pub fn execute_set_ask(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    token_id: TokenId,
+    token_id: &str,
     seller: Addr,
 ) -> Result<Response, ContractError> {
     let minter = NAME_MINTER.load(deps.storage)?;
@@ -90,13 +92,18 @@ pub fn execute_set_ask(
     // )?;
 
     let ask = Ask {
-        token_id: token_id.clone(),
+        token_id: token_id.to_string(),
         seller: seller.clone(),
         height: env.block.height,
     };
     store_ask(deps.storage, &ask)?;
 
-    // TODO: store reference to ask in expiration queue
+    // store reference to ask in expiration queue for future renewal processing
+    let mut queue = RENEWAL_QUEUE
+        .may_load(deps.storage, env.block.height)?
+        .unwrap_or_default();
+    queue.push(token_id.to_string());
+    RENEWAL_QUEUE.save(deps.storage, env.block.height + BLOCKS_PER_YEAR, &queue)?;
 
     let event = Event::new("set-ask")
         .add_attribute("collection", collection.to_string())

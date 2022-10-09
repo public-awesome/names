@@ -1,8 +1,8 @@
 use crate::msg::{
     AskCountResponse, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder, BidsResponse,
-    ParamsResponse, QueryMsg,
+    ParamsResponse, QueryMsg, RenewalQueueResponse,
 };
-use crate::state::{ask_key, asks, bid_key, bids, BidKey, TokenId, SUDO_PARAMS};
+use crate::state::{ask_key, asks, bid_key, bids, BidKey, TokenId, RENEWAL_QUEUE, SUDO_PARAMS};
 use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
 
@@ -65,7 +65,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AskHooks {} => todo!(),
         QueryMsg::BidHooks {} => todo!(),
         QueryMsg::SaleHooks {} => todo!(),
+        QueryMsg::RenewalQueue { height } => to_binary(&query_renewal_queue(deps, height)?),
     }
+}
+
+pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueResponse> {
+    let queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+
+    Ok(RenewalQueueResponse { queue })
 }
 
 pub fn query_asks(

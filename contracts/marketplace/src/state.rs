@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sg_controllers::Hooks;
@@ -20,6 +20,9 @@ pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 
 pub const NAME_MINTER: Item<Addr> = Item::new("name-minter");
 pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
+
+/// height -> [name1, name2, etc.]
+pub const RENEWAL_QUEUE: Map<u64, Vec<TokenId>> = Map::new("eq");
 
 pub type TokenId = String;
 
