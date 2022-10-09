@@ -22,7 +22,7 @@ pub const NAME_MINTER: Item<Addr> = Item::new("name-minter");
 pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
 
 /// height -> [name1, name2, etc.]
-pub const RENEWAL_QUEUE: Map<u64, Vec<TokenId>> = Map::new("eq");
+pub const RENEWAL_QUEUE: Map<u64, Vec<TokenId>> = Map::new("rq");
 
 pub type TokenId = String;
 
