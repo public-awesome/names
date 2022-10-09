@@ -399,7 +399,7 @@ mod query {
 
         // FIXME: this is not working, should sort by decreasing height
         let msg = MarketplaceQueryMsg::RecentAsks {
-            start_after: Some((99999, NAME.to_string())),
+            start_after: None,
             limit: None,
         };
         let res: AsksResponse = app.wrap().query_wasm_smart(mkt, &msg).unwrap();

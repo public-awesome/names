@@ -79,6 +79,7 @@ pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueRes
 }
 
 // FIXME: include pagination by height
+// do this on with the indexer?
 pub fn query_recent_asks(
     deps: Deps,
     start_after: Option<(u64, TokenId)>,
