@@ -25,8 +25,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
-// TODO: add to sudo params
-const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -108,12 +106,18 @@ pub fn execute_set_ask(
     };
     store_ask(deps.storage, &ask)?;
 
+    let params = SUDO_PARAMS.load(deps.storage)?;
+
     // store reference to ask in expiration queue for future renewal processing
     let mut queue = RENEWAL_QUEUE
         .may_load(deps.storage, env.block.height)?
         .unwrap_or_default();
     queue.push(token_id.to_string());
-    RENEWAL_QUEUE.save(deps.storage, env.block.height + BLOCKS_PER_YEAR, &queue)?;
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        env.block.height + params.blocks_per_year,
+        &queue,
+    )?;
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
 
