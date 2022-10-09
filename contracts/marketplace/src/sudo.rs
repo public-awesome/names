@@ -10,6 +10,7 @@ const MAX_FEE_BPS: u64 = 10000;
 pub struct ParamInfo {
     trading_fee_bps: Option<u64>,
     min_price: Option<Uint128>,
+    blocks_per_year: Option<u64>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -20,12 +21,14 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
         SudoMsg::UpdateParams {
             trading_fee_bps,
             min_price,
+            blocks_per_year,
         } => sudo_update_params(
             deps,
             env,
             ParamInfo {
                 trading_fee_bps,
                 min_price,
+                blocks_per_year,
             },
         ),
         SudoMsg::AddSaleHook { hook } => sudo_add_sale_hook(deps, api.addr_validate(&hook)?),
@@ -67,6 +70,7 @@ pub fn sudo_update_params(
     let ParamInfo {
         trading_fee_bps,
         min_price,
+        blocks_per_year,
     } = param_info;
     if let Some(trading_fee_bps) = trading_fee_bps {
         if trading_fee_bps > MAX_FEE_BPS {
@@ -81,6 +85,8 @@ pub fn sudo_update_params(
         .unwrap_or(params.trading_fee_percent);
 
     params.min_price = min_price.unwrap_or(params.min_price);
+
+    params.blocks_per_year = blocks_per_year.unwrap_or(params.blocks_per_year);
 
     SUDO_PARAMS.save(deps.storage, &params)?;
 

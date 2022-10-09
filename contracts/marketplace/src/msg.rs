@@ -9,6 +9,8 @@ pub struct InstantiateMsg {
     pub trading_fee_bps: u64,
     /// Min value for bids and asks
     pub min_price: Uint128,
+    /// Blocks per year
+    pub blocks_per_year: u64,
 }
 
 #[cw_serde]
@@ -38,6 +40,7 @@ pub enum SudoMsg {
     UpdateParams {
         trading_fee_bps: Option<u64>,
         min_price: Option<Uint128>,
+        blocks_per_year: Option<u64>,
     },
     /// Update the contract address of the name minter
     UpdateNameMinter { minter: String },

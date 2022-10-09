@@ -73,6 +73,7 @@ fn instantiate_contracts() -> StargazeApp {
     let msg = name_marketplace::msg::InstantiateMsg {
         trading_fee_bps: TRADING_FEE_BPS,
         min_price: Uint128::from(5u128),
+        blocks_per_year: BLOCKS_PER_YEAR,
     };
     let marketplace = app
         .instantiate_contract(
@@ -112,7 +113,7 @@ fn instantiate_contracts() -> StargazeApp {
     let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {
         collection: COLLECTION.to_string(),
     };
-    let res = app.wasm_sudo(marketplace.clone(), &msg);
+    let res = app.wasm_sudo(marketplace, &msg);
     assert!(res.is_ok());
 
     app
@@ -212,7 +213,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         )
         .unwrap();
 
-    assert_eq!(owner_of(&app, name.to_string()), user.to_string());
+    assert_eq!(owner_of(app, name.to_string()), user.to_string());
 }
 
 fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
