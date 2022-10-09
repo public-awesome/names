@@ -31,7 +31,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
-        QueryMsg::RecentAsks { start_after, limit } => todo!(),
+        QueryMsg::RecentAsks { start_after, limit } => {
+            to_binary(&query_recent_asks(deps, start_after, limit)?)
+        }
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
