@@ -81,18 +81,23 @@ pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueRes
 // FIXME: include pagination by height
 pub fn query_recent_asks(
     deps: Deps,
-    start_after: Option<u64>,
+    start_after: Option<(u64, TokenId)>,
     limit: Option<u32>,
 ) -> StdResult<AsksResponse> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     // let start = start_after.map(|s| Bound::Exclusive(s));
-    let start: Option<Bound<(u64, TokenId)>> = None;
+    // let start: Option<Bound<(u64, TokenId)>> = None;
 
     let asks = asks()
         .idx
         .height
-        .range(deps.storage, start, None, Order::Descending)
+        .range(
+            deps.storage,
+            Some(Bound::exclusive(start_after.unwrap_or_default())),
+            None,
+            Order::Descending,
+        )
         .take(limit)
         .map(|res| res.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()?;
