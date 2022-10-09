@@ -31,6 +31,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
+        QueryMsg::RecentAsks { start_after, limit } => todo!(),
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
@@ -73,6 +74,28 @@ pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueRes
     let queue = RENEWAL_QUEUE.load(deps.storage, height)?;
 
     Ok(RenewalQueueResponse { queue })
+}
+
+// FIXME: include pagination by height
+pub fn query_recent_asks(
+    deps: Deps,
+    start_after: Option<u64>,
+    limit: Option<u32>,
+) -> StdResult<AsksResponse> {
+    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
+
+    // let start = start_after.map(|s| Bound::Exclusive(s));
+    let start: Option<Bound<(u64, TokenId)>> = None;
+
+    let asks = asks()
+        .idx
+        .height
+        .range(deps.storage, start, None, Order::Descending)
+        .take(limit)
+        .map(|res| res.map(|item| item.1))
+        .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(AsksResponse { asks })
 }
 
 pub fn query_asks(

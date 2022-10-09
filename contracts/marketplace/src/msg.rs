@@ -122,6 +122,10 @@ pub enum QueryMsg {
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
+    RecentAsks {
+        start_after: Option<u64>,
+        limit: Option<u32>,
+    },
     /// Get data for a specific bid
     /// Return type: `BidResponse`
     Bid { token_id: TokenId, bidder: Bidder },
