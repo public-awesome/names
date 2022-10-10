@@ -5,7 +5,7 @@ authors = [
   "Shane Vitarana <s@noreply.publicawesome.com>",
   "John Y <j@noreply.publicawesome.com>",
 ]
-edition = "2018"
+edition = "2021"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
