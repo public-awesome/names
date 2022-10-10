@@ -51,6 +51,13 @@ export interface NameMarketplaceMessage {
   }: {
     height: number;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  setup: ({
+    collection,
+    minter
+  }: {
+    collection: string;
+    minter: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
   sender: string;
@@ -66,6 +73,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
     this.processRenewals = this.processRenewals.bind(this);
+    this.setup = this.setup.bind(this);
   }
 
   setAsk = ({
@@ -201,6 +209,28 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         msg: toUtf8(JSON.stringify({
           process_renewals: {
             height
+          }
+        })),
+        funds
+      })
+    };
+  };
+  setup = ({
+    collection,
+    minter
+  }: {
+    collection: string;
+    minter: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          setup: {
+            collection,
+            minter
           }
         })),
         funds

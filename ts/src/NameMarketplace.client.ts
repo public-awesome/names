@@ -322,6 +322,13 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
   }: {
     height: number;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  setup: ({
+    collection,
+    minter
+  }: {
+    collection: string;
+    minter: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class NameMarketplaceClient extends NameMarketplaceQueryClient implements NameMarketplaceInterface {
   client: SigningCosmWasmClient;
@@ -340,6 +347,7 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
     this.processRenewals = this.processRenewals.bind(this);
+    this.setup = this.setup.bind(this);
   }
 
   setAsk = async ({
@@ -422,6 +430,20 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     return await this.client.execute(this.sender, this.contractAddress, {
       process_renewals: {
         height
+      }
+    }, fee, memo, funds);
+  };
+  setup = async ({
+    collection,
+    minter
+  }: {
+    collection: string;
+    minter: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      setup: {
+        collection,
+        minter
       }
     }, fee, memo, funds);
   };
