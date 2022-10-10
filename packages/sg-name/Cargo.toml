@@ -1,6 +1,6 @@
 [package]
 name = "sg-name"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Shane Vitarana <s@noreply.publicawsome.com>"]
 edition = "2018"
 description = "Rust definition of name service metadata, used by Stargaze Names"
@@ -22,4 +22,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
-cosmwasm-std = "1.0.0"
+cosmwasm-std = "1.1.4"

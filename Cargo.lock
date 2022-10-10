@@ -530,7 +530,7 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "name-marketplace"
-version = "1.0.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -556,7 +556,7 @@ dependencies = [
 
 [[package]]
 name = "name-minter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -774,7 +774,9 @@ dependencies = [
 
 [[package]]
 name = "sg-controllers"
-version = "0.13.1"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c564e8168663c9c77a4658ab7d0e684bd706c417f35c7eb965e214081d3e9e6"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
@@ -787,7 +789,9 @@ dependencies = [
 
 [[package]]
 name = "sg-multi-test"
-version = "0.15.1"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a1161271bc3ce5d19ab307f27f8f1311b76a65c957194bf217ac7b1dc315970"
 dependencies = [
  "anyhow",
  "cosmwasm-std",
@@ -799,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-std",
  "schemars",
@@ -808,7 +812,9 @@ dependencies = [
 
 [[package]]
 name = "sg-std"
-version = "0.15.0"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2507dac977c3c33623f69480b365b77d069c694a3fb6cd78bbd3db31254b3bd9"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -821,7 +827,9 @@ dependencies = [
 
 [[package]]
 name = "sg1"
-version = "0.14.1"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52ea4a601ae8674bc77d49c91b587c57ceb65c7715e6d2dfcbbb8eacd3395d19"
 dependencies = [
  "cosmwasm-std",
  "cw-utils",
@@ -832,7 +840,9 @@ dependencies = [
 
 [[package]]
 name = "sg721"
-version = "0.18.0"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f465c903bebd449fc98425094a5a47261a145a22f11f065f3f75d41fab5ca365"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -844,7 +854,9 @@ dependencies = [
 
 [[package]]
 name = "sg721-base"
-version = "0.15.1"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51f7bcc22757c68467b8c439b8b9318dda9bea52abf9fed2b2663d539b8d801a"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -862,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "sg721-name"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",

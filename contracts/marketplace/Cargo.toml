@@ -1,6 +1,6 @@
 [package]
 name = "name-marketplace"
-version = "1.0.0"
+version = "0.2.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2018"
 repository = "https://github.com/public-awesome/names"
@@ -43,20 +43,12 @@ serde = { version = "1.0.133", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.30" }
 cw-utils = "0.15.0"
 semver = "1"
-sg-std = { path = "../../../launchpad/packages/sg-std" }
-sg1 = { path = "../../../launchpad/packages/sg1" }
-sg-controllers = { path = "../../../launchpad/packages/controllers" }
+sg-std = "0.19.0"
+sg1 = "0.19.0"
+sg-controllers = "0.19.1"
 
 [dev-dependencies]
 cw-multi-test = { version = "0.15.0" }
-sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
+sg-multi-test = "0.19.0"
 sg721-name = { path = "../sg721-name", features = ["library"] }
-sg721 = { path = "../../../launchpad/packages/sg721" }
-
-[profile.release]
-rpath = false
-lto = true
-overflow-checks = true
-opt-level = 3
-debug = false
-debug-assertions = false
+sg721 = "0.19.0"

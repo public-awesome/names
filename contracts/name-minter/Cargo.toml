@@ -1,6 +1,6 @@
 [package]
 name = "name-minter"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2018"
 
@@ -33,12 +33,12 @@ thiserror = { version = "1.0.31" }
 cw721 = "0.15.0"
 cw721-base = { version = "0.15.0", features = ["library"] }
 sg-name = { path = "../../packages/sg-name" }
-sg721 = { path = "../../../launchpad/packages/sg721" }
+sg721 = "0.19.0"
 sg721-name = { path = "../sg721-name" }
 name-marketplace = { path = "../marketplace" }
-sg-std = { path = "../../../launchpad/packages/sg-std" }
+sg-std = "0.19.0"
 
 [dev-dependencies]
 cw-multi-test = "0.15.0"
-sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
-sg721-base = { path = "../../../launchpad/contracts/sg721-base" }
+sg-multi-test = "0.19.0"
+sg721-base = "0.19.0"
