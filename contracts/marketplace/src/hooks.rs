@@ -1,4 +1,4 @@
-use cosmwasm_std::{entry_point, Addr, Deps, DepsMut, Env, Reply, StdResult, WasmMsg};
+use cosmwasm_std::{Addr, Deps, DepsMut, Env, Reply, StdResult, WasmMsg};
 use sg_std::{Response, SubMsg};
 
 use crate::{

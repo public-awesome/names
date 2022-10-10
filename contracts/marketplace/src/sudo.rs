@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::msg::SudoMsg;
 use crate::state::{ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, SALE_HOOKS, SUDO_PARAMS};
-use cosmwasm_std::{entry_point, Addr, Decimal, DepsMut, Env, Uint128};
+use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Uint128};
 use sg_std::Response;
 
 // bps fee can not exceed 100%
