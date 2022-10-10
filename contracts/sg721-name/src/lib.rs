@@ -1,4 +1,6 @@
 pub use crate::error::ContractError;
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 use cw721_base::Extension;
 use sg_name::Metadata;
 
