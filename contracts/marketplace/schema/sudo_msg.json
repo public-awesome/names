@@ -12,6 +12,14 @@
         "update_params": {
           "type": "object",
           "properties": {
+            "blocks_per_year": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
+            },
             "min_price": {
               "anyOf": [
                 {
@@ -30,7 +38,8 @@
               "format": "uint64",
               "minimum": 0.0
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -51,7 +60,8 @@
             "minter": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -72,7 +82,8 @@
             "collection": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -93,7 +104,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -114,7 +126,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -135,7 +148,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -156,7 +170,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -177,7 +192,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -198,7 +214,8 @@
             "hook": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

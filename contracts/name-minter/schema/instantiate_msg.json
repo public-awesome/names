@@ -15,5 +15,6 @@
     "marketplace_addr": {
       "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }

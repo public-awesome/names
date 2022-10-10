@@ -22,7 +22,8 @@
             "token_id": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -43,7 +44,8 @@
             "token_id": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -64,7 +66,8 @@
             "token_id": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -89,7 +92,52 @@
             "token_id": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Fund renewal of a name",
+      "type": "object",
+      "required": [
+        "fund_renewal"
+      ],
+      "properties": {
+        "fund_renewal": {
+          "type": "object",
+          "required": [
+            "token_id"
+          ],
+          "properties": {
+            "token_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Refund a renewal of a name",
+      "type": "object",
+      "required": [
+        "refund_renewal"
+      ],
+      "properties": {
+        "refund_renewal": {
+          "type": "object",
+          "required": [
+            "token_id"
+          ],
+          "properties": {
+            "token_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -112,49 +160,8 @@
               "format": "uint64",
               "minimum": 0.0
             }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "description": "Fund renewal of a name",
-      "type": "object",
-      "required": [
-        "fund_renewal"
-      ],
-      "properties": {
-        "fund_renewal": {
-          "type": "object",
-          "required": [
-            "token_id"
-          ],
-          "properties": {
-            "token_id": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "description": "Refund a renewal of a name",
-      "type": "object",
-      "required": [
-        "refund_renewal"
-      ],
-      "properties": {
-        "refund_renewal": {
-          "type": "object",
-          "required": [
-            "token_id"
-          ],
-          "properties": {
-            "token_id": {
-              "type": "string"
-            }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

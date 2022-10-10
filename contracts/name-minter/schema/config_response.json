@@ -9,5 +9,6 @@
     "collection_addr": {
       "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }
