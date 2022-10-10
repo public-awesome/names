@@ -32,9 +32,9 @@ This architecture enables Stargaze Names to be a truly Interchain name service s
 ## Initial Fees
 
 ```
-5+ chars = 100 STARS
-4 chars = 1,000 STARS
-3 chars = 10,000 STARS
+5+ chars = 500 STARS
+4 chars = 5,000 STARS
+3 chars = 50,000 STARS
 ```
 
 ## Contracts
