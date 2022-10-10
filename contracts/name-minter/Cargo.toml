@@ -42,3 +42,6 @@ cosmwasm-schema = "1.0.0"
 cw-multi-test = "0.13.4"
 sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
 sg721-base = { path = "../../../launchpad/contracts/sg721-base" }
+vending-minter = { path = "../../../launchpad/contracts/vending-minter" }
+vending-factory = { path = "../../../launchpad/contracts/vending-factory" }
+sg2 = { path = "../../../launchpad/packages/sg2" }
