@@ -1,6 +1,8 @@
 use crate::error::ContractError;
 use crate::msg::SudoMsg;
 use crate::state::{ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, SALE_HOOKS, SUDO_PARAMS};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Uint128};
 use sg_std::Response;
 
