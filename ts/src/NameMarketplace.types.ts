@@ -6,13 +6,11 @@
 
 export interface AskCountResponse {
   count: number;
-  [k: string]: unknown;
 }
 export type Uint128 = string;
 export type Addr = string;
 export interface AskCreatedHooksResponse {
   ask: Ask;
-  [k: string]: unknown;
 }
 export interface Ask {
   height: number;
@@ -29,23 +27,18 @@ export interface AskHooksResponse {
 export interface AskOffset {
   price: Uint128;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface AskResponse {
   ask?: Ask | null;
-  [k: string]: unknown;
 }
 export interface AsksBySellerResponse {
   asks: Ask[];
-  [k: string]: unknown;
 }
 export interface AsksResponse {
   asks: Ask[];
-  [k: string]: unknown;
 }
 export interface AsksSortedByPriceResponse {
   asks: Ask[];
-  [k: string]: unknown;
 }
 export interface BidHooksResponse {
   hooks: string[];
@@ -55,11 +48,9 @@ export interface BidOffset {
   bidder: Addr;
   price: Uint128;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface BidResponse {
   bid?: Bid | null;
-  [k: string]: unknown;
 }
 export interface Bid {
   amount: Uint128;
@@ -70,82 +61,68 @@ export interface Bid {
 }
 export interface BidsByBidderResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface BidsByBidderSortedByExpirationResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface BidsResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface BidsSortedByPriceResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface CollectionBidsByBidderResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface CollectionBidsByBidderSortedByExpirationResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface CollectionBidsSortedByPriceResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export type ExecuteMsg = {
   set_ask: {
     seller: string;
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   set_bid: {
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   remove_bid: {
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   accept_bid: {
     bidder: string;
     token_id: string;
-    [k: string]: unknown;
-  };
-} | {
-  process_renewals: {
-    height: number;
-    [k: string]: unknown;
   };
 } | {
   fund_renewal: {
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   refund_renewal: {
     token_id: string;
-    [k: string]: unknown;
+  };
+} | {
+  process_renewals: {
+    height: number;
   };
 };
 export interface InstantiateMsg {
+  blocks_per_year: number;
   min_price: Uint128;
   trading_fee_bps: number;
-  [k: string]: unknown;
 }
 export type MarketplaceContract = Addr;
 export type Decimal = string;
 export interface ParamsResponse {
   params: SudoParams;
-  [k: string]: unknown;
 }
 export interface SudoParams {
+  blocks_per_year: number;
   min_price: Uint128;
   trading_fee_percent: Decimal;
   [k: string]: unknown;
@@ -153,147 +130,115 @@ export interface SudoParams {
 export type QueryMsg = {
   ask: {
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   asks: {
     limit?: number | null;
     start_after?: number | null;
-    [k: string]: unknown;
   };
 } | {
   reverse_asks: {
     limit?: number | null;
     start_before?: number | null;
-    [k: string]: unknown;
   };
 } | {
-  ask_count: {
-    [k: string]: unknown;
-  };
+  ask_count: {};
 } | {
   asks_by_seller: {
     limit?: number | null;
     seller: string;
     start_after?: string | null;
-    [k: string]: unknown;
   };
 } | {
   bid: {
     bidder: string;
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   bids_by_bidder: {
     bidder: string;
     limit?: number | null;
     start_after?: string | null;
-    [k: string]: unknown;
   };
 } | {
   bids: {
     limit?: number | null;
     start_after?: string | null;
     token_id: string;
-    [k: string]: unknown;
   };
 } | {
   bids_sorted_by_price: {
     limit?: number | null;
     start_after?: BidOffset | null;
-    [k: string]: unknown;
   };
 } | {
   reverse_bids_sorted_by_price: {
     limit?: number | null;
     start_before?: BidOffset | null;
-    [k: string]: unknown;
   };
 } | {
-  ask_hooks: {
-    [k: string]: unknown;
-  };
+  ask_hooks: {};
 } | {
-  bid_hooks: {
-    [k: string]: unknown;
-  };
+  bid_hooks: {};
 } | {
-  sale_hooks: {
-    [k: string]: unknown;
-  };
+  sale_hooks: {};
 } | {
-  params: {
-    [k: string]: unknown;
-  };
+  params: {};
 } | {
   renewal_queue: {
     height: number;
-    [k: string]: unknown;
   };
 };
 export interface ReverseAsksSortedByPriceResponse {
   asks: Ask[];
-  [k: string]: unknown;
 }
 export interface ReverseBidsSortedByPriceResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface ReverseCollectionBidsSortedByPriceResponse {
   bids: Bid[];
-  [k: string]: unknown;
 }
 export interface SaleHooksResponse {
   buyer: string;
   seller: string;
   token_id: string;
-  [k: string]: unknown;
 }
 export type SudoMsg = {
   update_params: {
+    blocks_per_year?: number | null;
     min_price?: Uint128 | null;
     trading_fee_bps?: number | null;
-    [k: string]: unknown;
   };
 } | {
   update_name_minter: {
     minter: string;
-    [k: string]: unknown;
   };
 } | {
   update_name_collection: {
     collection: string;
-    [k: string]: unknown;
   };
 } | {
   add_ask_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 } | {
   remove_ask_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 } | {
   add_bid_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 } | {
   remove_bid_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 } | {
   add_sale_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 } | {
   remove_sale_hook: {
     hook: string;
-    [k: string]: unknown;
   };
 };

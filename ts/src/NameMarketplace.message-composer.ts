@@ -36,11 +36,6 @@ export interface NameMarketplaceMessage {
     bidder: string;
     tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  processRenewals: ({
-    height
-  }: {
-    height: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   fundRenewal: ({
     tokenId
   }: {
@@ -50,6 +45,11 @@ export interface NameMarketplaceMessage {
     tokenId
   }: {
     tokenId: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  processRenewals: ({
+    height
+  }: {
+    height: number;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
@@ -63,9 +63,9 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
-    this.processRenewals = this.processRenewals.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
+    this.processRenewals = this.processRenewals.bind(this);
   }
 
   setAsk = ({
@@ -150,25 +150,6 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
-  processRenewals = ({
-    height
-  }: {
-    height: number;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          process_renewals: {
-            height
-          }
-        })),
-        funds
-      })
-    };
-  };
   fundRenewal = ({
     tokenId
   }: {
@@ -201,6 +182,25 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         msg: toUtf8(JSON.stringify({
           refund_renewal: {
             token_id: tokenId
+          }
+        })),
+        funds
+      })
+    };
+  };
+  processRenewals = ({
+    height
+  }: {
+    height: number;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          process_renewals: {
+            height
           }
         })),
         funds

@@ -6,21 +6,16 @@
 
 export interface ConfigResponse {
   collection_addr: string;
-  [k: string]: unknown;
 }
 export type ExecuteMsg = {
   mint_and_list: {
     name: string;
-    [k: string]: unknown;
   };
 };
 export interface InstantiateMsg {
   collection_code_id: number;
   marketplace_addr: string;
-  [k: string]: unknown;
 }
 export type QueryMsg = {
-  config: {
-    [k: string]: unknown;
-  };
+  config: {};
 };

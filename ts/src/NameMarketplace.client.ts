@@ -307,11 +307,6 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     bidder: string;
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  processRenewals: ({
-    height
-  }: {
-    height: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   fundRenewal: ({
     tokenId
   }: {
@@ -321,6 +316,11 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     tokenId
   }: {
     tokenId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  processRenewals: ({
+    height
+  }: {
+    height: number;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class NameMarketplaceClient extends NameMarketplaceQueryClient implements NameMarketplaceInterface {
@@ -337,9 +337,9 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
-    this.processRenewals = this.processRenewals.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
+    this.processRenewals = this.processRenewals.bind(this);
   }
 
   setAsk = async ({
@@ -392,17 +392,6 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
       }
     }, fee, memo, funds);
   };
-  processRenewals = async ({
-    height
-  }: {
-    height: number;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      process_renewals: {
-        height
-      }
-    }, fee, memo, funds);
-  };
   fundRenewal = async ({
     tokenId
   }: {
@@ -422,6 +411,17 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     return await this.client.execute(this.sender, this.contractAddress, {
       refund_renewal: {
         token_id: tokenId
+      }
+    }, fee, memo, funds);
+  };
+  processRenewals = async ({
+    height
+  }: {
+    height: number;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      process_renewals: {
+        height
       }
     }, fee, memo, funds);
   };
