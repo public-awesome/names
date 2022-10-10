@@ -35,7 +35,6 @@ export interface MetadataForEmpty {
   extension: Empty;
   profile?: NFT | null;
   records: TextRecord[];
-  [k: string]: unknown;
 }
 export interface Empty {
   [k: string]: unknown;
@@ -43,13 +42,11 @@ export interface Empty {
 export interface NFT {
   collection: Addr;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface TextRecord {
   name: string;
   value: string;
   verified_at?: Timestamp | null;
-  [k: string]: unknown;
 }
 export interface AllOperatorsResponse {
   operators: Approval[];
@@ -162,7 +159,6 @@ export interface MetadataForNullable_Empty {
   extension?: Empty | null;
   profile?: NFT | null;
   records: TextRecord[];
-  [k: string]: unknown;
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;
