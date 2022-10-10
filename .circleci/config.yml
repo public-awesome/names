@@ -54,7 +54,7 @@ jobs:
             - target
           key: cargocache-marketplace-rust:1.58.0-{{ checksum "~/project/Cargo.lock" }}
 
-  contract_name_minter:
+  contract_name-minter:
     docker:
       - image: rust:1.58.0
     working_directory: ~/project/contracts/name-minter
