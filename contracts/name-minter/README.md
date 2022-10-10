@@ -1,6 +1,6 @@
-### SG-721 Name (sg721-name)
+# Stargaze Name Minter
 
-A collection for NFT domain names. Follows the [sg-name](../../packages/sg-name/README.md) spec.
+Mints Stargaze Names and lists them on Name Marketplace.
 
 ## DISCLAIMER
 

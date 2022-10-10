@@ -1,5 +1,15 @@
 # Stargaze Names
 
+## DUAL LICENSED
+
+The code is this repository is under two licenses. Please make a note of them before forking / copying.
+
+[Name Marketplace](./contracts/marketplace/LICENSE) -- Business source license
+
+[Name Minter](./contracts/name-minter/LICENSE) -- Apache 2.0 license
+
+[SG721 Name](./contracts/sg721-name/LICENSE) -- Apache 2.0 license
+
 ## Annual Auction
 
 - When a name is minted it is automatically listed in Name Marketplace (x)
@@ -39,7 +49,7 @@ This architecture enables Stargaze Names to be a truly Interchain name service s
 
 ## Contracts
 
-### SG-721 Name (sg721-name)
+### [SG-721 Name](./contracts/sg721-name/README.md)
 
 A cw721 contract with on-chain metadata for a name.
 
@@ -67,10 +77,14 @@ pub struct Metadata {
 }
 ```
 
-### Name Minter (name-minter)
+### [Name Minter](./contracts/name-minter/README.md)
 
 Name minter is responsible for minting, validating, and updating names and their metadata.
 
-### Name Marketplace (marketplace)
+### [Name Marketplace](./contracts/marketplace/README.md)
 
 The secondary marketplace for names. Names are automatically listed here once they are minted.
+
+## DISCLAIMER
+
+STARGAZE SOURCE CODE IS PROVIDED “AS IS”, AT YOUR OWN RISK, AND WITHOUT WARRANTIES OF ANY KIND. No developer or entity involved in creating or instantiating Stargaze smart contracts will be liable for any claims or damages whatsoever associated with your use, inability to use, or your interaction with other users of Stargaze, including any direct, indirect, incidental, special, exemplary, punitive or consequential damages, or loss of profits, cryptocurrencies, tokens, or anything else of value. Although Public Awesome, LLC and it's affilliates developed the initial code for Stargaze, it does not own or control the Stargaze network, which is run by a decentralized validator set.
