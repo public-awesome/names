@@ -6,6 +6,7 @@ workflows:
       - contract_marketplace
       - contract_name-minter
       - contract_sg721-name
+      - package_sg-name
       - lint
       - wasm-build
   deploy:
@@ -125,6 +126,30 @@ jobs:
             - /usr/local/cargo/registry
             - target
           key: cargocache-sg721-name-rust:1.59.0-{{ checksum "~/project/Cargo.lock" }}
+
+  package_sg-name:
+    docker:
+      - image: rust:1.59.0
+    working_directory: ~/project/package/sg-name
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
+      - restore_cache:
+          keys:
+            - cargocache-sg-name-rust:1.59.0-{{ checksum "~/project/Cargo.lock" }}
+      - run:
+          name: Unit Tests
+          environment:
+            RUST_BACKTRACE: 1
+          command: cargo unit-test --locked
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target
+          key: cargocache-sg-name-rust:1.59.0-{{ checksum "~/project/Cargo.lock" }}
 
   lint:
     docker:
