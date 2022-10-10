@@ -4,7 +4,7 @@ use crate::error::ContractError;
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
+    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
     NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
@@ -69,9 +69,29 @@ pub fn execute(
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
         ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
+        ExecuteMsg::Setup { minter, collection } => execute_setup(
+            deps,
+            api.addr_validate(&minter)?,
+            api.addr_validate(&collection)?,
+        ),
     }
 }
 
+/// Setup this contract (can be run once only)
+pub fn execute_setup(
+    deps: DepsMut,
+    minter: Addr,
+    collection: Addr,
+) -> Result<Response, ContractError> {
+    if IS_SETUP.load(deps.storage)? {
+        return Err(ContractError::AlreadySetup {});
+    }
+    NAME_MINTER.save(deps.storage, &minter)?;
+    NAME_COLLECTION.save(deps.storage, &collection)?;
+    IS_SETUP.save(deps.storage, &true)?;
+
+    Ok(Response::new())
+}
 /// A seller may set an Ask on their NFT to list it on Marketplace
 pub fn execute_set_ask(
     deps: DepsMut,

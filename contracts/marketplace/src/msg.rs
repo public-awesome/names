@@ -31,6 +31,9 @@ pub enum ExecuteMsg {
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
     ProcessRenewals { height: u64 },
+    /// Setup contract with minter and collection addresses
+    /// Can only be run once
+    Setup { minter: String, collection: String },
 }
 
 #[cw_serde]
