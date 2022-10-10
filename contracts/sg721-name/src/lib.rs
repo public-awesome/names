@@ -8,6 +8,8 @@ pub mod contract;
 mod error;
 pub mod msg;
 
+// TODO: add lookup map
+
 #[cfg(test)]
 pub mod unit_tests;
 
