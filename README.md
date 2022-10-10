@@ -2,8 +2,8 @@
 
 ## Annual Auction
 
-- When a name is minted it is automatically listed in Name Marketplace
-- Owner can accept the top bid at any time
+- When a name is minted it is automatically listed in Name Marketplace (x)
+- Owner can accept the top bid at any time (x)
 - After 1 year, owner has to pay 0.5% of the top bid to keep the name
 - If a bid is placed for 4 weeks, name value rises to this value
 - If fee is not paid, name is transferred to the bidder
