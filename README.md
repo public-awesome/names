@@ -1,4 +1,4 @@
-# Stargaze Names
+# Stargaze Names: A Cosmos IBC Name Service
 
 ## DUAL LICENSED
 
