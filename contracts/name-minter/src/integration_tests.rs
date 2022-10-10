@@ -528,16 +528,18 @@ mod profile {
     use super::*;
 
     use cosmwasm_std::{coin, Timestamp};
-    use cw721_base::Extension;
+    use cw721::NftInfoResponse;
+    use cw721_base::{state::TokenInfo, Extension};
     use sg2::{msg::Sg2ExecuteMsg, tests::mock_collection_params};
     use sg721::{ExecuteMsg as Sg721ExecuteMsg, MintMsg};
+    use sg721_base::msg::QueryMsg::NftInfo;
     use sg_name::{Metadata, NFT};
     use sg_std::{StargazeMsgWrapper, GENESIS_MINT_START_TIME, NATIVE_DENOM};
     use vending_factory::{
         msg::{VendingMinterCreateMsg, VendingMinterInitMsgExtension},
         state::{ParamsExtension, VendingMinterParams},
     };
-    use vending_minter::msg::{ConfigResponse, QueryMsg};
+    use vending_minter::msg::{ConfigResponse as MinterConfigResponse, QueryMsg};
 
     pub fn contract_factory() -> Box<dyn Contract<StargazeMsgWrapper>> {
         let contract = ContractWrapper::new(
@@ -621,7 +623,7 @@ mod profile {
         creator: &Addr,
         num_tokens: u32,
         splits_addr: Option<String>,
-    ) -> (Addr, ConfigResponse) {
+    ) -> (Addr, MinterConfigResponse) {
         let minter_code_id = router.store_code(contract_minter());
         println!("minter_code_id: {}", minter_code_id);
         let creation_fee = coins(CREATION_FEE, NATIVE_DENOM);
@@ -655,12 +657,11 @@ mod profile {
         let msg = Sg2ExecuteMsg::CreateMinter(msg);
 
         let res = router.execute_contract(creator.clone(), factory_addr, &msg, &creation_fee);
-        assert!(res.is_ok());
 
         // could get the minter address from the response above, but we know its contract1
         let minter_addr = Addr::unchecked("contract1");
 
-        let config: ConfigResponse = router
+        let config: MinterConfigResponse = router
             .wrap()
             .query_wasm_smart(minter_addr.clone(), &QueryMsg::Config {})
             .unwrap();
@@ -719,10 +720,9 @@ mod profile {
     fn update_profile() {
         let mut app = instantiate_contracts();
 
-        let mut router = custom_mock_app();
-        let (creator, user) = setup_accounts(&mut router);
+        let (creator, user) = setup_accounts(&mut app);
         let num_tokens = 2;
-        let (minter_addr, config) = setup_minter_contract(&mut router, &creator, num_tokens, None);
+        let (minter_addr, config) = setup_minter_contract(&mut app, &creator, num_tokens, None);
 
         let token_id = "king arthur".to_string();
         let mint_msg = MintMsg::<Extension> {
@@ -732,34 +732,53 @@ mod profile {
             extension: None,
         };
 
-        setup_block_time(&mut router, GENESIS_MINT_START_TIME + 1, None);
+        setup_block_time(&mut app, GENESIS_MINT_START_TIME + 1, None);
         let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
-        router
-            .execute_contract(
-                creator.clone(),
-                minter_addr.clone(),
-                &exec_msg,
-                &coins(MINT_PRICE, NATIVE_DENOM),
-            )
-            .unwrap();
+        app.execute_contract(
+            creator.clone(),
+            Addr::unchecked(config.sg721_address),
+            &exec_msg,
+            &coins(MINT_PRICE, NATIVE_DENOM),
+        )
+        .unwrap();
 
         mint_and_list(&mut app, NAME, USER);
 
         // update profile
-        let profile = Some(NFT {
-            collection: Addr::unchecked(config.sg721_address),
-            token_id,
-        });
-        let msg = Sg721NameExecuteMsg::UpdateProfile {
+        // let profile = Some(NFT {
+        //     collection: Addr::unchecked(config.sg721_address),
+        //     token_id,
+        // });
+        // let msg = Sg721NameExecuteMsg::UpdateProfile {
+        //     name: NAME.to_string(),
+        //     profile,
+        // };
+
+        let msg = Sg721NameExecuteMsg::UpdateBio {
             name: NAME.to_string(),
-            profile,
+            bio: Some("something".to_string()),
         };
 
-        let res = router
+        let res: NftInfoResponse<Metadata<Extension>> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION.to_string(),
+                &NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        println!("{:?}", res.extension.bio);
+        // assert!(false);
+
+        let res = app
             .execute_contract(
                 Addr::unchecked(USER),
-                Addr::unchecked("contract2".to_string()),
-                &msg,
+                Addr::unchecked(COLLECTION.to_string()),
+                &Sg721NameExecuteMsg::UpdateBio {
+                    name: NAME.to_string(),
+                    bio: Some("something".to_string()),
+                },
                 &[],
             )
             .unwrap_err();
