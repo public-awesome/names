@@ -165,6 +165,32 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "description": "Setup contract with minter and collection addresses Can only be run once",
+      "type": "object",
+      "required": [
+        "setup"
+      ],
+      "properties": {
+        "setup": {
+          "type": "object",
+          "required": [
+            "collection",
+            "minter"
+          ],
+          "properties": {
+            "collection": {
+              "type": "string"
+            },
+            "minter": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

@@ -110,6 +110,11 @@ export type ExecuteMsg = {
   process_renewals: {
     height: number;
   };
+} | {
+  setup: {
+    collection: string;
+    minter: string;
+  };
 };
 export interface InstantiateMsg {
   blocks_per_year: number;

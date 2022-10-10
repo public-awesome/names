@@ -28,6 +28,8 @@ pub const RENEWAL_QUEUE: Map<u64, Vec<TokenId>> = Map::new("rq");
 
 pub const ASK_COUNT: Item<u64> = Item::new("ask-count");
 
+pub const IS_SETUP: Item<bool> = Item::new("is-setup");
+
 pub fn ask_count(storage: &dyn Storage) -> StdResult<u64> {
     Ok(ASK_COUNT.may_load(storage)?.unwrap_or_default())
 }
