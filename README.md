@@ -1,5 +1,15 @@
 # Stargaze Names
 
+## DUAL LICENSED
+
+The code is this repository is under two licenses. Please make a note of them before forking / copying.
+
+[Name Marketplace](./contracts/marketplace/LICENSE) -- Business source license
+
+[Name Minter](./contracts/name-minter/LICENSE) -- Apache 2.0 license
+
+[SG721 Name](./contracts/sg721-name/LICENSE) -- Apache 2.0 license
+
 ## Annual Auction
 
 - When a name is minted it is automatically listed in Name Marketplace (x)
