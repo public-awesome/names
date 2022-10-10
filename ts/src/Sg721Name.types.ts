@@ -81,6 +81,96 @@ export interface ContractInfoResponse {
   name: string;
   symbol: string;
 }
+export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | {
+  update_bio: {
+    bio?: string | null;
+    name: string;
+  };
+} | {
+  update_profile: {
+    name: string;
+    profile?: NFT | null;
+  };
+} | {
+  add_text_record: {
+    name: string;
+    record: TextRecord;
+  };
+} | {
+  remove_text_record: {
+    name: string;
+    record_name: string;
+  };
+} | {
+  update_text_record: {
+    name: string;
+    record: TextRecord;
+  };
+} | {
+  transfer_nft: {
+    recipient: string;
+    token_id: string;
+  };
+} | {
+  send_nft: {
+    contract: string;
+    msg: Binary;
+    token_id: string;
+  };
+} | {
+  approve: {
+    expires?: Expiration | null;
+    spender: string;
+    token_id: string;
+  };
+} | {
+  revoke: {
+    spender: string;
+    token_id: string;
+  };
+} | {
+  approve_all: {
+    expires?: Expiration | null;
+    operator: string;
+  };
+} | {
+  revoke_all: {
+    operator: string;
+  };
+} | {
+  mint: MintMsgForMetadataForNullable_Empty;
+} | {
+  burn: {
+    token_id: string;
+  };
+} | {
+  update_collection_info: {
+    collection_info: UpdateCollectionInfoMsgForRoyaltyInfoResponse;
+  };
+} | {
+  update_trading_start_time: Timestamp | null;
+};
+export type Binary = string;
+export interface MintMsgForMetadataForNullable_Empty {
+  extension: MetadataForNullable_Empty;
+  owner: string;
+  token_id: string;
+  token_uri?: string | null;
+}
+export interface MetadataForNullable_Empty {
+  bio?: string | null;
+  extension?: Empty | null;
+  profile?: NFT | null;
+  records: TextRecord[];
+  [k: string]: unknown;
+}
+export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
+  description?: string | null;
+  explicit_content?: boolean | null;
+  external_link?: string | null;
+  image?: string | null;
+  royalty_info?: (RoyaltyInfoResponse | null) | null;
+}
 export interface InstantiateMsg {
   collection_info: CollectionInfoForRoyaltyInfoResponse;
   minter: string;
