@@ -87,7 +87,7 @@ pub fn execute_set_ask(
 
     let funds = may_pay(&info, NATIVE_DENOM)?;
 
-    let collection = NAME_COLLECTION.load(deps.storage)?;
+    // let collection = NAME_COLLECTION.load(deps.storage)?;
 
     // // Check if this contract is approved to transfer the token
     // Cw721Contract(collection.clone()).approval(
@@ -122,7 +122,6 @@ pub fn execute_set_ask(
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
 
     let event = Event::new("set-ask")
-        .add_attribute("collection", collection.to_string())
         .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
 
