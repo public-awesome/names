@@ -6,7 +6,7 @@ workflows:
       - contract_marketplace
       - contract_name-minter
       - contract_sg721-name
-      # - package_sg-name
+      - package_sg-name
       - lint
       - wasm-build
   deploy:
