@@ -4,32 +4,253 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export interface CountResponse {
-  count: number;
+export type Expiration = {
+  at_height: number;
+} | {
+  at_time: Timestamp;
+} | {
+  never: {};
+};
+export type Timestamp = Uint64;
+export type Uint64 = string;
+export type Addr = string;
+export interface AllNftInfoResponse {
+  access: OwnerOfResponse;
+  info: NftInfoResponseForMetadataForEmpty;
+}
+export interface OwnerOfResponse {
+  approvals: Approval[];
+  owner: string;
+}
+export interface Approval {
+  expires: Expiration;
+  spender: string;
+}
+export interface NftInfoResponseForMetadataForEmpty {
+  extension: MetadataForEmpty;
+  token_uri?: string | null;
+}
+export interface MetadataForEmpty {
+  bio?: string | null;
+  extension: Empty;
+  profile?: NFT | null;
+  records: TextRecord[];
   [k: string]: unknown;
 }
-export type ExecuteMsg = {
-  increment: {
-    [k: string]: unknown;
+export interface Empty {
+  [k: string]: unknown;
+}
+export interface NFT {
+  collection: Addr;
+  token_id: string;
+  [k: string]: unknown;
+}
+export interface TextRecord {
+  name: string;
+  value: string;
+  verified_at?: Timestamp | null;
+  [k: string]: unknown;
+}
+export interface AllOperatorsResponse {
+  operators: Approval[];
+}
+export interface AllTokensResponse {
+  tokens: string[];
+}
+export interface ApprovalResponse {
+  approval: Approval;
+}
+export interface ApprovalsResponse {
+  approvals: Approval[];
+}
+export type Decimal = string;
+export interface CollectionInfoResponse {
+  creator: string;
+  description: string;
+  explicit_content: boolean;
+  external_link?: string | null;
+  image: string;
+  royalty_info?: RoyaltyInfoResponse | null;
+  trading_start_time?: Timestamp | null;
+}
+export interface RoyaltyInfoResponse {
+  payment_address: string;
+  share: Decimal;
+}
+export interface ContractInfoResponse {
+  name: string;
+  symbol: string;
+}
+export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | {
+  update_bio: {
+    bio?: string | null;
+    name: string;
   };
 } | {
-  reset: {
-    count: number;
-    [k: string]: unknown;
+  update_profile: {
+    name: string;
+    profile?: NFT | null;
   };
+} | {
+  add_text_record: {
+    name: string;
+    record: TextRecord;
+  };
+} | {
+  remove_text_record: {
+    name: string;
+    record_name: string;
+  };
+} | {
+  update_text_record: {
+    name: string;
+    record: TextRecord;
+  };
+} | {
+  transfer_nft: {
+    recipient: string;
+    token_id: string;
+  };
+} | {
+  send_nft: {
+    contract: string;
+    msg: Binary;
+    token_id: string;
+  };
+} | {
+  approve: {
+    expires?: Expiration | null;
+    spender: string;
+    token_id: string;
+  };
+} | {
+  revoke: {
+    spender: string;
+    token_id: string;
+  };
+} | {
+  approve_all: {
+    expires?: Expiration | null;
+    operator: string;
+  };
+} | {
+  revoke_all: {
+    operator: string;
+  };
+} | {
+  mint: MintMsgForMetadataForNullable_Empty;
+} | {
+  burn: {
+    token_id: string;
+  };
+} | {
+  update_collection_info: {
+    collection_info: UpdateCollectionInfoMsgForRoyaltyInfoResponse;
+  };
+} | {
+  update_trading_start_time: Timestamp | null;
 };
-export interface InstantiateMsg {
-  count: number;
+export type Binary = string;
+export interface MintMsgForMetadataForNullable_Empty {
+  extension: MetadataForNullable_Empty;
+  owner: string;
+  token_id: string;
+  token_uri?: string | null;
+}
+export interface MetadataForNullable_Empty {
+  bio?: string | null;
+  extension?: Empty | null;
+  profile?: NFT | null;
+  records: TextRecord[];
   [k: string]: unknown;
 }
-export type QueryMsg = {
-  get_count: {
-    [k: string]: unknown;
-  };
-};
-export type Addr = string;
-export interface State {
+export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
+  description?: string | null;
+  explicit_content?: boolean | null;
+  external_link?: string | null;
+  image?: string | null;
+  royalty_info?: (RoyaltyInfoResponse | null) | null;
+}
+export interface InstantiateMsg {
+  collection_info: CollectionInfoForRoyaltyInfoResponse;
+  minter: string;
+  name: string;
+  symbol: string;
+}
+export interface CollectionInfoForRoyaltyInfoResponse {
+  creator: string;
+  description: string;
+  explicit_content: boolean;
+  external_link?: string | null;
+  image: string;
+  royalty_info?: RoyaltyInfoResponse | null;
+  trading_start_time?: Timestamp | null;
+}
+export interface MinterResponse {
+  minter: string;
+}
+export interface NftInfoResponse {
+  extension: MetadataForEmpty;
+  token_uri?: string | null;
+}
+export interface NumTokensResponse {
   count: number;
-  owner: Addr;
-  [k: string]: unknown;
+}
+export interface OperatorsResponse {
+  operators: Approval[];
+}
+export type QueryMsg = {
+  owner_of: {
+    include_expired?: boolean | null;
+    token_id: string;
+  };
+} | {
+  approval: {
+    include_expired?: boolean | null;
+    spender: string;
+    token_id: string;
+  };
+} | {
+  approvals: {
+    include_expired?: boolean | null;
+    token_id: string;
+  };
+} | {
+  all_operators: {
+    include_expired?: boolean | null;
+    limit?: number | null;
+    owner: string;
+    start_after?: string | null;
+  };
+} | {
+  num_tokens: {};
+} | {
+  contract_info: {};
+} | {
+  nft_info: {
+    token_id: string;
+  };
+} | {
+  all_nft_info: {
+    include_expired?: boolean | null;
+    token_id: string;
+  };
+} | {
+  tokens: {
+    limit?: number | null;
+    owner: string;
+    start_after?: string | null;
+  };
+} | {
+  all_tokens: {
+    limit?: number | null;
+    start_after?: string | null;
+  };
+} | {
+  minter: {};
+} | {
+  collection_info: {};
+};
+export interface TokensResponse {
+  tokens: string[];
 }

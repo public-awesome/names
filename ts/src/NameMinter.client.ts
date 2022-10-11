@@ -6,10 +6,10 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg, Addr, State } from "./NameMinter.types";
+import { ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
-  getCount: () => Promise<GetCountResponse>;
+  config: () => Promise<ConfigResponse>;
 }
 export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   client: CosmWasmClient;
@@ -18,23 +18,22 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
-    this.getCount = this.getCount.bind(this);
+    this.config = this.config.bind(this);
   }
 
-  getCount = async (): Promise<GetCountResponse> => {
+  config = async (): Promise<ConfigResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      get_count: {}
+      config: {}
     });
   };
 }
 export interface NameMinterInterface extends NameMinterReadOnlyInterface {
   contractAddress: string;
   sender: string;
-  increment: (fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  reset: ({
-    count
+  mintAndList: ({
+    name
   }: {
-    count: number;
+    name: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class NameMinterClient extends NameMinterQueryClient implements NameMinterInterface {
@@ -47,23 +46,17 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
-    this.increment = this.increment.bind(this);
-    this.reset = this.reset.bind(this);
+    this.mintAndList = this.mintAndList.bind(this);
   }
 
-  increment = async (fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      increment: {}
-    }, fee, memo, funds);
-  };
-  reset = async ({
-    count
+  mintAndList = async ({
+    name
   }: {
-    count: number;
+    name: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      reset: {
-        count
+      mint_and_list: {
+        name
       }
     }, fee, memo, funds);
   };

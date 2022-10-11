@@ -14,6 +14,7 @@ const TOKEN_ID_NEXT: &str = "name2";
 
 // Governance parameters
 const TRADING_FEE_BASIS_POINTS: u64 = 200; // 2%
+const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
 
 #[test]
 fn ask_indexed_map() {
@@ -87,6 +88,7 @@ fn setup_contract(deps: DepsMut) {
     let msg = InstantiateMsg {
         trading_fee_bps: TRADING_FEE_BASIS_POINTS,
         min_price: Uint128::from(5u128),
+        blocks_per_year: BLOCKS_PER_YEAR,
     };
     let info = mock_info(CREATOR, &[]);
     let res = instantiate(deps, mock_env(), info, msg).unwrap();
@@ -100,6 +102,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         trading_fee_bps: TRADING_FEE_BASIS_POINTS,
         min_price: Uint128::from(5u128),
+        blocks_per_year: BLOCKS_PER_YEAR,
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
 
@@ -116,6 +119,7 @@ fn bad_fees_initialization() {
     let msg = InstantiateMsg {
         trading_fee_bps: 10001,
         min_price: Uint128::from(5u128),
+        blocks_per_year: BLOCKS_PER_YEAR,
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);

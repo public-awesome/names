@@ -3,12 +3,18 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "count"
+    "collection_code_id",
+    "marketplace_addr"
   ],
   "properties": {
-    "count": {
+    "collection_code_id": {
       "type": "integer",
-      "format": "int32"
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "marketplace_addr": {
+      "type": "string"
     }
-  }
+  },
+  "additionalProperties": false
 }

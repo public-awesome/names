@@ -1,4 +1,6 @@
-use cosmwasm_std::{entry_point, Addr, Deps, DepsMut, Env, Reply, StdResult, WasmMsg};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{Addr, Deps, DepsMut, Env, Reply, StdResult, WasmMsg};
 use sg_std::{Response, SubMsg};
 
 use crate::{

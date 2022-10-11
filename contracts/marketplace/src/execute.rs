@@ -1,14 +1,16 @@
+use std::marker::PhantomData;
+
 use crate::error::ContractError;
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, NAME_COLLECTION,
+    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
     NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, MessageInfo,
+    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
     StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
@@ -23,8 +25,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
-// TODO: add to sudo params
-const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -41,8 +41,11 @@ pub fn instantiate(
     let params = SudoParams {
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps),
         min_price: msg.min_price,
+        blocks_per_year: msg.blocks_per_year,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
+
+    IS_SETUP.save(deps.storage, &false)?;
 
     Ok(Response::new())
 }
@@ -65,70 +68,32 @@ pub fn execute(
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
-        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
+        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
+        ExecuteMsg::Setup { minter, collection } => execute_setup(
+            deps,
+            api.addr_validate(&minter)?,
+            api.addr_validate(&collection)?,
+        ),
     }
 }
 
-pub fn execute_fund_renewal(
+/// Setup this contract (can be run once only)
+pub fn execute_setup(
     deps: DepsMut,
-    info: MessageInfo,
-    token_id: &str,
+    minter: Addr,
+    collection: Addr,
 ) -> Result<Response, ContractError> {
-    let payment = must_pay(&info, NATIVE_DENOM)?;
-
-    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
-    // TODO: should anyone be able to fund a renewal?
-    // if ask.seller != info.sender {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-    ask.renewal_fund += payment;
-    asks().save(deps.storage, ask_key(token_id), &ask)?;
-
-    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
-}
-
-pub fn execute_refund_renewal(
-    deps: DepsMut,
-    info: MessageInfo,
-    token_id: &str,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-
-    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
-
-    if ask.seller != info.sender {
-        return Err(ContractError::Unauthorized {});
+    if IS_SETUP.load(deps.storage)? {
+        return Err(ContractError::AlreadySetup {});
     }
-    if ask.renewal_fund.is_zero() {
-        return Err(ContractError::NoRenewalFund {});
-    }
+    NAME_MINTER.save(deps.storage, &minter)?;
+    NAME_COLLECTION.save(deps.storage, &collection)?;
+    IS_SETUP.save(deps.storage, &true)?;
 
-    let msg = BankMsg::Send {
-        to_address: ask.seller.to_string(),
-        amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
-    };
-
-    ask.renewal_fund = Uint128::zero();
-    asks().save(deps.storage, ask_key(token_id), &ask)?;
-
-    Ok(Response::new()
-        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
-        .add_message(msg))
+    Ok(Response::new())
 }
-
-pub fn execute_process_renewal(
-    _deps: DepsMut,
-    _env: Env,
-    height: u64,
-) -> Result<Response, ContractError> {
-    println!("Processing renewals at height {}", height);
-
-    Ok(Response::new()
-        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
-}
-
 /// A seller may set an Ask on their NFT to list it on Marketplace
 pub fn execute_set_ask(
     deps: DepsMut,
@@ -144,7 +109,7 @@ pub fn execute_set_ask(
 
     let funds = may_pay(&info, NATIVE_DENOM)?;
 
-    let collection = NAME_COLLECTION.load(deps.storage)?;
+    // let collection = NAME_COLLECTION.load(deps.storage)?;
 
     // // Check if this contract is approved to transfer the token
     // Cw721Contract(collection.clone()).approval(
@@ -163,17 +128,22 @@ pub fn execute_set_ask(
     };
     store_ask(deps.storage, &ask)?;
 
+    let params = SUDO_PARAMS.load(deps.storage)?;
+
     // store reference to ask in expiration queue for future renewal processing
     let mut queue = RENEWAL_QUEUE
         .may_load(deps.storage, env.block.height)?
         .unwrap_or_default();
     queue.push(token_id.to_string());
-    RENEWAL_QUEUE.save(deps.storage, env.block.height + BLOCKS_PER_YEAR, &queue)?;
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        env.block.height + params.blocks_per_year,
+        &queue,
+    )?;
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
 
     let event = Event::new("set-ask")
-        .add_attribute("collection", collection.to_string())
         .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
 
@@ -316,6 +286,95 @@ pub fn execute_accept_bid(
     Ok(res.add_event(event))
 }
 
+pub fn execute_fund_renewal(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    let payment = must_pay(&info, NATIVE_DENOM)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+    // TODO: should anyone be able to fund a renewal?
+    // if ask.seller != info.sender {
+    //     return Err(ContractError::Unauthorized {});
+    // }
+    ask.renewal_fund += payment;
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
+
+    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
+}
+
+pub fn execute_refund_renewal(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+
+    if ask.seller != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    if ask.renewal_fund.is_zero() {
+        return Err(ContractError::NoRenewalFund {});
+    }
+
+    let msg = BankMsg::Send {
+        to_address: ask.seller.to_string(),
+        amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
+    };
+
+    ask.renewal_fund = Uint128::zero();
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
+
+    Ok(Response::new()
+        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
+        .add_message(msg))
+}
+
+/// Anyone can call this to process renewals for a block and earn a reward
+pub fn execute_process_renewal(
+    _deps: DepsMut,
+    env: Env,
+    height: u64,
+) -> Result<Response, ContractError> {
+    println!("Processing renewals at height {}", height);
+
+    if height > env.block.height {
+        return Err(ContractError::CannotProcessFutureHeight {});
+    }
+
+    // // TODO: add renewal processing logic
+    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+    // for name in renewal_queue.iter() {
+    //     let ask = asks().load(deps.storage, ask_key(name))?;
+    //     if ask.renewal_fund.is_zero() {
+    //         continue;
+    //         // transfer ownership to name service
+    //         // list in marketplace for 0.5% of bid price
+    //         // if no bids, list for original price
+    //     }
+
+    //     // charge renewal fee
+    //     // pay out reward to operator
+    //     // reset ask
+
+    //     // Update Ask with new height
+    //     let ask = Ask {
+    //         token_id: name.to_string(),
+    //         id: ask.id,
+    //         seller: ask.seller,
+    //         height: env.block.height,
+    //         renewal_fund: Uint128::zero(),
+    //     };
+    //     store_ask(deps.storage, &ask)?;
+    // }
+
+    Ok(Response::new()
+        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
+}
+
 /// Transfers funds and NFT, updates bid
 fn finalize_sale(
     deps: Deps,
@@ -399,7 +458,8 @@ fn only_owner(
     collection: &Addr,
     token_id: &str,
 ) -> Result<OwnerOfResponse, ContractError> {
-    let res = Cw721Contract(collection.clone()).owner_of(&deps.querier, token_id, false)?;
+    let res = Cw721Contract::<Empty, Empty>(collection.clone(), PhantomData, PhantomData)
+        .owner_of(&deps.querier, token_id, false)?;
     if res.owner != info.sender {
         return Err(ContractError::UnauthorizedOwner {});
     }

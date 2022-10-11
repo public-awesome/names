@@ -1,8 +1,8 @@
 [package]
 name = "name-minter"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-edition = "2018"
+edition = "2021"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -21,27 +21,24 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = "1.0.0"
-cosmwasm-storage = "1.0.0"
-cw-storage-plus = "0.13.4"
-cw-utils = "0.14.0"
-cw2 = "0.13.4"
+cosmwasm-schema = "1.1.4"
+cosmwasm-std = "1.1.4"
+cosmwasm-storage = "1.1.4"
+cw-storage-plus = "0.15.0"
+cw-utils = "0.15.0"
+cw2 = "0.15.0"
 schemars = "0.8.8"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
-cw721 = "0.13.4"
-cw721-base = { version = "0.13.4", features = ["library"] }
-sg-name = { path = "../../packages/sg-name" }
-sg721 = { path = "../../../launchpad/packages/sg721" }
+cw721 = "0.15.0"
+cw721-base = { version = "0.15.0", features = ["library"] }
+sg-name = "0.2.0"
+sg721 = "0.19.0"
 sg721-name = { path = "../sg721-name" }
-name-marketplace = { path = "../marketplace" }
-sg-std = { path = "../../../launchpad/packages/sg-std" }
+name-marketplace = { path = "../marketplace", features = ["library"] }
+sg-std = "0.19.0"
 
 [dev-dependencies]
-cosmwasm-schema = "1.0.0"
-cw-multi-test = "0.13.4"
-sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
-sg721-base = { path = "../../../launchpad/contracts/sg721-base" }
-vending-minter = { path = "../../../launchpad/contracts/vending-minter" }
-vending-factory = { path = "../../../launchpad/contracts/vending-factory" }
-sg2 = { path = "../../../launchpad/packages/sg2" }
+cw-multi-test = "0.15.0"
+sg-multi-test = "0.19.0"
+sg721-base = "0.19.0"

@@ -4,32 +4,18 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export interface CountResponse {
-  count: number;
-  [k: string]: unknown;
+export interface ConfigResponse {
+  collection_addr: string;
 }
 export type ExecuteMsg = {
-  increment: {
-    [k: string]: unknown;
-  };
-} | {
-  reset: {
-    count: number;
-    [k: string]: unknown;
+  mint_and_list: {
+    name: string;
   };
 };
 export interface InstantiateMsg {
-  count: number;
-  [k: string]: unknown;
+  collection_code_id: number;
+  marketplace_addr: string;
 }
 export type QueryMsg = {
-  get_count: {
-    [k: string]: unknown;
-  };
+  config: {};
 };
-export type Addr = string;
-export interface State {
-  count: number;
-  owner: Addr;
-  [k: string]: unknown;
-}

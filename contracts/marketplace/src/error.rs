@@ -8,6 +8,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("AlreadySetup")]
+    AlreadySetup {},
+
     #[error("Unauthorized")]
     Unauthorized {},
 
@@ -46,6 +49,9 @@ pub enum ContractError {
 
     #[error("BidNotStale")]
     BidNotStale {},
+
+    #[error("CannotProcessFutureHeight")]
+    CannotProcessFutureHeight {},
 
     #[error("InvalidFinder: {0}")]
     InvalidFinder(String),

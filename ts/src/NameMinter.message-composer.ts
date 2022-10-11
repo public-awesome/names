@@ -8,15 +8,14 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg, Addr, State } from "./NameMinter.types";
+import { ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg } from "./NameMinter.types";
 export interface NameMinterMessage {
   contractAddress: string;
   sender: string;
-  increment: (funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  reset: ({
-    count
+  mintAndList: ({
+    name
   }: {
-    count: number;
+    name: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMinterMessageComposer implements NameMinterMessage {
@@ -26,27 +25,13 @@ export class NameMinterMessageComposer implements NameMinterMessage {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
-    this.increment = this.increment.bind(this);
-    this.reset = this.reset.bind(this);
+    this.mintAndList = this.mintAndList.bind(this);
   }
 
-  increment = (funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          increment: {}
-        })),
-        funds
-      })
-    };
-  };
-  reset = ({
-    count
+  mintAndList = ({
+    name
   }: {
-    count: number;
+    name: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -54,8 +39,8 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          reset: {
-            count
+          mint_and_list: {
+            name
           }
         })),
         funds

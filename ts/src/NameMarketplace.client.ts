@@ -5,92 +5,45 @@
 */
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import { StdFee } from "@cosmjs/amino";
-import { AskCountResponse, Addr, Timestamp, Uint64, Uint128, SaleType, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidOffset, CollectionBidResponse, CollectionBid, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, CollectionOffset, CollectionsResponse, ExecuteMsg, Coin, Duration, InstantiateMsg, ExpiryRange, ListedCollectionsResponse, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { Coin, StdFee } from "@cosmjs/amino";
+import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
-  collections: ({
-    limit,
-    startAfter
-  }: {
-    limit?: number;
-    startAfter?: string;
-  }) => Promise<CollectionsResponse>;
   ask: ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }) => Promise<AskResponse>;
   asks: ({
-    collection,
-    includeInactive,
     limit,
     startAfter
   }: {
-    collection: string;
-    includeInactive?: boolean;
     limit?: number;
     startAfter?: number;
   }) => Promise<AsksResponse>;
   reverseAsks: ({
-    collection,
-    includeInactive,
     limit,
     startBefore
   }: {
-    collection: string;
-    includeInactive?: boolean;
     limit?: number;
     startBefore?: number;
   }) => Promise<ReverseAsksResponse>;
-  asksSortedByPrice: ({
-    collection,
-    includeInactive,
-    limit,
-    startAfter
-  }: {
-    collection: string;
-    includeInactive?: boolean;
-    limit?: number;
-    startAfter?: AskOffset;
-  }) => Promise<AsksSortedByPriceResponse>;
-  reverseAsksSortedByPrice: ({
-    collection,
-    includeInactive,
-    limit,
-    startBefore
-  }: {
-    collection: string;
-    includeInactive?: boolean;
-    limit?: number;
-    startBefore?: AskOffset;
-  }) => Promise<ReverseAsksSortedByPriceResponse>;
-  askCount: ({
-    collection
-  }: {
-    collection: string;
-  }) => Promise<AskCountResponse>;
+  askCount: () => Promise<AskCountResponse>;
   asksBySeller: ({
-    includeInactive,
     limit,
     seller,
     startAfter
   }: {
-    includeInactive?: boolean;
     limit?: number;
     seller: string;
-    startAfter?: CollectionOffset;
+    startAfter?: string;
   }) => Promise<AsksBySellerResponse>;
   bid: ({
     bidder,
-    collection,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }) => Promise<BidResponse>;
   bidsByBidder: ({
     bidder,
@@ -99,93 +52,40 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     bidder: string;
     limit?: number;
-    startAfter?: CollectionOffset;
+    startAfter?: string;
   }) => Promise<BidsByBidderResponse>;
-  bidsByBidderSortedByExpiration: ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionOffset;
-  }) => Promise<BidsByBidderSortedByExpirationResponse>;
   bids: ({
-    collection,
     limit,
     startAfter,
     tokenId
   }: {
-    collection: string;
     limit?: number;
     startAfter?: string;
-    tokenId: number;
+    tokenId: string;
   }) => Promise<BidsResponse>;
   bidsSortedByPrice: ({
-    collection,
     limit,
     startAfter
   }: {
-    collection: string;
     limit?: number;
     startAfter?: BidOffset;
   }) => Promise<BidsSortedByPriceResponse>;
   reverseBidsSortedByPrice: ({
-    collection,
     limit,
     startBefore
   }: {
-    collection: string;
     limit?: number;
     startBefore?: BidOffset;
   }) => Promise<ReverseBidsSortedByPriceResponse>;
-  collectionBid: ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
-  }) => Promise<CollectionBidResponse>;
-  collectionBidsByBidder: ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionOffset;
-  }) => Promise<CollectionBidsByBidderResponse>;
-  collectionBidsByBidderSortedByExpiration: ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionBidOffset;
-  }) => Promise<CollectionBidsByBidderSortedByExpirationResponse>;
-  collectionBidsSortedByPrice: ({
-    collection,
-    limit,
-    startAfter
-  }: {
-    collection: string;
-    limit?: number;
-    startAfter?: CollectionBidOffset;
-  }) => Promise<CollectionBidsSortedByPriceResponse>;
-  reverseCollectionBidsSortedByPrice: ({
-    collection,
-    limit,
-    startBefore
-  }: {
-    collection: string;
-    limit?: number;
-    startBefore?: CollectionBidOffset;
-  }) => Promise<ReverseCollectionBidsSortedByPriceResponse>;
   askHooks: () => Promise<AskHooksResponse>;
   bidHooks: () => Promise<BidHooksResponse>;
   saleHooks: () => Promise<SaleHooksResponse>;
   params: () => Promise<ParamsResponse>;
+  renewalQueue: ({
+    height
+  }: {
+    height: number;
+  }) => Promise<RenewalQueueResponse>;
 }
 export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterface {
   client: CosmWasmClient;
@@ -194,164 +94,78 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
-    this.collections = this.collections.bind(this);
     this.ask = this.ask.bind(this);
     this.asks = this.asks.bind(this);
     this.reverseAsks = this.reverseAsks.bind(this);
-    this.asksSortedByPrice = this.asksSortedByPrice.bind(this);
-    this.reverseAsksSortedByPrice = this.reverseAsksSortedByPrice.bind(this);
     this.askCount = this.askCount.bind(this);
     this.asksBySeller = this.asksBySeller.bind(this);
     this.bid = this.bid.bind(this);
     this.bidsByBidder = this.bidsByBidder.bind(this);
-    this.bidsByBidderSortedByExpiration = this.bidsByBidderSortedByExpiration.bind(this);
     this.bids = this.bids.bind(this);
     this.bidsSortedByPrice = this.bidsSortedByPrice.bind(this);
     this.reverseBidsSortedByPrice = this.reverseBidsSortedByPrice.bind(this);
-    this.collectionBid = this.collectionBid.bind(this);
-    this.collectionBidsByBidder = this.collectionBidsByBidder.bind(this);
-    this.collectionBidsByBidderSortedByExpiration = this.collectionBidsByBidderSortedByExpiration.bind(this);
-    this.collectionBidsSortedByPrice = this.collectionBidsSortedByPrice.bind(this);
-    this.reverseCollectionBidsSortedByPrice = this.reverseCollectionBidsSortedByPrice.bind(this);
     this.askHooks = this.askHooks.bind(this);
     this.bidHooks = this.bidHooks.bind(this);
     this.saleHooks = this.saleHooks.bind(this);
     this.params = this.params.bind(this);
+    this.renewalQueue = this.renewalQueue.bind(this);
   }
 
-  collections = async ({
-    limit,
-    startAfter
-  }: {
-    limit?: number;
-    startAfter?: string;
-  }): Promise<CollectionsResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      collections: {
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
   ask = async ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }): Promise<AskResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       ask: {
-        collection,
         token_id: tokenId
       }
     });
   };
   asks = async ({
-    collection,
-    includeInactive,
     limit,
     startAfter
   }: {
-    collection: string;
-    includeInactive?: boolean;
     limit?: number;
     startAfter?: number;
   }): Promise<AsksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       asks: {
-        collection,
-        include_inactive: includeInactive,
         limit,
         start_after: startAfter
       }
     });
   };
   reverseAsks = async ({
-    collection,
-    includeInactive,
     limit,
     startBefore
   }: {
-    collection: string;
-    includeInactive?: boolean;
     limit?: number;
     startBefore?: number;
   }): Promise<ReverseAsksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reverse_asks: {
-        collection,
-        include_inactive: includeInactive,
         limit,
         start_before: startBefore
       }
     });
   };
-  asksSortedByPrice = async ({
-    collection,
-    includeInactive,
-    limit,
-    startAfter
-  }: {
-    collection: string;
-    includeInactive?: boolean;
-    limit?: number;
-    startAfter?: AskOffset;
-  }): Promise<AsksSortedByPriceResponse> => {
+  askCount = async (): Promise<AskCountResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      asks_sorted_by_price: {
-        collection,
-        include_inactive: includeInactive,
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
-  reverseAsksSortedByPrice = async ({
-    collection,
-    includeInactive,
-    limit,
-    startBefore
-  }: {
-    collection: string;
-    includeInactive?: boolean;
-    limit?: number;
-    startBefore?: AskOffset;
-  }): Promise<ReverseAsksSortedByPriceResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      reverse_asks_sorted_by_price: {
-        collection,
-        include_inactive: includeInactive,
-        limit,
-        start_before: startBefore
-      }
-    });
-  };
-  askCount = async ({
-    collection
-  }: {
-    collection: string;
-  }): Promise<AskCountResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      ask_count: {
-        collection
-      }
+      ask_count: {}
     });
   };
   asksBySeller = async ({
-    includeInactive,
     limit,
     seller,
     startAfter
   }: {
-    includeInactive?: boolean;
     limit?: number;
     seller: string;
-    startAfter?: CollectionOffset;
+    startAfter?: string;
   }): Promise<AsksBySellerResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       asks_by_seller: {
-        include_inactive: includeInactive,
         limit,
         seller,
         start_after: startAfter
@@ -360,17 +174,14 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   };
   bid = async ({
     bidder,
-    collection,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }): Promise<BidResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bid: {
         bidder,
-        collection,
         token_id: tokenId
       }
     });
@@ -382,7 +193,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     bidder: string;
     limit?: number;
-    startAfter?: CollectionOffset;
+    startAfter?: string;
   }): Promise<BidsByBidderResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids_by_bidder: {
@@ -392,37 +203,17 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       }
     });
   };
-  bidsByBidderSortedByExpiration = async ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionOffset;
-  }): Promise<BidsByBidderSortedByExpirationResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      bids_by_bidder_sorted_by_expiration: {
-        bidder,
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
   bids = async ({
-    collection,
     limit,
     startAfter,
     tokenId
   }: {
-    collection: string;
     limit?: number;
     startAfter?: string;
-    tokenId: number;
+    tokenId: string;
   }): Promise<BidsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids: {
-        collection,
         limit,
         start_after: startAfter,
         token_id: tokenId
@@ -430,116 +221,28 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     });
   };
   bidsSortedByPrice = async ({
-    collection,
     limit,
     startAfter
   }: {
-    collection: string;
     limit?: number;
     startAfter?: BidOffset;
   }): Promise<BidsSortedByPriceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids_sorted_by_price: {
-        collection,
         limit,
         start_after: startAfter
       }
     });
   };
   reverseBidsSortedByPrice = async ({
-    collection,
     limit,
     startBefore
   }: {
-    collection: string;
     limit?: number;
     startBefore?: BidOffset;
   }): Promise<ReverseBidsSortedByPriceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reverse_bids_sorted_by_price: {
-        collection,
-        limit,
-        start_before: startBefore
-      }
-    });
-  };
-  collectionBid = async ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
-  }): Promise<CollectionBidResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      collection_bid: {
-        bidder,
-        collection
-      }
-    });
-  };
-  collectionBidsByBidder = async ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionOffset;
-  }): Promise<CollectionBidsByBidderResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      collection_bids_by_bidder: {
-        bidder,
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
-  collectionBidsByBidderSortedByExpiration = async ({
-    bidder,
-    limit,
-    startAfter
-  }: {
-    bidder: string;
-    limit?: number;
-    startAfter?: CollectionBidOffset;
-  }): Promise<CollectionBidsByBidderSortedByExpirationResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      collection_bids_by_bidder_sorted_by_expiration: {
-        bidder,
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
-  collectionBidsSortedByPrice = async ({
-    collection,
-    limit,
-    startAfter
-  }: {
-    collection: string;
-    limit?: number;
-    startAfter?: CollectionBidOffset;
-  }): Promise<CollectionBidsSortedByPriceResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      collection_bids_sorted_by_price: {
-        collection,
-        limit,
-        start_after: startAfter
-      }
-    });
-  };
-  reverseCollectionBidsSortedByPrice = async ({
-    collection,
-    limit,
-    startBefore
-  }: {
-    collection: string;
-    limit?: number;
-    startBefore?: CollectionBidOffset;
-  }): Promise<ReverseCollectionBidsSortedByPriceResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      reverse_collection_bids_sorted_by_price: {
-        collection,
         limit,
         start_before: startBefore
       }
@@ -565,132 +268,66 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       params: {}
     });
   };
+  renewalQueue = async ({
+    height
+  }: {
+    height: number;
+  }): Promise<RenewalQueueResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      renewal_queue: {
+        height
+      }
+    });
+  };
 }
 export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   sender: string;
   setAsk: ({
-    collection,
-    expires,
-    findersFeeBps,
-    fundsRecipient,
-    price,
-    reserveFor,
-    saleType,
+    seller,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-    fundsRecipient?: string;
-    price: Coin;
-    reserveFor?: string;
-    saleType: SaleType;
-    tokenId: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  removeAsk: ({
-    collection,
-    tokenId
-  }: {
-    collection: string;
-    tokenId: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateAskPrice: ({
-    collection,
-    price,
-    tokenId
-  }: {
-    collection: string;
-    price: Coin;
-    tokenId: number;
+    seller: string;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setBid: ({
-    collection,
-    expires,
-    finder,
-    findersFeeBps,
-    saleType,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    finder?: string;
-    findersFeeBps?: number;
-    saleType: SaleType;
-    tokenId: number;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   removeBid: ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   acceptBid: ({
     bidder,
-    collection,
-    finder,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  setCollectionBid: ({
-    collection,
-    expires,
-    findersFeeBps
-  }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  removeCollectionBid: ({
-    collection
-  }: {
-    collection: string;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  acceptCollectionBid: ({
-    bidder,
-    collection,
-    finder,
+  fundRenewal: ({
     tokenId
   }: {
-    bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  syncAsk: ({
-    collection,
+  refundRenewal: ({
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  removeStaleAsk: ({
+  processRenewals: ({
+    height
+  }: {
+    height: number;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  setup: ({
     collection,
-    tokenId
+    minter
   }: {
     collection: string;
-    tokenId: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  removeStaleBid: ({
-    bidder,
-    collection,
-    tokenId
-  }: {
-    bidder: string;
-    collection: string;
-    tokenId: number;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  removeStaleCollectionBid: ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
+    minter: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class NameMarketplaceClient extends NameMarketplaceQueryClient implements NameMarketplaceInterface {
@@ -704,247 +341,109 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setAsk = this.setAsk.bind(this);
-    this.removeAsk = this.removeAsk.bind(this);
-    this.updateAskPrice = this.updateAskPrice.bind(this);
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
-    this.setCollectionBid = this.setCollectionBid.bind(this);
-    this.removeCollectionBid = this.removeCollectionBid.bind(this);
-    this.acceptCollectionBid = this.acceptCollectionBid.bind(this);
-    this.syncAsk = this.syncAsk.bind(this);
-    this.removeStaleAsk = this.removeStaleAsk.bind(this);
-    this.removeStaleBid = this.removeStaleBid.bind(this);
-    this.removeStaleCollectionBid = this.removeStaleCollectionBid.bind(this);
+    this.fundRenewal = this.fundRenewal.bind(this);
+    this.refundRenewal = this.refundRenewal.bind(this);
+    this.processRenewals = this.processRenewals.bind(this);
+    this.setup = this.setup.bind(this);
   }
 
   setAsk = async ({
-    collection,
-    expires,
-    findersFeeBps,
-    fundsRecipient,
-    price,
-    reserveFor,
-    saleType,
+    seller,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-    fundsRecipient?: string;
-    price: Coin;
-    reserveFor?: string;
-    saleType: SaleType;
-    tokenId: number;
+    seller: string;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       set_ask: {
-        collection,
-        expires,
-        finders_fee_bps: findersFeeBps,
-        funds_recipient: fundsRecipient,
-        price,
-        reserve_for: reserveFor,
-        sale_type: saleType,
-        token_id: tokenId
-      }
-    }, fee, memo, funds);
-  };
-  removeAsk = async ({
-    collection,
-    tokenId
-  }: {
-    collection: string;
-    tokenId: number;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      remove_ask: {
-        collection,
-        token_id: tokenId
-      }
-    }, fee, memo, funds);
-  };
-  updateAskPrice = async ({
-    collection,
-    price,
-    tokenId
-  }: {
-    collection: string;
-    price: Coin;
-    tokenId: number;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      update_ask_price: {
-        collection,
-        price,
+        seller,
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
   setBid = async ({
-    collection,
-    expires,
-    finder,
-    findersFeeBps,
-    saleType,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    finder?: string;
-    findersFeeBps?: number;
-    saleType: SaleType;
-    tokenId: number;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       set_bid: {
-        collection,
-        expires,
-        finder,
-        finders_fee_bps: findersFeeBps,
-        sale_type: saleType,
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
   removeBid = async ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       remove_bid: {
-        collection,
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
   acceptBid = async ({
     bidder,
-    collection,
-    finder,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       accept_bid: {
         bidder,
-        collection,
-        finder,
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
-  setCollectionBid = async ({
-    collection,
-    expires,
-    findersFeeBps
-  }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      set_collection_bid: {
-        collection,
-        expires,
-        finders_fee_bps: findersFeeBps
-      }
-    }, fee, memo, funds);
-  };
-  removeCollectionBid = async ({
-    collection
-  }: {
-    collection: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      remove_collection_bid: {
-        collection
-      }
-    }, fee, memo, funds);
-  };
-  acceptCollectionBid = async ({
-    bidder,
-    collection,
-    finder,
+  fundRenewal = async ({
     tokenId
   }: {
-    bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      accept_collection_bid: {
-        bidder,
-        collection,
-        finder,
+      fund_renewal: {
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
-  syncAsk = async ({
-    collection,
+  refundRenewal = async ({
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      sync_ask: {
-        collection,
+      refund_renewal: {
         token_id: tokenId
       }
     }, fee, memo, funds);
   };
-  removeStaleAsk = async ({
+  processRenewals = async ({
+    height
+  }: {
+    height: number;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      process_renewals: {
+        height
+      }
+    }, fee, memo, funds);
+  };
+  setup = async ({
     collection,
-    tokenId
+    minter
   }: {
     collection: string;
-    tokenId: number;
+    minter: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      remove_stale_ask: {
+      setup: {
         collection,
-        token_id: tokenId
-      }
-    }, fee, memo, funds);
-  };
-  removeStaleBid = async ({
-    bidder,
-    collection,
-    tokenId
-  }: {
-    bidder: string;
-    collection: string;
-    tokenId: number;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      remove_stale_bid: {
-        bidder,
-        collection,
-        token_id: tokenId
-      }
-    }, fee, memo, funds);
-  };
-  removeStaleCollectionBid = async ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      remove_stale_collection_bid: {
-        bidder,
-        collection
+        minter
       }
     }, fee, memo, funds);
   };

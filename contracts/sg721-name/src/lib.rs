@@ -1,10 +1,14 @@
 pub use crate::error::ContractError;
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 use cw721_base::Extension;
 use sg_name::Metadata;
 
 pub mod contract;
 mod error;
 pub mod msg;
+
+// TODO: add lookup map
 
 #[cfg(test)]
 pub mod unit_tests;
@@ -25,7 +29,7 @@ pub mod entry {
         execute_add_text_record, execute_remove_text_record, execute_transfer_nft,
         execute_update_bio, execute_update_profile, execute_update_text_record,
     };
-    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
     use sg_std::Response;
 

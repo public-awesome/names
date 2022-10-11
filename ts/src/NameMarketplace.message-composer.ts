@@ -4,135 +4,59 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
+import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { AskCountResponse, Addr, Timestamp, Uint64, Uint128, SaleType, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidOffset, CollectionBidResponse, CollectionBid, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, CollectionOffset, CollectionsResponse, ExecuteMsg, Coin, Duration, InstantiateMsg, ExpiryRange, ListedCollectionsResponse, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;
   setAsk: ({
-    collection,
-    expires,
-    findersFeeBps,
-    fundsRecipient,
-    price,
-    reserveFor,
-    saleType,
+    seller,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-    fundsRecipient?: string;
-    price: Coin;
-    reserveFor?: string;
-    saleType: SaleType;
-    tokenId: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  removeAsk: ({
-    collection,
-    tokenId
-  }: {
-    collection: string;
-    tokenId: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateAskPrice: ({
-    collection,
-    price,
-    tokenId
-  }: {
-    collection: string;
-    price: Coin;
-    tokenId: number;
+    seller: string;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   setBid: ({
-    collection,
-    expires,
-    finder,
-    findersFeeBps,
-    saleType,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    finder?: string;
-    findersFeeBps?: number;
-    saleType: SaleType;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   removeBid: ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   acceptBid: ({
     bidder,
-    collection,
-    finder,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  setCollectionBid: ({
-    collection,
-    expires,
-    findersFeeBps
-  }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  removeCollectionBid: ({
-    collection
-  }: {
-    collection: string;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  acceptCollectionBid: ({
-    bidder,
-    collection,
-    finder,
+  fundRenewal: ({
     tokenId
   }: {
-    bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  syncAsk: ({
-    collection,
+  refundRenewal: ({
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  removeStaleAsk: ({
+  processRenewals: ({
+    height
+  }: {
+    height: number;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  setup: ({
     collection,
-    tokenId
+    minter
   }: {
     collection: string;
-    tokenId: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  removeStaleBid: ({
-    bidder,
-    collection,
-    tokenId
-  }: {
-    bidder: string;
-    collection: string;
-    tokenId: number;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  removeStaleCollectionBid: ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
+    minter: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
@@ -143,38 +67,21 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setAsk = this.setAsk.bind(this);
-    this.removeAsk = this.removeAsk.bind(this);
-    this.updateAskPrice = this.updateAskPrice.bind(this);
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
-    this.setCollectionBid = this.setCollectionBid.bind(this);
-    this.removeCollectionBid = this.removeCollectionBid.bind(this);
-    this.acceptCollectionBid = this.acceptCollectionBid.bind(this);
-    this.syncAsk = this.syncAsk.bind(this);
-    this.removeStaleAsk = this.removeStaleAsk.bind(this);
-    this.removeStaleBid = this.removeStaleBid.bind(this);
-    this.removeStaleCollectionBid = this.removeStaleCollectionBid.bind(this);
+    this.fundRenewal = this.fundRenewal.bind(this);
+    this.refundRenewal = this.refundRenewal.bind(this);
+    this.processRenewals = this.processRenewals.bind(this);
+    this.setup = this.setup.bind(this);
   }
 
   setAsk = ({
-    collection,
-    expires,
-    findersFeeBps,
-    fundsRecipient,
-    price,
-    reserveFor,
-    saleType,
+    seller,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-    fundsRecipient?: string;
-    price: Coin;
-    reserveFor?: string;
-    saleType: SaleType;
-    tokenId: number;
+    seller: string;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -183,60 +90,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           set_ask: {
-            collection,
-            expires,
-            finders_fee_bps: findersFeeBps,
-            funds_recipient: fundsRecipient,
-            price,
-            reserve_for: reserveFor,
-            sale_type: saleType,
-            token_id: tokenId
-          }
-        })),
-        funds
-      })
-    };
-  };
-  removeAsk = ({
-    collection,
-    tokenId
-  }: {
-    collection: string;
-    tokenId: number;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          remove_ask: {
-            collection,
-            token_id: tokenId
-          }
-        })),
-        funds
-      })
-    };
-  };
-  updateAskPrice = ({
-    collection,
-    price,
-    tokenId
-  }: {
-    collection: string;
-    price: Coin;
-    tokenId: number;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          update_ask_price: {
-            collection,
-            price,
+            seller,
             token_id: tokenId
           }
         })),
@@ -245,19 +99,9 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     };
   };
   setBid = ({
-    collection,
-    expires,
-    finder,
-    findersFeeBps,
-    saleType,
     tokenId
   }: {
-    collection: string;
-    expires: Timestamp;
-    finder?: string;
-    findersFeeBps?: number;
-    saleType: SaleType;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -266,11 +110,6 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           set_bid: {
-            collection,
-            expires,
-            finder,
-            finders_fee_bps: findersFeeBps,
-            sale_type: saleType,
             token_id: tokenId
           }
         })),
@@ -279,11 +118,9 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     };
   };
   removeBid = ({
-    collection,
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -292,7 +129,6 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           remove_bid: {
-            collection,
             token_id: tokenId
           }
         })),
@@ -302,14 +138,10 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
   };
   acceptBid = ({
     bidder,
-    collection,
-    finder,
     tokenId
   }: {
     bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -319,8 +151,6 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         msg: toUtf8(JSON.stringify({
           accept_bid: {
             bidder,
-            collection,
-            finder,
             token_id: tokenId
           }
         })),
@@ -328,60 +158,10 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
-  setCollectionBid = ({
-    collection,
-    expires,
-    findersFeeBps
-  }: {
-    collection: string;
-    expires: Timestamp;
-    findersFeeBps?: number;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          set_collection_bid: {
-            collection,
-            expires,
-            finders_fee_bps: findersFeeBps
-          }
-        })),
-        funds
-      })
-    };
-  };
-  removeCollectionBid = ({
-    collection
-  }: {
-    collection: string;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          remove_collection_bid: {
-            collection
-          }
-        })),
-        funds
-      })
-    };
-  };
-  acceptCollectionBid = ({
-    bidder,
-    collection,
-    finder,
+  fundRenewal = ({
     tokenId
   }: {
-    bidder: string;
-    collection: string;
-    finder?: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -389,10 +169,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          accept_collection_bid: {
-            bidder,
-            collection,
-            finder,
+          fund_renewal: {
             token_id: tokenId
           }
         })),
@@ -400,12 +177,10 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
-  syncAsk = ({
-    collection,
+  refundRenewal = ({
     tokenId
   }: {
-    collection: string;
-    tokenId: number;
+    tokenId: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -413,8 +188,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          sync_ask: {
-            collection,
+          refund_renewal: {
             token_id: tokenId
           }
         })),
@@ -422,12 +196,31 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
-  removeStaleAsk = ({
+  processRenewals = ({
+    height
+  }: {
+    height: number;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          process_renewals: {
+            height
+          }
+        })),
+        funds
+      })
+    };
+  };
+  setup = ({
     collection,
-    tokenId
+    minter
   }: {
     collection: string;
-    tokenId: number;
+    minter: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -435,56 +228,9 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          remove_stale_ask: {
+          setup: {
             collection,
-            token_id: tokenId
-          }
-        })),
-        funds
-      })
-    };
-  };
-  removeStaleBid = ({
-    bidder,
-    collection,
-    tokenId
-  }: {
-    bidder: string;
-    collection: string;
-    tokenId: number;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          remove_stale_bid: {
-            bidder,
-            collection,
-            token_id: tokenId
-          }
-        })),
-        funds
-      })
-    };
-  };
-  removeStaleCollectionBid = ({
-    bidder,
-    collection
-  }: {
-    bidder: string;
-    collection: string;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          remove_stale_collection_bid: {
-            bidder,
-            collection
+            minter
           }
         })),
         funds

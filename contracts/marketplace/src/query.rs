@@ -3,7 +3,9 @@ use crate::msg::{
     ParamsResponse, QueryMsg, RenewalQueueResponse,
 };
 use crate::state::{ask_key, asks, bid_key, bids, BidKey, Id, TokenId, RENEWAL_QUEUE, SUDO_PARAMS};
-use cosmwasm_std::{entry_point, to_binary, Addr, Binary, Deps, Env, Order, StdResult};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
 
 // Query limits
