@@ -168,6 +168,14 @@ pub enum QueryMsg {
     Params {},
     /// Get the renewal queue for a specific height
     RenewalQueue { height: u64 },
+    /// Get the minter and collection
+    Config {},
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub minter: Addr,
+    pub collection: Addr,
 }
 
 #[cw_serde]
