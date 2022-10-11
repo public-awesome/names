@@ -63,6 +63,9 @@ pub fn execute(
         ExecuteMsg::SetAsk { token_id, seller } => {
             execute_set_ask(deps, env, info, &token_id, api.addr_validate(&seller)?)
         }
+        ExecuteMsg::UpdateAsk { token_id, seller } => {
+            execute_update_ask(deps, info, &token_id, api.addr_validate(&seller)?)
+        }
         ExecuteMsg::SetBid { token_id } => execute_set_bid(deps, env, info, &token_id),
         ExecuteMsg::RemoveBid { token_id } => execute_remove_bid(deps, env, info, &token_id),
         ExecuteMsg::AcceptBid { token_id, bidder } => {
@@ -94,6 +97,7 @@ pub fn execute_setup(
 
     Ok(Response::new())
 }
+
 /// A seller may set an Ask on their NFT to list it on Marketplace
 pub fn execute_set_ask(
     deps: DepsMut,
@@ -148,6 +152,39 @@ pub fn execute_set_ask(
         .add_attribute("seller", seller);
 
     Ok(Response::new().add_event(event).add_submessages(hook))
+}
+
+/// When an NFT is transferred, the `ask` has to be updated with the new
+/// seller. Also any renewal funds should be refunded to the previous owner.
+pub fn execute_update_ask(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+    seller: Addr,
+) -> Result<Response, ContractError> {
+    let collection = NAME_COLLECTION.load(deps.storage)?;
+    if info.sender != collection {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut res = Response::new();
+
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+    ask.seller = seller.clone();
+
+    if !ask.renewal_fund.is_zero() {
+        let msg = BankMsg::Send {
+            to_address: ask.seller.to_string(),
+            amount: coins(ask.renewal_fund.u128(), NATIVE_DENOM),
+        };
+        res = res.add_message(msg);
+    }
+
+    let event = Event::new("update-ask")
+        .add_attribute("token_id", token_id)
+        .add_attribute("seller", seller);
+
+    Ok(res.add_event(event))
 }
 
 /// Places a bid on a name. The bid is escrowed in the contract.
