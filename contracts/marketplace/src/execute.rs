@@ -171,6 +171,7 @@ pub fn execute_update_ask(
 
     let mut ask = asks().load(deps.storage, ask_key(token_id))?;
     ask.seller = seller.clone();
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
 
     if !ask.renewal_fund.is_zero() {
         let msg = BankMsg::Send {

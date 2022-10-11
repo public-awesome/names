@@ -1,6 +1,6 @@
 use crate::{error::ContractError, state::NAME_MARKETPLACE};
 
-use cosmwasm_std::{Addr, Deps, DepsMut, Env, MessageInfo, StdResult};
+use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
 
 use cw721_base::Extension;
 use cw_utils::nonpayable;
@@ -8,6 +8,7 @@ use cw_utils::nonpayable;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
@@ -167,14 +168,24 @@ pub fn execute_transfer_nft(
     recipient: String,
     token_id: String,
 ) -> Result<Response, ContractError> {
-    // sender can transfer check done on sg721 transfer tx
     nonpayable(&info)?;
+
+    // Update the ask on the marketplace
+    let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
+        token_id: token_id.to_string(),
+        seller: recipient.to_string(),
+    };
+    let update_ask_msg = WasmMsg::Execute {
+        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        funds: vec![],
+        msg: to_binary(&msg)?,
+    };
 
     let mut token = Sg721NameContract::default()
         .tokens
         .load(deps.storage, &token_id)?;
 
-    // reset bio, profile, records
+    // Reset bio, profile, records
     token.extension.bio = None;
     token.extension.profile = None;
     token.extension.records = vec![];
@@ -184,14 +195,11 @@ pub fn execute_transfer_nft(
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient,
-        token_id,
+        token_id: token_id.to_string(),
     };
     Sg721NameContract::default().execute(deps, env, info, msg)?;
 
-    // TODO: update ask in marketplace
-    // let msg = Mark
-
-    Ok(Response::new())
+    Ok(Response::new().add_message(update_ask_msg))
 }
 
 fn only_owner(deps: Deps, sender: Addr, token_id: &str) -> Result<Addr, ContractError> {
