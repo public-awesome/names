@@ -530,9 +530,9 @@ mod profile {
 
     use cosmwasm_std::{coin, Timestamp};
     use cw721::NftInfoResponse;
-    use cw721_base::{state::TokenInfo, Extension};
+    use cw721_base::{state::TokenInfo, Extension, MintMsg};
     use sg2::{msg::Sg2ExecuteMsg, tests::mock_collection_params};
-    use sg721::{ExecuteMsg as Sg721ExecuteMsg, MintMsg};
+    use sg721::ExecuteMsg as Sg721ExecuteMsg;
     use sg721_base::msg::QueryMsg::NftInfo;
     use sg_name::{Metadata, NFT};
     use sg_std::{StargazeMsgWrapper, GENESIS_MINT_START_TIME, NATIVE_DENOM};

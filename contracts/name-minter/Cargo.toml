@@ -42,3 +42,6 @@ sg-std = "0.19.0"
 cw-multi-test = "0.15.0"
 sg-multi-test = "0.19.0"
 sg721-base = "0.19.0"
+vending-minter = { path = "../../../launchpad/contracts/vending-minter" }
+vending-factory = { path = "../../../launchpad/contracts/vending-factory" }
+sg2 = { path = "../../../launchpad/packages/sg2" }
