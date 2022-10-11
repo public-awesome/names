@@ -1,7 +1,7 @@
 [package]
 name = "sg-name-market"
 version = "0.4.0"
-authors = ["Shane Vitarana <s@noreply.publicawsome.com>"]
+authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2021"
 description = "Rust definition of Stargaze Name Marketplace"
 license = "Apache-2.0"
