@@ -1,4 +1,4 @@
-use crate::error::ContractError;
+use crate::{error::ContractError, state::NAME_MARKETPLACE};
 
 use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, WasmQuery};
 
@@ -161,6 +161,23 @@ pub fn execute_update_text_record(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
+    Ok(Response::new())
+}
+
+pub fn execute_set_name_marketplace(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
+    if minter != info.sender {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
+
     Ok(Response::new())
 }
 

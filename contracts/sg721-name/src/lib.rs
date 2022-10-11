@@ -7,6 +7,7 @@ use sg_name::Metadata;
 pub mod contract;
 mod error;
 pub mod msg;
+pub mod state;
 
 // TODO: add lookup map
 
@@ -23,6 +24,8 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
 pub type QueryMsg = sg721_base::msg::QueryMsg;
 
 pub mod entry {
+    use crate::contract::execute_set_name_marketplace;
+
     use super::*;
 
     use contract::{
@@ -69,6 +72,9 @@ pub mod entry {
             }
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
+            }
+            ExecuteMsg::SetNameMarketplace { address } => {
+                execute_set_name_marketplace(deps, info, address)
             }
             ExecuteMsg::TransferNft {
                 recipient,
