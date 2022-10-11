@@ -45,6 +45,8 @@ pub fn instantiate(
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
+    IS_SETUP.save(deps.storage, &false)?;
+
     Ok(Response::new())
 }
 
