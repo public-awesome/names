@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ExecuteMsg_for_Metadata_for_Nullable_Empty",
+  "title": "ExecuteMsg",
   "oneOf": [
     {
       "type": "string",
@@ -326,7 +326,7 @@
       ],
       "properties": {
         "mint": {
-          "$ref": "#/definitions/MintMsg_for_Metadata_for_Nullable_Empty"
+          "$ref": "#/definitions/MintMsg_for_Metadata_for_Empty"
         }
       },
       "additionalProperties": false
@@ -460,9 +460,10 @@
         }
       ]
     },
-    "Metadata_for_Nullable_Empty": {
+    "Metadata_for_Empty": {
       "type": "object",
       "required": [
+        "extension",
         "records"
       ],
       "properties": {
@@ -473,14 +474,7 @@
           ]
         },
         "extension": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Empty"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/definitions/Empty"
         },
         "profile": {
           "anyOf": [
@@ -500,7 +494,7 @@
         }
       }
     },
-    "MintMsg_for_Metadata_for_Nullable_Empty": {
+    "MintMsg_for_Metadata_for_Empty": {
       "type": "object",
       "required": [
         "extension",
@@ -512,7 +506,7 @@
           "description": "Any custom extension used by this contract",
           "allOf": [
             {
-              "$ref": "#/definitions/Metadata_for_Nullable_Empty"
+              "$ref": "#/definitions/Metadata_for_Empty"
             }
           ]
         },
