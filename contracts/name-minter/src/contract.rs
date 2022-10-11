@@ -82,6 +82,8 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
             NAME_COLLECTION.save(deps.storage, &Addr::unchecked(collection_address))?;
 
+            // TODO: define sg721-name interface
+
             Ok(Response::default().add_attribute("action", "init_collection_reply"))
         }
         Err(_) => Err(ContractError::ReplyOnSuccess {}),

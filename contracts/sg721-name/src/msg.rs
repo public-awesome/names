@@ -9,6 +9,8 @@ use sg_name::{TextRecord, NFT};
 // The rest are inherited from sg721 and impl to properly convert the msgs.
 #[cw_serde]
 pub enum ExecuteMsg<T> {
+    /// Set name marketplace contract address
+    SetNameMarketplace { address: String },
     /// Update bio
     UpdateBio { name: String, bio: Option<String> },
     /// Update profile
@@ -57,8 +59,6 @@ pub enum ExecuteMsg<T> {
     UpdateTradingStartTime(Option<Timestamp>),
     /// Freeze collection info from further updates
     FreezeCollectionInfo,
-    /// Set name marketplace contract address
-    SetNameMarketplace { address: String },
 }
 
 impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {

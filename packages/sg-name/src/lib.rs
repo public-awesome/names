@@ -23,3 +23,19 @@ pub struct Metadata<T> {
     pub records: Vec<TextRecord>,
     pub extension: T,
 }
+
+#[cw_serde]
+pub enum ExecuteMsg {
+    /// Set name marketplace contract address
+    SetNameMarketplace { address: String },
+    /// Update bio
+    UpdateBio { name: String, bio: Option<String> },
+    /// Update profile
+    UpdateProfile { name: String, profile: Option<NFT> },
+    /// Add text record ex: twitter handle, discord name, etc
+    AddTextRecord { name: String, record: TextRecord },
+    /// Remove text record ex: twitter handle, discord name, etc
+    RemoveTextRecord { name: String, record_name: String },
+    /// Update text record ex: twitter handle, discord name, etc
+    UpdateTextRecord { name: String, record: TextRecord },
+}
