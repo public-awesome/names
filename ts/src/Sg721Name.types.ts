@@ -35,7 +35,6 @@ export interface MetadataForEmpty {
   extension: Empty;
   profile?: NFT | null;
   records: TextRecord[];
-  [k: string]: unknown;
 }
 export interface Empty {
   [k: string]: unknown;
@@ -43,13 +42,11 @@ export interface Empty {
 export interface NFT {
   collection: Addr;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface TextRecord {
   name: string;
   value: string;
   verified_at?: Timestamp | null;
-  [k: string]: unknown;
 }
 export interface AllOperatorsResponse {
   operators: Approval[];
@@ -82,6 +79,10 @@ export interface ContractInfoResponse {
   symbol: string;
 }
 export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | {
+  set_name_marketplace: {
+    address: string;
+  };
+} | {
   update_bio: {
     bio?: string | null;
     name: string;
@@ -162,7 +163,6 @@ export interface MetadataForNullable_Empty {
   extension?: Empty | null;
   profile?: NFT | null;
   records: TextRecord[];
-  [k: string]: unknown;
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;
@@ -200,6 +200,20 @@ export interface OperatorsResponse {
   operators: Approval[];
 }
 export type QueryMsg = {
+  name_marketplace: {};
+} | {
+  bio: {
+    name: string;
+  };
+} | {
+  profile: {
+    name: string;
+  };
+} | {
+  text_records: {
+    name: string;
+  };
+} | {
   owner_of: {
     include_expired?: boolean | null;
     token_id: string;
