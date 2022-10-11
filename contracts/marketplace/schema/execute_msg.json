@@ -29,6 +29,32 @@
       "additionalProperties": false
     },
     {
+      "description": "Update ask when an NFT is transferred Only the name collection can call this",
+      "type": "object",
+      "required": [
+        "update_ask"
+      ],
+      "properties": {
+        "update_ask": {
+          "type": "object",
+          "required": [
+            "seller",
+            "token_id"
+          ],
+          "properties": {
+            "seller": {
+              "type": "string"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
       "description": "Place a bid on an existing ask",
       "type": "object",
       "required": [
