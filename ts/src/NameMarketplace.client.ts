@@ -86,6 +86,7 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     height: number;
   }) => Promise<RenewalQueueResponse>;
+  config: () => Promise<ConfigResponse>;
 }
 export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterface {
   client: CosmWasmClient;
@@ -109,6 +110,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.saleHooks = this.saleHooks.bind(this);
     this.params = this.params.bind(this);
     this.renewalQueue = this.renewalQueue.bind(this);
+    this.config = this.config.bind(this);
   }
 
   ask = async ({
@@ -277,6 +279,11 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       renewal_queue: {
         height
       }
+    });
+  };
+  config = async (): Promise<ConfigResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      config: {}
     });
   };
 }
