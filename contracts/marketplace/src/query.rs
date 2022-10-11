@@ -3,8 +3,8 @@ use crate::msg::{
     ConfigResponse, ParamsResponse, QueryMsg, RenewalQueueResponse,
 };
 use crate::state::{
-    ask_key, asks, bid_key, bids, BidKey, Id, TokenId, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE,
-    SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, BidKey, Id, TokenId, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION,
+    NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -67,10 +67,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
         )?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
-        // TODO: add these
-        QueryMsg::AskHooks {} => todo!(),
-        QueryMsg::BidHooks {} => todo!(),
-        QueryMsg::SaleHooks {} => todo!(),
+        QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
+        QueryMsg::BidHooks {} => to_binary(&BID_HOOKS.query_hooks(deps)?),
+        QueryMsg::SaleHooks {} => to_binary(&SALE_HOOKS.query_hooks(deps)?),
         QueryMsg::RenewalQueue { height } => to_binary(&query_renewal_queue(deps, height)?),
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
