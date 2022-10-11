@@ -10,7 +10,7 @@ use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
-use sg_name::Metadata;
+use sg_name::{ExecuteMsg as SgNameExecuteMsg, Metadata};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
@@ -78,13 +78,21 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     let reply = parse_reply_instantiate_data(msg);
     match reply {
         Ok(res) => {
-            let collection_address = res.contract_address;
+            let collection_address = &res.contract_address;
 
             NAME_COLLECTION.save(deps.storage, &Addr::unchecked(collection_address))?;
 
-            // TODO: define sg721-name interface
+            let msg = WasmMsg::Execute {
+                contract_addr: collection_address.to_string(),
+                funds: vec![],
+                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
+                    address: collection_address.to_string(),
+                })?,
+            };
 
-            Ok(Response::default().add_attribute("action", "init_collection_reply"))
+            Ok(Response::default()
+                .add_attribute("action", "init_collection_reply")
+                .add_message(msg))
         }
         Err(_) => Err(ContractError::ReplyOnSuccess {}),
     }
