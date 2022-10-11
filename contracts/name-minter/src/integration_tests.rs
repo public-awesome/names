@@ -8,6 +8,7 @@ use name_marketplace::msg::{
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
+use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
@@ -108,6 +109,12 @@ fn instantiate_contracts() -> StargazeApp {
     };
     let res = app.wasm_sudo(marketplace.clone(), &msg);
     assert!(res.is_ok());
+
+    let res: NameMarketplaceResponse = app
+        .wrap()
+        .query_wasm_smart(COLLECTION, &SgNameQueryMsg::NameMarketplace {})
+        .unwrap();
+    assert_eq!(res.address, marketplace.to_string());
 
     // 4. Update Name Marketplace with Name Collection address
     let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {

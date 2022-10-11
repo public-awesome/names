@@ -3,6 +3,86 @@
   "title": "QueryMsg",
   "oneOf": [
     {
+      "description": "Returns NameMarketplaceResponse",
+      "type": "object",
+      "required": [
+        "name_marketplace"
+      ],
+      "properties": {
+        "name_marketplace": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Returns BioResponse",
+      "type": "object",
+      "required": [
+        "bio"
+      ],
+      "properties": {
+        "bio": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Returns ProfileResponse",
+      "type": "object",
+      "required": [
+        "profile"
+      ],
+      "properties": {
+        "profile": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Returns TextRecordListResponse",
+      "type": "object",
+      "required": [
+        "text_records"
+      ],
+      "properties": {
+        "text_records": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
       "type": "object",
       "required": [
         "owner_of"
