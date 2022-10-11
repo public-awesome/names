@@ -1,6 +1,6 @@
 use crate::{error::ContractError, state::NAME_MARKETPLACE};
 
-use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmQuery};
 
 use cw721::OwnerOfResponse;
 use cw721_base::Extension;
@@ -8,7 +8,7 @@ use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::{msg::QueryMsg as Sg721QueryMsg, ContractError::Unauthorized};
-use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_std::Response;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
@@ -248,4 +248,12 @@ fn validate_and_sanitize_record(record: &mut TextRecord) -> Result<(), ContractE
     // new or updated records need to be verified
     record.verified_at = None;
     Ok(())
+}
+
+pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> {
+    let address = NAME_MARKETPLACE.load(deps.storage)?;
+
+    Ok(NameMarketplaceResponse {
+        address: address.to_string(),
+    })
 }

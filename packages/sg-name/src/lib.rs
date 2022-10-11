@@ -25,7 +25,7 @@ pub struct Metadata<T> {
 }
 
 #[cw_serde]
-pub enum ExecuteMsg {
+pub enum SgNameExecuteMsg {
     /// Set name marketplace contract address
     SetNameMarketplace { address: String },
     /// Update bio
@@ -38,4 +38,15 @@ pub enum ExecuteMsg {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+}
+
+#[cw_serde]
+pub enum SgNameQueryMsg {
+    /// Returns NameMarketplaceResponse
+    NameMarketplace {},
+}
+
+#[cw_serde]
+pub struct NameMarketplaceResponse {
+    pub address: String,
 }

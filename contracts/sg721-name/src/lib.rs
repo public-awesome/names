@@ -21,10 +21,10 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 pub type InstantiateMsg = sg721::InstantiateMsg;
 pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
-pub type QueryMsg = sg721_base::msg::QueryMsg;
+pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
-    use crate::contract::execute_set_name_marketplace;
+    use crate::contract::{execute_set_name_marketplace, query_name_marketplace};
 
     use super::*;
 
@@ -32,8 +32,8 @@ pub mod entry {
         execute_add_text_record, execute_remove_text_record, execute_transfer_nft,
         execute_update_bio, execute_update_profile, execute_update_text_record,
     };
-    use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
-    use sg721_base::{msg::QueryMsg, ContractError as Sg721ContractError};
+    use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use sg721_base::ContractError as Sg721ContractError;
     use sg_std::Response;
 
     #[cfg_attr(not(feature = "library"), entry_point)]
@@ -88,6 +88,9 @@ pub mod entry {
 
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
-        Sg721NameContract::default().query(deps, env, msg)
+        match msg {
+            QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
+            _ => Sg721NameContract::default().query(deps, env, msg.into()),
+        }
     }
 }

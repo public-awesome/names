@@ -10,7 +10,7 @@ use cw_utils::{must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
-use sg_name::{ExecuteMsg as SgNameExecuteMsg, Metadata};
+use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
@@ -86,7 +86,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 contract_addr: collection_address.to_string(),
                 funds: vec![],
                 msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
-                    address: collection_address.to_string(),
+                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
                 })?,
             };
 

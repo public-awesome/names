@@ -3,6 +3,7 @@ use cosmwasm_std::{Binary, Timestamp};
 use cw721::Expiration;
 use cw721_base::MintMsg;
 use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
+use sg721_base::msg::QueryMsg as Sg721QueryMsg;
 use sg_name::{TextRecord, NFT};
 
 // Add execute msgs related to bio, profile, text records
@@ -116,6 +117,128 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
                 extension,
             }),
             _ => unreachable!("Invalid ExecuteMsg"),
+        }
+    }
+}
+
+#[cw_serde]
+pub enum QueryMsg {
+    /// Returns NameMarketplaceResponse
+    NameMarketplace {},
+    /// Returns BioResponse
+    Bio {
+        name: String,
+    },
+    /// Returns ProfileResponse
+    Profile {
+        name: String,
+    },
+    /// Returns TextRecordListResponse
+    TextRecords {
+        name: String,
+    },
+    OwnerOf {
+        token_id: String,
+        include_expired: Option<bool>,
+    },
+    Approval {
+        token_id: String,
+        spender: String,
+        include_expired: Option<bool>,
+    },
+    Approvals {
+        token_id: String,
+        include_expired: Option<bool>,
+    },
+    AllOperators {
+        owner: String,
+        include_expired: Option<bool>,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    NumTokens {},
+    ContractInfo {},
+    NftInfo {
+        token_id: String,
+    },
+    AllNftInfo {
+        token_id: String,
+        include_expired: Option<bool>,
+    },
+    Tokens {
+        owner: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    AllTokens {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    Minter {},
+    CollectionInfo {},
+}
+
+impl From<QueryMsg> for Sg721QueryMsg {
+    fn from(msg: QueryMsg) -> Sg721QueryMsg {
+        match msg {
+            QueryMsg::OwnerOf {
+                token_id,
+                include_expired,
+            } => Sg721QueryMsg::OwnerOf {
+                token_id,
+                include_expired,
+            },
+            QueryMsg::Approval {
+                token_id,
+                spender,
+                include_expired,
+            } => Sg721QueryMsg::Approval {
+                token_id,
+                spender,
+                include_expired,
+            },
+            QueryMsg::Approvals {
+                token_id,
+                include_expired,
+            } => Sg721QueryMsg::Approvals {
+                token_id,
+                include_expired,
+            },
+            QueryMsg::AllOperators {
+                owner,
+                include_expired,
+                start_after,
+                limit,
+            } => Sg721QueryMsg::AllOperators {
+                owner,
+                include_expired,
+                start_after,
+                limit,
+            },
+            QueryMsg::NumTokens {} => Sg721QueryMsg::NumTokens {},
+            QueryMsg::ContractInfo {} => Sg721QueryMsg::ContractInfo {},
+            QueryMsg::NftInfo { token_id } => Sg721QueryMsg::NftInfo { token_id },
+            QueryMsg::AllNftInfo {
+                token_id,
+                include_expired,
+            } => Sg721QueryMsg::AllNftInfo {
+                token_id,
+                include_expired,
+            },
+            QueryMsg::Tokens {
+                owner,
+                start_after,
+                limit,
+            } => Sg721QueryMsg::Tokens {
+                owner,
+                start_after,
+                limit,
+            },
+            QueryMsg::AllTokens { start_after, limit } => {
+                Sg721QueryMsg::AllTokens { start_after, limit }
+            }
+            QueryMsg::Minter {} => Sg721QueryMsg::Minter {},
+            _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }
 }
