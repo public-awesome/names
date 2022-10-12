@@ -127,25 +127,19 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 
 /// Defines incides for accessing bids
 pub struct BidIndicies<'a> {
-    pub token_id: MultiIndex<'a, TokenId, Bid, BidKey>,
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
 }
 
 impl<'a> IndexList<Bid> for BidIndicies<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Bid>> + '_> {
-        let v: Vec<&dyn Index<Bid>> = vec![&self.token_id, &self.price, &self.bidder];
+        let v: Vec<&dyn Index<Bid>> = vec![&self.price, &self.bidder];
         Box::new(v.into_iter())
     }
 }
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
     let indexes = BidIndicies {
-        token_id: MultiIndex::new(
-            |_pk: &[u8], d: &Bid| d.token_id.clone(),
-            "bids",
-            "bids__collection_token_id",
-        ),
         price: MultiIndex::new(
             |_pk: &[u8], d: &Bid| d.amount.u128(),
             "bids",
