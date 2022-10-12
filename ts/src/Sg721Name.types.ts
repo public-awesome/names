@@ -139,7 +139,7 @@ export type ExecuteMsg = "freeze_collection_info" | {
     operator: string;
   };
 } | {
-  mint: MintMsgForMetadataForEmpty;
+  mint: MintMsgForMetadataForNullable_Empty;
 } | {
   burn: {
     token_id: string;
@@ -152,11 +152,17 @@ export type ExecuteMsg = "freeze_collection_info" | {
   update_trading_start_time: Timestamp | null;
 };
 export type Binary = string;
-export interface MintMsgForMetadataForEmpty {
-  extension: MetadataForEmpty;
+export interface MintMsgForMetadataForNullable_Empty {
+  extension: MetadataForNullable_Empty;
   owner: string;
   token_id: string;
   token_uri?: string | null;
+}
+export interface MetadataForNullable_Empty {
+  bio?: string | null;
+  extension?: Empty | null;
+  profile?: NFT | null;
+  records: TextRecord[];
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;

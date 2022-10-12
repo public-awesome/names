@@ -348,7 +348,7 @@
       ],
       "properties": {
         "mint": {
-          "$ref": "#/definitions/MintMsg_for_Metadata_for_Empty"
+          "$ref": "#/definitions/MintMsg_for_Metadata_for_Nullable_Empty"
         }
       },
       "additionalProperties": false
@@ -482,10 +482,9 @@
         }
       ]
     },
-    "Metadata_for_Empty": {
+    "Metadata_for_Nullable_Empty": {
       "type": "object",
       "required": [
-        "extension",
         "records"
       ],
       "properties": {
@@ -496,7 +495,14 @@
           ]
         },
         "extension": {
-          "$ref": "#/definitions/Empty"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Empty"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "profile": {
           "anyOf": [
@@ -517,7 +523,7 @@
       },
       "additionalProperties": false
     },
-    "MintMsg_for_Metadata_for_Empty": {
+    "MintMsg_for_Metadata_for_Nullable_Empty": {
       "type": "object",
       "required": [
         "extension",
@@ -529,7 +535,7 @@
           "description": "Any custom extension used by this contract",
           "allOf": [
             {
-              "$ref": "#/definitions/Metadata_for_Empty"
+              "$ref": "#/definitions/Metadata_for_Nullable_Empty"
             }
           ]
         },
