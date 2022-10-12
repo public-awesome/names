@@ -383,6 +383,20 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "description": "Get the minter and collection",
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {

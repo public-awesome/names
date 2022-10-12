@@ -18,6 +18,9 @@ pub enum ExecuteMsg {
     /// List name NFT on the marketplace by creating a new ask
     /// Only the name minter can call this.
     SetAsk { token_id: TokenId, seller: String },
+    /// Update ask when an NFT is transferred
+    /// Only the name collection can call this
+    UpdateAsk { token_id: TokenId, seller: String },
     /// Place a bid on an existing ask
     SetBid { token_id: TokenId },
     /// Remove an existing bid from an ask
@@ -168,6 +171,14 @@ pub enum QueryMsg {
     Params {},
     /// Get the renewal queue for a specific height
     RenewalQueue { height: u64 },
+    /// Get the minter and collection
+    Config {},
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub minter: Addr,
+    pub collection: Addr,
 }
 
 #[cw_serde]

@@ -193,6 +193,8 @@ export type QueryMsg = {
   renewal_queue: {
     height: number;
   };
+} | {
+  config: {};
 };
 export interface ReverseAsksSortedByPriceResponse {
   asks: Ask[];

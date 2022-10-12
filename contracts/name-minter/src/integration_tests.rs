@@ -8,6 +8,7 @@ use name_marketplace::msg::{
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
+use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
@@ -40,6 +41,7 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 }
 
 const USER: &str = "user";
+const USER2: &str = "user2";
 const BIDDER: &str = "bidder";
 const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
@@ -108,6 +110,12 @@ fn instantiate_contracts() -> StargazeApp {
     };
     let res = app.wasm_sudo(marketplace.clone(), &msg);
     assert!(res.is_ok());
+
+    let res: NameMarketplaceResponse = app
+        .wrap()
+        .query_wasm_smart(COLLECTION, &SgNameQueryMsg::NameMarketplace {})
+        .unwrap();
+    assert_eq!(res.address, marketplace.to_string());
 
     // 4. Update Name Marketplace with Name Collection address
     let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {
@@ -521,5 +529,34 @@ mod query {
             .unwrap();
         assert_eq!(res.queue.len(), 1);
         assert_eq!(res.queue[0], "hack".to_string());
+    }
+}
+
+mod transfer {
+    use super::*;
+
+    #[test]
+    fn transfer_nft() {
+        let mut app = instantiate_contracts();
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let msg = Sg721NameExecuteMsg::TransferNft {
+            recipient: USER2.to_string(),
+            token_id: NAME.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = MarketplaceQueryMsg::Ask {
+            token_id: NAME.to_string(),
+        };
+        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.ask.unwrap().seller.to_string(), USER2.to_string());
     }
 }

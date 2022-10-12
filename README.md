@@ -12,9 +12,9 @@ The code is this repository is under two licenses. Please make a note of them be
 
 ## Architecture
 
-Names are stored without the TLD so they can be mapped to a raw address that is not bech32 encoded. This way, all Cosmos / Interchain names can be resolved to an address that is derived via the same key derivation path (118).
+Names are stored without the TLD so they can be mapped to _any_ Cosmos address. All names can be resolved to an address that is derived via the same Cosmos key derivation path (118).
 
-For example:
+When you buy a Stargaze Name, you are really getting a name on _every_ Cosmos chain. Any chain can lookup a name by its local address over IBC. Similarly, any chain can mint a name over IBC that resolves to a local address.
 
 ```
 bobo -> D93385094E906D7DA4EBFDEC2C4B167D5CAA431A (in hex)

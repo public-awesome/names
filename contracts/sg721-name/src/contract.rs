@@ -1,14 +1,14 @@
-use crate::error::ContractError;
+use crate::{error::ContractError, state::NAME_MARKETPLACE};
 
-use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
 
-use cw721::OwnerOfResponse;
 use cw721_base::Extension;
 use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
-use sg721_base::{msg::QueryMsg as Sg721QueryMsg, ContractError::Unauthorized};
-use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg721_base::ContractError::Unauthorized;
+use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
@@ -19,11 +19,10 @@ pub fn execute_update_bio(
     name: String,
     bio: Option<String>,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
     let token_id = name;
-    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), info.sender, &token_id)?;
     validate_bio(bio.clone())?;
 
     Sg721NameContract::default()
@@ -44,26 +43,10 @@ pub fn execute_update_profile(
     name: String,
     profile: Option<NFT>,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
     let token_id = name;
-    if !is_sender_token_id_owner(deps.as_ref(), info.sender.clone(), &token_id) {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
 
-    if let Some(profile) = profile.clone() {
-        let req = WasmQuery::Smart {
-            contract_addr: profile.collection.to_string(),
-            msg: to_binary(&Sg721QueryMsg::OwnerOf {
-                token_id: profile.token_id,
-                include_expired: None,
-            })?,
-        }
-        .into();
-        let res: OwnerOfResponse = deps.querier.query(&req)?;
-        if res.owner != info.sender {
-            return Err(ContractError::NotNFTOwner {});
-        }
-    }
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), info.sender, &token_id)?;
 
     Sg721NameContract::default()
         .tokens
@@ -83,11 +66,10 @@ pub fn execute_add_text_record(
     name: String,
     mut record: TextRecord,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
     let token_id = name;
-    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), info.sender, &token_id)?;
     validate_and_sanitize_record(&mut record)?;
 
     Sg721NameContract::default()
@@ -114,11 +96,10 @@ pub fn execute_remove_text_record(
     name: String,
     record_name: String,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
     let token_id = name;
-    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), info.sender, &token_id)?;
 
     Sg721NameContract::default()
         .tokens
@@ -141,11 +122,10 @@ pub fn execute_update_text_record(
     name: String,
     mut record: TextRecord,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
     let token_id = name;
-    if !is_sender_token_id_owner(deps.as_ref(), info.sender, &token_id) {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), info.sender, &token_id)?;
     validate_and_sanitize_record(&mut record)?;
 
     Sg721NameContract::default()
@@ -164,6 +144,23 @@ pub fn execute_update_text_record(
     Ok(Response::new())
 }
 
+pub fn execute_set_name_marketplace(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
+    if minter != info.sender {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
+
+    Ok(Response::new())
+}
+
 pub fn execute_transfer_nft(
     deps: DepsMut,
     env: Env,
@@ -171,14 +168,24 @@ pub fn execute_transfer_nft(
     recipient: String,
     token_id: String,
 ) -> Result<Response, ContractError> {
-    // sender can transfer check done on sg721 transfer tx
     nonpayable(&info)?;
+
+    // Update the ask on the marketplace
+    let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
+        token_id: token_id.to_string(),
+        seller: recipient.to_string(),
+    };
+    let update_ask_msg = WasmMsg::Execute {
+        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        funds: vec![],
+        msg: to_binary(&msg)?,
+    };
+
     let mut token = Sg721NameContract::default()
         .tokens
-        .may_load(deps.storage, &token_id)?
-        .ok_or(ContractError::NameNotFound {})?;
+        .load(deps.storage, &token_id)?;
 
-    // reset bio, profile, records
+    // Reset bio, profile, records
     token.extension.bio = None;
     token.extension.profile = None;
     token.extension.records = vec![];
@@ -188,22 +195,24 @@ pub fn execute_transfer_nft(
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient,
-        token_id,
+        token_id: token_id.to_string(),
     };
     Sg721NameContract::default().execute(deps, env, info, msg)?;
 
-    Ok(Response::new())
+    Ok(Response::new().add_message(update_ask_msg))
 }
 
-fn is_sender_token_id_owner(deps: Deps, sender: Addr, token_id: &str) -> bool {
-    let owner = match Sg721NameContract::default()
+fn only_owner(deps: Deps, sender: Addr, token_id: &str) -> Result<Addr, ContractError> {
+    let owner = Sg721NameContract::default()
         .tokens
-        .load(deps.storage, token_id)
-    {
-        Ok(token_info) => token_info.owner,
-        Err(_) => return false,
-    };
-    owner == sender
+        .load(deps.storage, token_id)?
+        .owner;
+
+    if owner != sender {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    Ok(owner)
 }
 
 fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
@@ -231,4 +240,12 @@ fn validate_and_sanitize_record(record: &mut TextRecord) -> Result<(), ContractE
     // new or updated records need to be verified
     record.verified_at = None;
     Ok(())
+}
+
+pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> {
+    let address = NAME_MARKETPLACE.load(deps.storage)?;
+
+    Ok(NameMarketplaceResponse {
+        address: address.to_string(),
+    })
 }
