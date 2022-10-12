@@ -453,7 +453,7 @@ mod query {
         mint_and_list(&mut app, "hack", USER);
 
         let msg = MarketplaceQueryMsg::ReverseAsks {
-            start_before: Some(5),
+            start_before: None,
             limit: None,
         };
         let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
