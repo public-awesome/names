@@ -134,15 +134,13 @@ pub fn execute_set_ask(
 
     let params = SUDO_PARAMS.load(deps.storage)?;
 
-    // store reference to ask in expiration queue for future renewal processing
-    let mut queue = RENEWAL_QUEUE
-        .may_load(deps.storage, env.block.height)?
-        .unwrap_or_default();
-    queue.push(token_id.to_string());
+    // store reference to ask in renewal queue for future processing
+    let seconds_per_year = 31536000;
+    let renewal_time = env.block.time.plus_seconds(seconds_per_year);
     RENEWAL_QUEUE.save(
         deps.storage,
-        env.block.height + params.blocks_per_year,
-        &queue,
+        (renewal_time.seconds(), ask.id),
+        &"".to_string(),
     )?;
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
