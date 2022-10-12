@@ -77,13 +77,11 @@ pub struct AskIndicies<'a> {
     pub id: UniqueIndex<'a, u64, Ask, AskKey>,
     /// Index by seller
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
-    /// Keeps track of whene renewal has to happen
-    pub height: MultiIndex<'a, u64, Ask, AskKey>,
 }
 
 impl<'a> IndexList<Ask> for AskIndicies<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Ask>> + '_> {
-        let v: Vec<&dyn Index<Ask>> = vec![&self.id, &self.seller, &self.height];
+        let v: Vec<&dyn Index<Ask>> = vec![&self.id, &self.seller];
         Box::new(v.into_iter())
     }
 }
@@ -96,7 +94,6 @@ pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
             "asks",
             "asks__seller",
         ),
-        height: MultiIndex::new(|_pk: &[u8], d: &Ask| d.height, "asks", "asks__height"),
     };
     IndexedMap::new("asks", indexes)
 }
@@ -130,26 +127,19 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 
 /// Defines incides for accessing bids
 pub struct BidIndicies<'a> {
-    pub token_id: MultiIndex<'a, TokenId, Bid, BidKey>,
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
-    pub height: MultiIndex<'a, u64, Bid, BidKey>,
 }
 
 impl<'a> IndexList<Bid> for BidIndicies<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Bid>> + '_> {
-        let v: Vec<&dyn Index<Bid>> = vec![&self.token_id, &self.price, &self.bidder];
+        let v: Vec<&dyn Index<Bid>> = vec![&self.price, &self.bidder];
         Box::new(v.into_iter())
     }
 }
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
     let indexes = BidIndicies {
-        token_id: MultiIndex::new(
-            |_pk: &[u8], d: &Bid| d.token_id.clone(),
-            "bids",
-            "bids__collection_token_id",
-        ),
         price: MultiIndex::new(
             |_pk: &[u8], d: &Bid| d.amount.u128(),
             "bids",
@@ -160,7 +150,6 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
             "bids",
             "bids__bidder",
         ),
-        height: MultiIndex::new(|_pk: &[u8], d: &Bid| d.height, "bids", "bids__height"),
     };
     IndexedMap::new("bids", indexes)
 }
