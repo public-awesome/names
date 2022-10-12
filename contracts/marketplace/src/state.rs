@@ -1,10 +1,9 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use sg_controllers::Hooks;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct SudoParams {
     /// Fair Burn fee for winning bids
     pub trading_fee_percent: Decimal,
@@ -53,7 +52,7 @@ pub type TokenId = String;
 pub type Id = u64;
 
 /// Represents an ask on the marketplace
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Ask {
     pub token_id: TokenId,
     pub id: u64,
@@ -99,7 +98,7 @@ pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
 }
 
 /// Represents a bid (offer) on the marketplace
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Bid {
     pub token_id: TokenId,
     pub bidder: Addr,

@@ -1,11 +1,10 @@
 use crate::msg::ExecuteMsg;
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Addr, StdResult, WasmMsg};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use sg_std::CosmosMsg;
 
 /// MarketplaceContract is a wrapper around Addr that provides a lot of helpers
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MarketplaceContract(pub Addr);
 
 impl MarketplaceContract {
