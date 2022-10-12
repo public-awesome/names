@@ -4,7 +4,6 @@ use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg};
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
-    RenewalQueueResponse,
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
@@ -51,7 +50,7 @@ const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
 
-const BLOCKS_PER_YEAR: u64 = 60 * 60 * 8766 / 5;
+const SECONDS_PER_YEAR: u64 = 31536000;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
@@ -75,7 +74,6 @@ fn instantiate_contracts() -> StargazeApp {
     let msg = name_marketplace::msg::InstantiateMsg {
         trading_fee_bps: TRADING_FEE_BPS,
         min_price: Uint128::from(5u128),
-        blocks_per_year: BLOCKS_PER_YEAR,
     };
     let marketplace = app
         .instantiate_contract(
@@ -201,19 +199,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         )
         .unwrap();
     assert_eq!(res.ask.unwrap().token_id, name);
-
-    // check if name is in the renewal queue
-    let res: RenewalQueueResponse = app
-        .wrap()
-        .query_wasm_smart(
-            MKT,
-            &MarketplaceQueryMsg::RenewalQueue {
-                height: app.block_info().height + BLOCKS_PER_YEAR,
-            },
-        )
-        .unwrap();
-    assert_eq!(res.queue.len(), 1);
-    assert_eq!(res.queue[0], name);
 
     // check if token minted
     let _res: NumTokensResponse = app
@@ -515,23 +500,21 @@ mod query {
     fn query_renewal_queue() {
         let mut app = instantiate_contracts();
 
+        // mint two names at the same time
         mint_and_list(&mut app, NAME, USER);
-
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
         mint_and_list(&mut app, "hack", USER);
 
-        let res: RenewalQueueResponse = app
+        let res: AsksResponse = app
             .wrap()
             .query_wasm_smart(
                 MKT,
                 &MarketplaceQueryMsg::RenewalQueue {
-                    height: app.block_info().height + BLOCKS_PER_YEAR,
+                    time: app.block_info().time.plus_seconds(SECONDS_PER_YEAR),
                 },
             )
             .unwrap();
-        assert_eq!(res.queue.len(), 1);
-        assert_eq!(res.queue[0], "hack".to_string());
+        assert_eq!(res.asks.len(), 2);
+        assert_eq!(res.asks[1].token_id, "hack".to_string());
     }
 }
 
