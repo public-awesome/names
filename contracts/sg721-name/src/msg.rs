@@ -59,7 +59,7 @@ pub enum ExecuteMsg<T> {
     /// Called by the minter to update trading start time
     UpdateTradingStartTime(Option<Timestamp>),
     /// Freeze collection info from further updates
-    FreezeCollectionInfo,
+    FreezeCollectionInfo {},
 }
 
 impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {

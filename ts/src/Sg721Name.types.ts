@@ -78,7 +78,7 @@ export interface ContractInfoResponse {
   name: string;
   symbol: string;
 }
-export type ExecuteMsg = "freeze_collection_info" | {
+export type ExecuteMsg = {
   set_name_marketplace: {
     address: string;
   };
@@ -150,6 +150,8 @@ export type ExecuteMsg = "freeze_collection_info" | {
   };
 } | {
   update_trading_start_time: Timestamp | null;
+} | {
+  freeze_collection_info: {};
 };
 export type Binary = string;
 export interface MintMsgForMetadataForNullable_Empty {

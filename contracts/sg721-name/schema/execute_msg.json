@@ -3,12 +3,6 @@
   "title": "ExecuteMsg",
   "oneOf": [
     {
-      "type": "string",
-      "enum": [
-        "freeze_collection_info"
-      ]
-    },
-    {
       "description": "Set name marketplace contract address",
       "type": "object",
       "required": [
@@ -413,6 +407,20 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Freeze collection info from further updates",
+      "type": "object",
+      "required": [
+        "freeze_collection_info"
+      ],
+      "properties": {
+        "freeze_collection_info": {
+          "type": "object",
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
