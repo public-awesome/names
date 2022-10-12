@@ -1,6 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
-use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex, UniqueIndex};
+use cw_storage_macro::index_list;
+use cw_storage_plus::{IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 use sg_controllers::Hooks;
 
 #[cw_serde]
@@ -70,19 +71,13 @@ pub fn ask_key(token_id: &str) -> AskKey {
 }
 
 /// Defines indices for accessing Asks
+#[index_list(Ask)]
 pub struct AskIndicies<'a> {
     /// Unique incrementing id for each ask
     /// This allows pagination when `token_id`s are strings
     pub id: UniqueIndex<'a, u64, Ask, AskKey>,
     /// Index by seller
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
-}
-
-impl<'a> IndexList<Ask> for AskIndicies<'a> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Ask>> + '_> {
-        let v: Vec<&dyn Index<Ask>> = vec![&self.id, &self.seller];
-        Box::new(v.into_iter())
-    }
 }
 
 pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
@@ -125,16 +120,10 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 }
 
 /// Defines incides for accessing bids
+#[index_list(Bid)]
 pub struct BidIndicies<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
-}
-
-impl<'a> IndexList<Bid> for BidIndicies<'a> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Bid>> + '_> {
-        let v: Vec<&dyn Index<Bid>> = vec![&self.price, &self.bidder];
-        Box::new(v.into_iter())
-    }
 }
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {

@@ -213,6 +213,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-storage-macro"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9b3573e431a76e5af8c16faea098ed3bca7afc7e60a98faa6630d7f80179444"
+dependencies = [
+ "syn",
+]
+
+[[package]]
 name = "cw-storage-plus"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -536,6 +545,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-multi-test",
+ "cw-storage-macro",
  "cw-storage-plus",
  "cw-utils",
  "cw2",
