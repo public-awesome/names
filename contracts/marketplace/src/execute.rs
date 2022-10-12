@@ -169,17 +169,18 @@ pub fn execute_update_ask(
 
     let mut res = Response::new();
 
+    // refund any renewal funds and update the seller
     let mut ask = asks().load(deps.storage, ask_key(token_id))?;
     ask.seller = seller.clone();
-    asks().save(deps.storage, ask_key(token_id), &ask)?;
-
     if !ask.renewal_fund.is_zero() {
         let msg = BankMsg::Send {
             to_address: ask.seller.to_string(),
             amount: coins(ask.renewal_fund.u128(), NATIVE_DENOM),
         };
         res = res.add_message(msg);
+        ask.renewal_fund = Uint128::zero();
     }
+    asks().save(deps.storage, ask_key(token_id), &ask)?;
 
     let event = Event::new("update-ask")
         .add_attribute("token_id", token_id)
