@@ -119,9 +119,10 @@ pub fn reverse_query_asks(
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     let start = start_before.unwrap_or(
-        asks()
+        (asks()
             .keys_raw(deps.storage, None, None, Order::Ascending)
-            .count() as u64,
+            .count()
+            + 1) as u64,
     );
 
     let asks = asks()
@@ -130,7 +131,7 @@ pub fn reverse_query_asks(
         .range(
             deps.storage,
             None,
-            Some(Bound::inclusive(start)),
+            Some(Bound::exclusive(start)),
             Order::Descending,
         )
         .take(limit)
