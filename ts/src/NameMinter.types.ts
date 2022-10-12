@@ -12,10 +12,16 @@ export type ExecuteMsg = {
     name: string;
   };
 };
+export type Uint128 = string;
 export interface InstantiateMsg {
+  base_price: Uint128;
   collection_code_id: number;
   marketplace_addr: string;
+  max_name_length: number;
+  min_name_length: number;
 }
 export type QueryMsg = {
   config: {};
+} | {
+  params: {};
 };

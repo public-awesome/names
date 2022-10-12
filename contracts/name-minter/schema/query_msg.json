@@ -14,6 +14,19 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "params"
+      ],
+      "properties": {
+        "params": {
+          "type": "object",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }
