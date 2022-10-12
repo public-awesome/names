@@ -68,5 +68,11 @@ You should see the minter and collection addresses.
 ## Execute a mint
 
 ```sh
-./exec_mint.sh bobo
+./exec_mint.sh [name]
+```
+
+## Place a bid
+
+```
+./exec_bid.sh [name] [price (in STARS)]
 ```
