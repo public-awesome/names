@@ -6,7 +6,7 @@ Use an environment variable manager like [dotenv](https://github.com/motdotla/do
 
 `cp .env.example .env` and modify for your setup.
 
-Configure `starsd` with: `./setup.sh`.
+Configure `starsd` with: `./config.sh`.
 
 ## Upload code to chain
 
@@ -38,15 +38,32 @@ Update `.env` with Marketplace address (`MKT`).
 
 `./init_minter.sh`
 
-Update `.env` with both Minter and Collection addresses (`MINTER` and `COLLECTION`).
+Update `.env` with both the minter and collection addresses (`MINTER` and `COLLECTION`).
 
 You can verify the correct addresses with the query helpers.
 
 ```sh
 ./query_col.sh
 ./query_minter.sh
+```
+
+Since the minter and collection addresses are output at the same time, it might be difficult to know which is which. Try one of them for `MINTER` and perform the above queries. If they fail, switch around the minter and collection.
+
+## Setup Marketplace
+
+Marketplace has to be setup with the minter and collection addresses.
+
+```sh
+./exec_mkt_setup.sh
+```
+
+Verify it was setup correctly with:
+
+```sh
 ./query_mkt.sh
 ```
+
+You should see the minter and collection addresses.
 
 ## Execute a mint
 
