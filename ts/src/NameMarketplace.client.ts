@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, Timestamp, Uint64, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -82,9 +82,9 @@ export interface NameMarketplaceReadOnlyInterface {
   saleHooks: () => Promise<SaleHooksResponse>;
   params: () => Promise<ParamsResponse>;
   renewalQueue: ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }) => Promise<RenewalQueueResponse>;
   config: () => Promise<ConfigResponse>;
 }
@@ -271,13 +271,13 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     });
   };
   renewalQueue = async ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }): Promise<RenewalQueueResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       renewal_queue: {
-        height
+        time
       }
     });
   };
@@ -332,9 +332,9 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   processRenewals: ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setup: ({
     collection,
@@ -452,13 +452,13 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     }, fee, memo, funds);
   };
   processRenewals = async ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       process_renewals: {
-        height
+        time
       }
     }, fee, memo, funds);
   };

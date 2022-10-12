@@ -12,14 +12,6 @@
         "update_params": {
           "type": "object",
           "properties": {
-            "blocks_per_year": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "format": "uint64",
-              "minimum": 0.0
-            },
             "min_price": {
               "anyOf": [
                 {
