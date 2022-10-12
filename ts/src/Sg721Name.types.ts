@@ -78,7 +78,7 @@ export interface ContractInfoResponse {
   name: string;
   symbol: string;
 }
-export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | {
+export type ExecuteMsg = "freeze_collection_info" | {
   set_name_marketplace: {
     address: string;
   };
@@ -139,7 +139,7 @@ export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | 
     operator: string;
   };
 } | {
-  mint: MintMsgForMetadataForNullable_Empty;
+  mint: MintMsgForMetadataForEmpty;
 } | {
   burn: {
     token_id: string;
@@ -152,17 +152,11 @@ export type ExecuteMsgForMetadataForNullable_Empty = "freeze_collection_info" | 
   update_trading_start_time: Timestamp | null;
 };
 export type Binary = string;
-export interface MintMsgForMetadataForNullable_Empty {
-  extension: MetadataForNullable_Empty;
+export interface MintMsgForMetadataForEmpty {
+  extension: MetadataForEmpty;
   owner: string;
   token_id: string;
   token_uri?: string | null;
-}
-export interface MetadataForNullable_Empty {
-  bio?: string | null;
-  extension?: Empty | null;
-  profile?: NFT | null;
-  records: TextRecord[];
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;

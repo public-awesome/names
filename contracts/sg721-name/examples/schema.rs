@@ -10,7 +10,7 @@ use cw721::{
 };
 use cw721_base::MinterResponse;
 use sg721_base::msg::CollectionInfoResponse;
-use sg721_name::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use sg721_name::{msg::ExecuteMsg, InstantiateMsg, QueryMsg};
 use sg_name::Metadata;
 
 fn main() {
@@ -20,7 +20,12 @@ fn main() {
     remove_schemas(&out_dir).unwrap();
 
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
-    export_schema(&schema_for!(ExecuteMsg), &out_dir);
+    // export_schema(&schema_for!(ExecuteMsg), &out_dir);
+    export_schema_with_title(
+        &schema_for!(ExecuteMsg<Metadata<Empty>>),
+        &out_dir,
+        "ExecuteMsg",
+    );
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema_with_title(
         &schema_for!(AllNftInfoResponse<Metadata<Empty>>),

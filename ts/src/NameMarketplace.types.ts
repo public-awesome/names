@@ -86,6 +86,11 @@ export type ExecuteMsg = {
     token_id: string;
   };
 } | {
+  update_ask: {
+    seller: string;
+    token_id: string;
+  };
+} | {
   set_bid: {
     token_id: string;
   };
