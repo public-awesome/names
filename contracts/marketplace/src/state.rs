@@ -23,8 +23,8 @@ pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 pub const NAME_MINTER: Item<Addr> = Item::new("name-minter");
 pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
 
-/// (renewal_time, id) -> [""]
-pub const RENEWAL_QUEUE: Map<(u64, u64), String> = Map::new("rq");
+/// (renewal_time, id) -> [token_id]
+pub const RENEWAL_QUEUE: Map<(u64, u64), TokenId> = Map::new("rq");
 
 pub const ASK_COUNT: Item<u64> = Item::new("ask-count");
 

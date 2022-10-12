@@ -1,6 +1,6 @@
 use crate::msg::{
     AskCountResponse, AskResponse, AsksResponse, BidOffset, BidResponse, Bidder, BidsResponse,
-    ConfigResponse, ParamsResponse, QueryMsg, RenewalQueueResponse,
+    ConfigResponse, ParamsResponse, QueryMsg,
 };
 use crate::state::{
     ask_key, asks, bid_key, bids, BidKey, Id, TokenId, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION,
@@ -8,7 +8,7 @@ use crate::state::{
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult};
+use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult, Timestamp};
 use cw_storage_plus::Bound;
 
 // Query limits
@@ -70,7 +70,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
         QueryMsg::BidHooks {} => to_binary(&BID_HOOKS.query_hooks(deps)?),
         QueryMsg::SaleHooks {} => to_binary(&SALE_HOOKS.query_hooks(deps)?),
-        QueryMsg::RenewalQueue { height } => to_binary(&query_renewal_queue(deps, height)?),
+        QueryMsg::RenewalQueue { time } => to_binary(&query_renewal_queue(deps, time)?),
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
@@ -82,10 +82,19 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse { minter, collection })
 }
 
-pub fn query_renewal_queue(deps: Deps, height: u64) -> StdResult<RenewalQueueResponse> {
-    let queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+pub fn query_renewal_queue(deps: Deps, time: Timestamp) -> StdResult<AsksResponse> {
+    let names = RENEWAL_QUEUE
+        .prefix(time.seconds())
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| item.map(|item| item.1))
+        .collect::<StdResult<Vec<_>>>()?;
 
-    Ok(RenewalQueueResponse { queue })
+    let asks = names
+        .iter()
+        .map(|name| asks().load(deps.storage, ask_key(name)))
+        .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(AsksResponse { asks })
 }
 
 pub fn query_asks(
