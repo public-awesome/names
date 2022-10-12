@@ -92,6 +92,9 @@ fn instantiate_contracts() -> StargazeApp {
     let msg = InstantiateMsg {
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
+        base_price: Uint128::from(BASE_PRICE),
+        min_name_length: 3,
+        max_name_length: 63,
     };
     let minter = app
         .instantiate_contract(

@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, StdResult, SubMsg,
-    WasmMsg,
+    Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::{Extension, MintMsg};
@@ -15,18 +15,13 @@ use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{NAME_COLLECTION, NAME_MARKETPLACE};
+use crate::state::{ParamsResponse, SudoParams, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_COLLECTION_REPLY_ID: u64 = 1;
-
-// TODO: make these sudo params
-const MIN_NAME_LENGTH: u64 = 3;
-const MAX_NAME_LENGTH: u64 = 63;
-const BASE_PRICE: u128 = 100_000_000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -39,6 +34,13 @@ pub fn instantiate(
 
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
+
+    let params = SudoParams {
+        min_name_length: msg.min_name_length,
+        max_name_length: msg.max_name_length,
+        base_price: msg.base_price.u128(),
+    };
+    SUDO_PARAMS.save(deps.storage, &params)?;
 
     let collection_init_msg = Sg721InstantiateMsg {
         name: "Name Tokens".to_string(),
@@ -116,9 +118,11 @@ pub fn execute_mint_and_list(
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
-    validate_name(name)?;
+    let params = SUDO_PARAMS.load(deps.storage)?;
 
-    let price = validate_payment(name.len(), &info)?;
+    validate_name(name, params.min_name_length, params.max_name_length)?;
+
+    let price = validate_payment(name.len(), &info, params.base_price)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
@@ -158,11 +162,11 @@ pub fn execute_mint_and_list(
 }
 
 // This follows the same rules as Internet domain names
-fn validate_name(name: &str) -> Result<(), ContractError> {
+fn validate_name(name: &str, min: u64, max: u64) -> Result<(), ContractError> {
     let len = name.len() as u64;
-    if len < MIN_NAME_LENGTH {
+    if len < min {
         return Err(ContractError::NameTooShort {});
-    } else if len >= MAX_NAME_LENGTH {
+    } else if len >= max {
         return Err(ContractError::NameTooLong {});
     }
 
@@ -184,13 +188,17 @@ fn validate_name(name: &str) -> Result<(), ContractError> {
     Ok(())
 }
 
-fn validate_payment(name_len: usize, info: &MessageInfo) -> Result<Coin, ContractError> {
+fn validate_payment(
+    name_len: usize,
+    info: &MessageInfo,
+    base_price: u128,
+) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
     let amount = match name_len {
         0..=2 => return Err(ContractError::NameTooShort {}),
-        3 => BASE_PRICE * 100,
-        4 => BASE_PRICE * 10,
-        _ => BASE_PRICE,
+        3 => base_price * 100,
+        4 => base_price * 10,
+        _ => base_price,
     };
 
     let payment = must_pay(info, NATIVE_DENOM)?;
@@ -210,6 +218,7 @@ fn invalid_char(c: char) -> bool {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_collection_addr(deps)?),
+        QueryMsg::Params {} => to_binary(&query_params(deps)?),
     }
 }
 
@@ -220,66 +229,94 @@ fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
+fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
+    let params = SUDO_PARAMS.load(deps.storage)?;
+
+    Ok(ParamsResponse {
+        base_price: Uint128::from(params.base_price),
+        min_name_length: params.min_name_length,
+        max_name_length: params.max_name_length,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{coin, Addr, MessageInfo};
 
-    use crate::contract::BASE_PRICE;
+    use crate::contract::validate_name;
 
-    use super::{validate_name, validate_payment};
+    use super::validate_payment;
 
     #[test]
     fn check_validate_name() {
-        assert!(validate_name("bobo").is_ok());
-        assert!(validate_name("-bobo").is_err());
-        assert!(validate_name("bobo-").is_err());
-        assert!(validate_name("bo-bo").is_ok());
-        assert!(validate_name("bo--bo").is_err());
-        assert!(validate_name("bob--o").is_ok());
-        assert!(validate_name("bo").is_err());
-        assert!(validate_name("b").is_err());
-        assert!(validate_name("bob").is_ok());
-        assert!(
-            validate_name("bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobo").is_ok()
-        );
-        assert!(
-            validate_name("bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobob")
-                .is_err()
-        );
-        assert!(validate_name("0123456789").is_ok());
-        assert!(validate_name("😬").is_err());
-        assert!(validate_name("BOBO").is_err());
-        assert!(validate_name("b-o----b").is_ok());
-        assert!(validate_name("bobo.stars").is_err());
+        let min = 3;
+        let max = 63;
+        assert!(validate_name("bobo", min, max).is_ok());
+        assert!(validate_name("-bobo", min, max).is_err());
+        assert!(validate_name("bobo-", min, max).is_err());
+        assert!(validate_name("bo-bo", min, max).is_ok());
+        assert!(validate_name("bo--bo", min, max).is_err());
+        assert!(validate_name("bob--o", min, max).is_ok());
+        assert!(validate_name("bo", min, max).is_err());
+        assert!(validate_name("b", min, max).is_err());
+        assert!(validate_name("bob", min, max).is_ok());
+        assert!(validate_name(
+            "bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobo",
+            min,
+            max
+        )
+        .is_ok());
+        assert!(validate_name(
+            "bobobobobobobobobobobobobobobobobobobobobobobobobobobobobobobob",
+            min,
+            max
+        )
+        .is_err());
+        assert!(validate_name("0123456789", min, max).is_ok());
+        assert!(validate_name("😬", min, max).is_err());
+        assert!(validate_name("BOBO", min, max).is_err());
+        assert!(validate_name("b-o----b", min, max).is_ok());
+        assert!(validate_name("bobo.stars", min, max).is_err());
     }
 
     #[test]
     fn check_validate_payment() {
+        let base_price = 100_000_000;
+
         let info = MessageInfo {
             sender: Addr::unchecked("sender"),
-            funds: vec![coin(BASE_PRICE, "ustars")],
+            funds: vec![coin(base_price, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info).unwrap().amount.u128(),
-            BASE_PRICE
+            validate_payment(5, &info, base_price)
+                .unwrap()
+                .amount
+                .u128(),
+            base_price
         );
 
         let info = MessageInfo {
             sender: Addr::unchecked("sender"),
-            funds: vec![coin(BASE_PRICE * 10, "ustars")],
+            funds: vec![coin(base_price * 10, "ustars")],
         };
         assert_eq!(
-            validate_payment(4, &info).unwrap().amount.u128(),
-            BASE_PRICE * 10
+            validate_payment(4, &info, base_price)
+                .unwrap()
+                .amount
+                .u128(),
+            base_price * 10
         );
 
         let info = MessageInfo {
             sender: Addr::unchecked("sender"),
-            funds: vec![coin(BASE_PRICE * 100, "ustars")],
+            funds: vec![coin(base_price * 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(3, &info).unwrap().amount.u128(),
-            BASE_PRICE * 100
+            validate_payment(3, &info, base_price)
+                .unwrap()
+                .amount
+                .u128(),
+            base_price * 100
         );
     }
 }
