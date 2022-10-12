@@ -130,7 +130,7 @@ pub fn reverse_query_asks(
         .range(
             deps.storage,
             None,
-            Some(Bound::exclusive(start)),
+            Some(Bound::inclusive(start)),
             Order::Descending,
         )
         .take(limit)
