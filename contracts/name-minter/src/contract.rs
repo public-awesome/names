@@ -14,7 +14,7 @@ use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS};
+use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS, WHITELIST};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -88,8 +88,23 @@ pub fn execute(
             info,
             admin.map(|admin| api.addr_validate(&admin)).transpose()?,
         )?),
+        ExecuteMsg::UpdateWhitelist { whitelist } => {
+            execute_update_whitelsit(deps, info, whitelist)
+        }
         ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, env, info, name.trim()),
     }
+}
+
+pub fn execute_update_whitelsit(
+    deps: DepsMut,
+    info: MessageInfo,
+    whitelist: Option<String>,
+) -> Result<Response, ContractError> {
+    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
+
+    WHITELIST.save(deps.storage, &maybe_addr(deps.api, whitelist)?)?;
+
+    Ok(Response::new())
 }
 
 pub fn execute_mint_and_list(

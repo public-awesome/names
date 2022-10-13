@@ -1,4 +1,4 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 
 #[cw_serde]
@@ -18,6 +18,9 @@ pub enum ExecuteMsg {
     /// Will be set to null after go-to-market
     UpdateAdmin {
         admin: Option<String>,
+    },
+    UpdateWhitelist {
+        whitelist: Option<String>,
     },
     MintAndList {
         name: String,
@@ -40,8 +43,13 @@ pub enum SudoMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(cw_controllers::AdminResponse)]
+    Admin {},
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(ParamsResponse)]
     Params {},
 }
 

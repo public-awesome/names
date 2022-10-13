@@ -64,7 +64,7 @@ pub fn custom_mock_app() -> StargazeApp {
 // 2. Instantiate Name Minter (which instantiates Name Collection)
 // 3. Update Name Marketplace with Name Minter address
 // 4. Update Name Marketplace with Name Collection address
-fn instantiate_contracts() -> StargazeApp {
+fn instantiate_contracts(admin: Option<String>) -> StargazeApp {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
     let minter_id = app.store_code(contract_minter());
@@ -88,7 +88,7 @@ fn instantiate_contracts() -> StargazeApp {
 
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
-        admin: None,
+        admin,
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -271,7 +271,7 @@ mod execute {
 
     #[test]
     fn check_approvals() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -293,14 +293,14 @@ mod execute {
 
     #[test]
     fn test_mint() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
     }
 
     #[test]
     fn test_bid() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -308,7 +308,7 @@ mod execute {
 
     #[test]
     fn test_accept_bid() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -369,7 +369,7 @@ mod execute {
     //  test two sales cycles in a row to check if approvals work
     #[test]
     fn test_two_sales_cycles() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -392,6 +392,36 @@ mod execute {
     }
 }
 
+mod admin {
+    use super::*;
+
+    #[test]
+    fn update_admin() {
+        let mut app = instantiate_contracts(Some(ADMIN.to_string()));
+
+        let msg = ExecuteMsg::UpdateAdmin { admin: None };
+        let res = app.execute_contract(Addr::unchecked(USER), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_err());
+
+        let msg = ExecuteMsg::UpdateAdmin { admin: None };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn update_whitelist() {
+        let mut app = instantiate_contracts(Some(ADMIN.to_string()));
+
+        let msg = ExecuteMsg::UpdateWhitelist { whitelist: None };
+
+        let res = app.execute_contract(Addr::unchecked(USER), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_err());
+
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+    }
+}
+
 mod query {
     use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
     use sg_name::NameResponse;
@@ -400,7 +430,7 @@ mod query {
 
     #[test]
     fn query_ask() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -413,7 +443,7 @@ mod query {
 
     #[test]
     fn query_asks() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -431,7 +461,7 @@ mod query {
 
     #[test]
     fn query_reverse_asks() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -449,7 +479,7 @@ mod query {
 
     #[test]
     fn query_asks_by_seller() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -468,7 +498,7 @@ mod query {
 
     #[test]
     fn query_ask_count() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -483,7 +513,7 @@ mod query {
 
     #[test]
     fn query_top_bids() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -500,7 +530,7 @@ mod query {
 
     #[test]
     fn query_renewal_queue() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         // mint two names at the same time
         mint_and_list(&mut app, NAME, USER);
@@ -521,7 +551,7 @@ mod query {
 
     #[test]
     fn query_name() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 
@@ -543,7 +573,7 @@ mod transfer {
 
     #[test]
     fn transfer_nft() {
-        let mut app = instantiate_contracts();
+        let mut app = instantiate_contracts(None);
 
         mint_and_list(&mut app, NAME, USER);
 

@@ -4,12 +4,13 @@ use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
 
 use crate::{
     msg::{ConfigResponse, ParamsResponse, QueryMsg},
-    state::{NAME_COLLECTION, SUDO_PARAMS},
+    state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Admin {} => to_binary(&ADMIN.query_admin(deps)?),
         QueryMsg::Config {} => to_binary(&query_collection_addr(deps)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
     }
