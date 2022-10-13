@@ -11,6 +11,7 @@ use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
+use sg_whitelist_basic::SgWhitelistExecuteMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -33,6 +34,8 @@ pub fn instantiate(
 
     let admin_addr = maybe_addr(deps.api, msg.admin)?;
     ADMIN.set(deps.branch(), admin_addr)?;
+
+    WHITELIST.save(deps.storage, &None)?;
 
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
@@ -111,7 +114,21 @@ pub fn execute_mint_and_list(
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
+    let mut res = Response::new();
+
     let params = SUDO_PARAMS.load(deps.storage)?;
+    let whitelist = WHITELIST.load(deps.storage)?;
+
+    if let Some(whitelist) = whitelist {
+        let msg = WasmMsg::Execute {
+            contract_addr: whitelist.to_string(),
+            funds: vec![],
+            msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
+                address: info.sender.to_string(),
+            })?,
+        };
+        res = res.add_message(msg);
+    }
 
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
@@ -147,7 +164,7 @@ pub fn execute_mint_and_list(
         funds: vec![],
     };
 
-    Ok(Response::new()
+    Ok(res
         .add_attribute("action", "mint_and_list")
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
