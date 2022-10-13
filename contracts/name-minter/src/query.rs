@@ -3,8 +3,8 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
 
 use crate::{
-    msg::{CollectionResponse, ParamsResponse, QueryMsg},
-    state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS},
+    msg::{CollectionResponse, ParamsResponse, QueryMsg, WhitelistResponse},
+    state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS, WHITELIST},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -13,7 +13,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Admin {} => to_binary(&ADMIN.query_admin(deps)?),
         QueryMsg::Collection {} => to_binary(&query_collection(deps)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
+        QueryMsg::Whitelist {} => to_binary(&query_whitelist(deps)?),
     }
+}
+
+fn query_whitelist(deps: Deps) -> StdResult<WhitelistResponse> {
+    let whitelist = WHITELIST.load(deps.storage)?;
+    Ok(WhitelistResponse {
+        whitelist: whitelist.map(|x| x.to_string()),
+    })
 }
 
 fn query_collection(deps: Deps) -> StdResult<CollectionResponse> {

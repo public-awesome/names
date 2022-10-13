@@ -393,6 +393,8 @@ mod execute {
 }
 
 mod admin {
+    use crate::msg::{QueryMsg, WhitelistResponse};
+
     use super::*;
 
     #[test]
@@ -430,6 +432,10 @@ mod admin {
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelist {};
+        let res: WhitelistResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelist, None);
     }
 }
 

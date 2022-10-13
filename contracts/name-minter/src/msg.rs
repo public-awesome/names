@@ -47,16 +47,22 @@ pub enum SudoMsg {
 pub enum QueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
+    #[returns(WhitelistResponse)]
+    Whitelist {},
     #[returns(CollectionResponse)]
     Collection {},
     #[returns(ParamsResponse)]
     Params {},
 }
 
-// We define a custom struct for each query response
 #[cw_serde]
 pub struct CollectionResponse {
     pub collection: String,
+}
+
+#[cw_serde]
+pub struct WhitelistResponse {
+    pub whitelist: Option<String>,
 }
 
 #[cw_serde]
