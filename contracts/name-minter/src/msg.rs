@@ -3,6 +3,8 @@ use cosmwasm_std::Uint128;
 
 #[cw_serde]
 pub struct InstantiateMsg {
+    /// Temporary admin for managing whitelists
+    pub admin: Option<String>,
     pub collection_code_id: u64,
     pub marketplace_addr: String,
     pub min_name_length: u64,
@@ -12,7 +14,14 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    MintAndList { name: String },
+    /// Change the admin that manages the whitelist
+    /// Will be set to null after go-to-market
+    UpdateAdmin {
+        admin: Option<String>,
+    },
+    MintAndList {
+        name: String,
+    },
 }
 
 #[cw_serde]
@@ -40,4 +49,11 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct ConfigResponse {
     pub collection_addr: String,
+}
+
+#[cw_serde]
+pub struct ParamsResponse {
+    pub min_name_length: u64,
+    pub max_name_length: u64,
+    pub base_price: Uint128,
 }

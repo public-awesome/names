@@ -1,12 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Reply, StdResult, SubMsg,
-    Uint128, WasmMsg,
+    coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::{Extension, MintMsg};
-use cw_utils::{must_pay, parse_reply_instantiate_data};
+use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
@@ -14,8 +13,8 @@ use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
 
 use crate::error::ContractError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ParamsResponse, SudoParams, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS};
+use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -25,12 +24,15 @@ const INIT_COLLECTION_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    let admin_addr = maybe_addr(deps.api, msg.admin)?;
+    ADMIN.set(deps.branch(), admin_addr)?;
 
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
@@ -72,42 +74,20 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    if msg.id != INIT_COLLECTION_REPLY_ID {
-        return Err(ContractError::InvalidReplyID {});
-    }
-
-    let reply = parse_reply_instantiate_data(msg);
-    match reply {
-        Ok(res) => {
-            let collection_address = &res.contract_address;
-
-            NAME_COLLECTION.save(deps.storage, &Addr::unchecked(collection_address))?;
-
-            let msg = WasmMsg::Execute {
-                contract_addr: collection_address.to_string(),
-                funds: vec![],
-                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
-                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-                })?,
-            };
-
-            Ok(Response::default()
-                .add_attribute("action", "init_collection_reply")
-                .add_message(msg))
-        }
-        Err(_) => Err(ContractError::ReplyOnSuccess {}),
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    let api = deps.api;
+
     match msg {
+        ExecuteMsg::UpdateAdmin { admin } => Ok(ADMIN.execute_update_admin(
+            deps,
+            info,
+            admin.map(|admin| api.addr_validate(&admin)).transpose()?,
+        )?),
         ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, env, info, name.trim()),
     }
 }
@@ -215,28 +195,32 @@ fn invalid_char(c: char) -> bool {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::Config {} => to_binary(&query_collection_addr(deps)?),
-        QueryMsg::Params {} => to_binary(&query_params(deps)?),
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
+    if msg.id != INIT_COLLECTION_REPLY_ID {
+        return Err(ContractError::InvalidReplyID {});
     }
-}
 
-fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = NAME_COLLECTION.load(deps.storage)?;
-    Ok(ConfigResponse {
-        collection_addr: config.to_string(),
-    })
-}
+    let reply = parse_reply_instantiate_data(msg);
+    match reply {
+        Ok(res) => {
+            let collection_address = &res.contract_address;
 
-fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
-    let params = SUDO_PARAMS.load(deps.storage)?;
+            NAME_COLLECTION.save(deps.storage, &Addr::unchecked(collection_address))?;
 
-    Ok(ParamsResponse {
-        base_price: Uint128::from(params.base_price),
-        min_name_length: params.min_name_length,
-        max_name_length: params.max_name_length,
-    })
+            let msg = WasmMsg::Execute {
+                contract_addr: collection_address.to_string(),
+                funds: vec![],
+                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
+                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+                })?,
+            };
+
+            Ok(Response::default()
+                .add_attribute("action", "init_collection_reply")
+                .add_message(msg))
+        }
+        Err(_) => Err(ContractError::ReplyOnSuccess {}),
+    }
 }
 
 #[cfg(test)]

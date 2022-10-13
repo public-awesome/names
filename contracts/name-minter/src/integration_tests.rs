@@ -14,7 +14,7 @@ pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         crate::contract::execute,
         crate::contract::instantiate,
-        crate::contract::query,
+        crate::query::query,
     )
     .with_reply(crate::contract::reply);
     Box::new(contract)
@@ -88,6 +88,7 @@ fn instantiate_contracts() -> StargazeApp {
 
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
+        admin: None,
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
