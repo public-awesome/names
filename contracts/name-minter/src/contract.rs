@@ -83,11 +83,9 @@ pub fn execute(
     let api = deps.api;
 
     match msg {
-        ExecuteMsg::UpdateAdmin { admin } => Ok(ADMIN.execute_update_admin(
-            deps,
-            info,
-            admin.map(|admin| api.addr_validate(&admin)).transpose()?,
-        )?),
+        ExecuteMsg::UpdateAdmin { admin } => {
+            Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
+        }
         ExecuteMsg::UpdateWhitelist { whitelist } => {
             execute_update_whitelsit(deps, info, whitelist)
         }

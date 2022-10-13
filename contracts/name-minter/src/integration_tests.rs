@@ -403,9 +403,20 @@ mod admin {
         let res = app.execute_contract(Addr::unchecked(USER), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_err());
 
-        let msg = ExecuteMsg::UpdateAdmin { admin: None };
+        let msg = ExecuteMsg::UpdateAdmin {
+            admin: Some(USER2.to_string()),
+        };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
+
+        let msg = ExecuteMsg::UpdateAdmin { admin: None };
+        let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        // cannot update admin after its been removed
+        let msg = ExecuteMsg::UpdateAdmin { admin: None };
+        let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_err());
     }
 
     #[test]
