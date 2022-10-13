@@ -16,6 +16,7 @@ pub struct TextRecord {
     pub verified_at: Option<Timestamp>,
 }
 
+/// Note that the address mapped to the name is stored in `token_uri`.
 #[cw_serde]
 pub struct Metadata<T> {
     pub bio: Option<String>,

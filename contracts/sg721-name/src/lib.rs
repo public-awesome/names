@@ -24,7 +24,7 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
-    use crate::contract::{execute_set_name_marketplace, query_name_marketplace};
+    use crate::contract::{execute_mint, execute_set_name_marketplace, query_name_marketplace};
 
     use super::*;
 
@@ -80,6 +80,7 @@ pub mod entry {
                 recipient,
                 token_id,
             } => execute_transfer_nft(deps, env, info, recipient, token_id),
+            ExecuteMsg::Mint(msg) => execute_mint(deps, info, msg),
             _ => Sg721NameContract::default()
                 .execute(deps, env, info, msg.into())
                 .map_err(|e| e.into()),

@@ -2,11 +2,11 @@ use crate::{error::ContractError, state::NAME_MARKETPLACE};
 
 use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
 
-use cw721_base::Extension;
+use cw721_base::{state::TokenInfo, Extension, MintMsg};
 use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
-use sg721_base::ContractError::Unauthorized;
+use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
@@ -159,6 +159,39 @@ pub fn execute_set_name_marketplace(
     NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
 
     Ok(Response::new())
+}
+
+pub fn execute_mint(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: MintMsg<Metadata<Extension>>,
+) -> Result<Response, ContractError> {
+    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
+    if info.sender != minter {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    // create the token
+    let token = TokenInfo {
+        owner: deps.api.addr_validate(&msg.owner)?,
+        approvals: vec![],
+        token_uri: msg.token_uri,
+        extension: msg.extension,
+    };
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &msg.token_id, |old| match old {
+            Some(_) => Err(ContractError::Base(Claimed {})),
+            None => Ok(token),
+        })?;
+
+    Sg721NameContract::default().increment_tokens(deps.storage)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "mint")
+        .add_attribute("minter", info.sender)
+        .add_attribute("owner", msg.owner)
+        .add_attribute("token_id", msg.token_id))
 }
 
 pub fn execute_transfer_nft(
