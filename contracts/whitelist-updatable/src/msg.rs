@@ -2,15 +2,15 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub members: Vec<String>,
+    pub addresses: Vec<String>,
     pub per_address_limit: u32,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
     UpdateAdmin { new_admin: Option<String> },
-    AddAddresses { members: Vec<String> },
-    RemoveAddresses { members: Vec<String> },
+    AddAddresses { addresses: Vec<String> },
+    RemoveAddresses { addresses: Vec<String> },
     // Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
     ProcessAddress { address: String },
     UpdatePerAddressLimit { limit: u64 },
