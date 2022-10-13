@@ -124,6 +124,7 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
 #[cw_serde]
 pub enum QueryMsg {
     /// Returns NameResponse
+    /// Reverse lookup of name for address
     Name {
         address: String,
     },
