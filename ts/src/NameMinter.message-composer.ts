@@ -8,10 +8,20 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { ConfigResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
+import { CollectionResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
 export interface NameMinterMessage {
   contractAddress: string;
   sender: string;
+  updateAdmin: ({
+    admin
+  }: {
+    admin?: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  updateWhitelist: ({
+    whitelist
+  }: {
+    whitelist?: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   mintAndList: ({
     name
   }: {
@@ -25,9 +35,49 @@ export class NameMinterMessageComposer implements NameMinterMessage {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.updateAdmin = this.updateAdmin.bind(this);
+    this.updateWhitelist = this.updateWhitelist.bind(this);
     this.mintAndList = this.mintAndList.bind(this);
   }
 
+  updateAdmin = ({
+    admin
+  }: {
+    admin?: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          update_admin: {
+            admin
+          }
+        })),
+        funds
+      })
+    };
+  };
+  updateWhitelist = ({
+    whitelist
+  }: {
+    whitelist?: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          update_whitelist: {
+            whitelist
+          }
+        })),
+        funds
+      })
+    };
+  };
   mintAndList = ({
     name
   }: {

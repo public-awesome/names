@@ -1,10 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Addr;
+use cw_controllers::Admin;
 use cw_storage_plus::Item;
-
-pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
-
-pub const NAME_MARKETPLACE: Item<Addr> = Item::new("name-marketplace");
 
 #[cw_serde]
 pub struct SudoParams {
@@ -18,9 +15,12 @@ pub struct SudoParams {
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("params");
 
-#[cw_serde]
-pub struct ParamsResponse {
-    pub min_name_length: u64,
-    pub max_name_length: u64,
-    pub base_price: Uint128,
-}
+pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
+
+pub const NAME_MARKETPLACE: Item<Addr> = Item::new("name-marketplace");
+
+pub const ADMIN: Admin = Admin::new("admin");
+
+/// The currently active whitelist
+/// Can only be updated by admin
+pub const WHITELIST: Item<Option<Addr>> = Item::new("whitelist");
