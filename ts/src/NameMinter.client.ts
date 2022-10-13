@@ -6,11 +6,11 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { ConfigResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
+import { CollectionResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
   admin: () => Promise<AdminResponse>;
-  config: () => Promise<ConfigResponse>;
+  collection: () => Promise<CollectionResponse>;
   params: () => Promise<ParamsResponse>;
 }
 export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
@@ -21,7 +21,7 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
     this.client = client;
     this.contractAddress = contractAddress;
     this.admin = this.admin.bind(this);
-    this.config = this.config.bind(this);
+    this.collection = this.collection.bind(this);
     this.params = this.params.bind(this);
   }
 
@@ -30,9 +30,9 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
       admin: {}
     });
   };
-  config = async (): Promise<ConfigResponse> => {
+  collection = async (): Promise<CollectionResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      config: {}
+      collection: {}
     });
   };
   params = async (): Promise<ParamsResponse> => {

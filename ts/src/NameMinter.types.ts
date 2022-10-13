@@ -4,8 +4,8 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export interface ConfigResponse {
-  collection_addr: string;
+export interface CollectionResponse {
+  collection: string;
 }
 export type ExecuteMsg = {
   update_admin: {
@@ -32,7 +32,7 @@ export interface InstantiateMsg {
 export type QueryMsg = {
   admin: {};
 } | {
-  config: {};
+  collection: {};
 } | {
   params: {};
 };

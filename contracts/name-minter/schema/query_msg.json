@@ -18,10 +18,10 @@
     {
       "type": "object",
       "required": [
-        "config"
+        "collection"
       ],
       "properties": {
-        "config": {
+        "collection": {
           "type": "object",
           "additionalProperties": false
         }
