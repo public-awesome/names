@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
 
 use crate::{
-    msg::{ConfigResponse, ParamsResponse, QueryMsg},
+    msg::{CollectionResponse, ParamsResponse, QueryMsg},
     state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS},
 };
 
@@ -11,15 +11,15 @@ use crate::{
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Admin {} => to_binary(&ADMIN.query_admin(deps)?),
-        QueryMsg::Config {} => to_binary(&query_collection_addr(deps)?),
+        QueryMsg::Collection {} => to_binary(&query_collection(deps)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
     }
 }
 
-fn query_collection_addr(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = NAME_COLLECTION.load(deps.storage)?;
-    Ok(ConfigResponse {
-        collection_addr: config.to_string(),
+fn query_collection(deps: Deps) -> StdResult<CollectionResponse> {
+    let collection = NAME_COLLECTION.load(deps.storage)?;
+    Ok(CollectionResponse {
+        collection: collection.to_string(),
     })
 }
 

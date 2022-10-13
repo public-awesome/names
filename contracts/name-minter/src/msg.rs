@@ -47,16 +47,16 @@ pub enum SudoMsg {
 pub enum QueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(ConfigResponse)]
-    Config {},
+    #[returns(CollectionResponse)]
+    Collection {},
     #[returns(ParamsResponse)]
     Params {},
 }
 
 // We define a custom struct for each query response
 #[cw_serde]
-pub struct ConfigResponse {
-    pub collection_addr: String,
+pub struct CollectionResponse {
+    pub collection: String,
 }
 
 #[cw_serde]
