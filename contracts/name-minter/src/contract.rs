@@ -130,7 +130,7 @@ pub fn execute_mint_and_list(
     let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
-        token_uri: None,
+        token_uri: Some(info.sender.to_string()),
         extension: Metadata {
             bio: None,
             profile: None,

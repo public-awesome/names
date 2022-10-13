@@ -1,4 +1,7 @@
-use crate::{error::ContractError, state::NAME_MARKETPLACE};
+use crate::{
+    error::ContractError,
+    state::{ADDRESS_MAP, NAME_MARKETPLACE},
+};
 
 use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
 
@@ -171,11 +174,21 @@ pub fn execute_mint(
         return Err(ContractError::Base(Unauthorized {}));
     }
 
+    let token_uri = match msg.token_uri {
+        Some(token_uri) => token_uri,
+        None => return Err(ContractError::MissingTokenUri {}),
+    };
+    ADDRESS_MAP.save(
+        deps.storage,
+        &deps.api.addr_validate(&token_uri)?,
+        &msg.token_id,
+    )?;
+
     // create the token
     let token = TokenInfo {
         owner: deps.api.addr_validate(&msg.owner)?,
-        approvals: vec![],
-        token_uri: msg.token_uri,
+        approvals: vec![],          // TODO: set approval here?
+        token_uri: Some(token_uri), // stars address
         extension: msg.extension,
     };
     Sg721NameContract::default()
