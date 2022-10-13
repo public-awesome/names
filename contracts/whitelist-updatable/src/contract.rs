@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -33,7 +33,7 @@ pub fn instantiate(
     let mut count = 0u64;
     for address in msg.addresses.into_iter() {
         let addr = deps.api.addr_validate(&address.clone())?;
-        WHITELIST.save(deps.storage, addr, &0u64)?;
+        WHITELIST.save(deps.storage, addr, &0u32)?;
         count += 1;
     }
 
@@ -99,7 +99,7 @@ pub fn execute_add_addresses(
 
     for address in addresses.into_iter() {
         let addr = deps.api.addr_validate(&address.clone())?;
-        WHITELIST.save(deps.storage, addr, &0u64)?;
+        WHITELIST.save(deps.storage, addr, &0u32)?;
         count += 1;
     }
 
@@ -155,6 +155,10 @@ pub fn execute_process_address(
         return Err(ContractError::AddressNotFound {});
     }
 
+    if WHITELIST.load(deps.storage, addr.clone())? >= config.per_address_limit {
+        return Err(ContractError::OverPerAddressLimit {});
+    }
+
     let count = WHITELIST.load(deps.storage, addr.clone())?;
     WHITELIST.save(deps.storage, addr.clone(), &(count + 1))?;
 
@@ -203,8 +207,38 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
+        QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
+        QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
+        QueryMsg::Count {} => to_binary(&query_count(deps)?),
+        QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
+    }
+}
+
+pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {
+    let addr = deps.api.addr_validate(&address)?;
+    Ok(WHITELIST.has(deps.storage, addr))
+}
+
+pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
+    let addr = deps.api.addr_validate(&address)?;
+    Ok(WHITELIST.load(deps.storage, addr)?)
+}
+
+pub fn query_admin(deps: Deps) -> StdResult<String> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(config.admin.to_string())
+}
+
+pub fn query_count(deps: Deps) -> StdResult<u64> {
+    Ok(TOTAL_ADDRESS_COUNT.load(deps.storage)?)
+}
+
+pub fn query_per_address_limit(deps: Deps) -> StdResult<u32> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(config.per_address_limit)
 }
 
 #[cfg(test)]

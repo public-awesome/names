@@ -22,10 +22,12 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(bool)]
     IncludesAddress { address: String },
+    #[returns(u32)]
+    MintCount { address: String },
     #[returns(Option<String>)]
     Admin {},
     #[returns(u64)]
     Count {},
-    #[returns(u64)]
+    #[returns(u32)]
     PerAddressLimit {},
 }
