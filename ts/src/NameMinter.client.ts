@@ -9,6 +9,7 @@ import { Coin, StdFee } from "@cosmjs/amino";
 import { ConfigResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
+  admin: () => Promise<AdminResponse>;
   config: () => Promise<ConfigResponse>;
   params: () => Promise<ParamsResponse>;
 }
@@ -19,10 +20,16 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
+    this.admin = this.admin.bind(this);
     this.config = this.config.bind(this);
     this.params = this.params.bind(this);
   }
 
+  admin = async (): Promise<AdminResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      admin: {}
+    });
+  };
   config = async (): Promise<ConfigResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       config: {}
@@ -37,6 +44,16 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
 export interface NameMinterInterface extends NameMinterReadOnlyInterface {
   contractAddress: string;
   sender: string;
+  updateAdmin: ({
+    admin
+  }: {
+    admin?: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  updateWhitelist: ({
+    whitelist
+  }: {
+    whitelist?: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   mintAndList: ({
     name
   }: {
@@ -53,9 +70,33 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.updateAdmin = this.updateAdmin.bind(this);
+    this.updateWhitelist = this.updateWhitelist.bind(this);
     this.mintAndList = this.mintAndList.bind(this);
   }
 
+  updateAdmin = async ({
+    admin
+  }: {
+    admin?: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      update_admin: {
+        admin
+      }
+    }, fee, memo, funds);
+  };
+  updateWhitelist = async ({
+    whitelist
+  }: {
+    whitelist?: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      update_whitelist: {
+        whitelist
+      }
+    }, fee, memo, funds);
+  };
   mintAndList = async ({
     name
   }: {

@@ -3,6 +3,49 @@
   "title": "ExecuteMsg",
   "oneOf": [
     {
+      "description": "Change the admin that manages the whitelist Will be set to null after go-to-market",
+      "type": "object",
+      "required": [
+        "update_admin"
+      ],
+      "properties": {
+        "update_admin": {
+          "type": "object",
+          "properties": {
+            "admin": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_whitelist"
+      ],
+      "properties": {
+        "update_whitelist": {
+          "type": "object",
+          "properties": {
+            "whitelist": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
       "type": "object",
       "required": [
         "mint_and_list"

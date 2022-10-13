@@ -10,6 +10,13 @@
     "min_name_length"
   ],
   "properties": {
+    "admin": {
+      "description": "Temporary admin for managing whitelists",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "base_price": {
       "$ref": "#/definitions/Uint128"
     },

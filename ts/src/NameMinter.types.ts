@@ -8,12 +8,21 @@ export interface ConfigResponse {
   collection_addr: string;
 }
 export type ExecuteMsg = {
+  update_admin: {
+    admin?: string | null;
+  };
+} | {
+  update_whitelist: {
+    whitelist?: string | null;
+  };
+} | {
   mint_and_list: {
     name: string;
   };
 };
 export type Uint128 = string;
 export interface InstantiateMsg {
+  admin?: string | null;
   base_price: Uint128;
   collection_code_id: number;
   marketplace_addr: string;
@@ -21,6 +30,8 @@ export interface InstantiateMsg {
   min_name_length: number;
 }
 export type QueryMsg = {
+  admin: {};
+} | {
   config: {};
 } | {
   params: {};
