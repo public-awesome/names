@@ -16,6 +16,7 @@ pub struct TextRecord {
     pub verified_at: Option<Timestamp>,
 }
 
+/// Note that the address mapped to the name is stored in `token_uri`.
 #[cw_serde]
 pub struct Metadata<T> {
     pub bio: Option<String>,
@@ -42,6 +43,10 @@ pub enum SgNameExecuteMsg {
 
 #[cw_serde]
 pub enum SgNameQueryMsg {
+    /// Returns the name for the given address (`NameResponse`).
+    /// `address` can be any Bech32 encoded address. It will be
+    /// converted to a stars address for internal mapping.
+    Name { address: String },
     /// Returns NameMarketplaceResponse
     NameMarketplace {},
 }
@@ -49,4 +54,10 @@ pub enum SgNameQueryMsg {
 #[cw_serde]
 pub struct NameMarketplaceResponse {
     pub address: String,
+}
+
+/// Returns the `token_id`
+#[cw_serde]
+pub struct NameResponse {
+    pub name: String,
 }

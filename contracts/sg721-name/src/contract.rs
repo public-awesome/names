@@ -1,13 +1,16 @@
-use crate::{error::ContractError, state::NAME_MARKETPLACE};
+use crate::{
+    error::ContractError,
+    state::{ADDRESS_MAP, NAME_MARKETPLACE},
+};
 
 use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
 
-use cw721_base::Extension;
+use cw721_base::{state::TokenInfo, Extension, MintMsg};
 use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
-use sg721_base::ContractError::Unauthorized;
-use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg721_base::ContractError::{Claimed, Unauthorized};
+use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -161,6 +164,49 @@ pub fn execute_set_name_marketplace(
     Ok(Response::new())
 }
 
+pub fn execute_mint(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: MintMsg<Metadata<Extension>>,
+) -> Result<Response, ContractError> {
+    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
+    if info.sender != minter {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    let token_uri = match msg.token_uri {
+        Some(token_uri) => token_uri,
+        None => return Err(ContractError::MissingTokenUri {}),
+    };
+    ADDRESS_MAP.save(
+        deps.storage,
+        &deps.api.addr_validate(&token_uri)?,
+        &msg.token_id,
+    )?;
+
+    // create the token
+    let token = TokenInfo {
+        owner: deps.api.addr_validate(&msg.owner)?,
+        approvals: vec![],          // TODO: set approval here?
+        token_uri: Some(token_uri), // stars address
+        extension: msg.extension,
+    };
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &msg.token_id, |old| match old {
+            Some(_) => Err(ContractError::Base(Claimed {})),
+            None => Ok(token),
+        })?;
+
+    Sg721NameContract::default().increment_tokens(deps.storage)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "mint")
+        .add_attribute("minter", info.sender)
+        .add_attribute("owner", msg.owner)
+        .add_attribute("token_id", msg.token_id))
+}
+
 pub fn execute_transfer_nft(
     deps: DepsMut,
     env: Env,
@@ -248,4 +294,11 @@ pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> 
     Ok(NameMarketplaceResponse {
         address: address.to_string(),
     })
+}
+
+pub fn query_name(deps: Deps, address: String) -> StdResult<NameResponse> {
+    // TODO: De-code and re-encode address if needed (for remote chains)
+    let name = ADDRESS_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
+
+    Ok(NameResponse { name })
 }

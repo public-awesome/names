@@ -3,6 +3,28 @@
   "title": "QueryMsg",
   "oneOf": [
     {
+      "description": "Returns NameResponse Reverse lookup of name for address",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
       "description": "Returns NameMarketplaceResponse",
       "type": "object",
       "required": [
