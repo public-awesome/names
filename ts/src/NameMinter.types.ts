@@ -32,6 +32,8 @@ export interface InstantiateMsg {
 export type QueryMsg = {
   admin: {};
 } | {
+  whitelist: {};
+} | {
   collection: {};
 } | {
   params: {};

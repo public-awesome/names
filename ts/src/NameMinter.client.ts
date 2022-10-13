@@ -10,6 +10,7 @@ import { CollectionResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } fro
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
   admin: () => Promise<AdminResponse>;
+  whitelist: () => Promise<WhitelistResponse>;
   collection: () => Promise<CollectionResponse>;
   params: () => Promise<ParamsResponse>;
 }
@@ -21,6 +22,7 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
     this.client = client;
     this.contractAddress = contractAddress;
     this.admin = this.admin.bind(this);
+    this.whitelist = this.whitelist.bind(this);
     this.collection = this.collection.bind(this);
     this.params = this.params.bind(this);
   }
@@ -28,6 +30,11 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   admin = async (): Promise<AdminResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       admin: {}
+    });
+  };
+  whitelist = async (): Promise<WhitelistResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      whitelist: {}
     });
   };
   collection = async (): Promise<CollectionResponse> => {
