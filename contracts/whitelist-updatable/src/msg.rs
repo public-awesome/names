@@ -8,12 +8,13 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    UpdateAdmin { new_admin: Option<String> },
+    UpdateAdmin { new_admin: String },
     AddAddresses { addresses: Vec<String> },
     RemoveAddresses { addresses: Vec<String> },
     // Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
     ProcessAddress { address: String },
-    UpdatePerAddressLimit { limit: u64 },
+    UpdatePerAddressLimit { limit: u32 },
+    Purge {},
 }
 
 #[cw_serde]
