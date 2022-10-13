@@ -3,7 +3,7 @@
   "title": "QueryMsg",
   "oneOf": [
     {
-      "description": "Returns NameResponse",
+      "description": "Returns NameResponse Reverse lookup of name for address",
       "type": "object",
       "required": [
         "name"
