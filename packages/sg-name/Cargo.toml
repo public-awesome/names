@@ -1,6 +1,6 @@
 [package]
 name = "sg-name"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Shane Vitarana <s@noreply.publicawsome.com>"]
 edition = "2021"
 description = "Rust definition of name service metadata, used by Stargaze Names"

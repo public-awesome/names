@@ -295,3 +295,11 @@ pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> 
         address: address.to_string(),
     })
 }
+
+pub fn query_name(deps: Deps, address: String) -> StdResult<NameMarketplaceResponse> {
+    let address = NAME_MARKETPLACE.load(deps.storage)?;
+
+    Ok(NameMarketplaceResponse {
+        address: address.to_string(),
+    })
+}
