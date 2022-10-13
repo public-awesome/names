@@ -187,6 +187,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         &msg,
         &name_fee,
     );
+    println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
