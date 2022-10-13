@@ -202,6 +202,10 @@ export interface OperatorsResponse {
   operators: Approval[];
 }
 export type QueryMsg = {
+  name: {
+    address: string;
+  };
+} | {
   name_marketplace: {};
 } | {
   bio: {

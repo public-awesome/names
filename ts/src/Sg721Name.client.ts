@@ -9,6 +9,11 @@ import { Coin, StdFee } from "@cosmjs/amino";
 import { Expiration, Timestamp, Uint64, Addr, AllNftInfoResponse, OwnerOfResponse, Approval, NftInfoResponseForMetadataForEmpty, MetadataForEmpty, Empty, NFT, TextRecord, AllOperatorsResponse, AllTokensResponse, ApprovalResponse, ApprovalsResponse, Decimal, CollectionInfoResponse, RoyaltyInfoResponse, ContractInfoResponse, ExecuteMsg, Binary, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, MinterResponse, NftInfoResponse, NumTokensResponse, OperatorsResponse, QueryMsg, TokensResponse } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
+  name: ({
+    address
+  }: {
+    address: string;
+  }) => Promise<NameResponse>;
   nameMarketplace: () => Promise<NameMarketplaceResponse>;
   bio: ({
     name
@@ -99,6 +104,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
+    this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
     this.bio = this.bio.bind(this);
     this.profile = this.profile.bind(this);
@@ -117,6 +123,17 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.collectionInfo = this.collectionInfo.bind(this);
   }
 
+  name = async ({
+    address
+  }: {
+    address: string;
+  }): Promise<NameResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      name: {
+        address
+      }
+    });
+  };
   nameMarketplace = async (): Promise<NameMarketplaceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name_marketplace: {}

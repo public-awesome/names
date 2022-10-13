@@ -491,6 +491,7 @@
       ]
     },
     "Metadata_for_Nullable_Empty": {
+      "description": "Note that the address mapped to the name is stored in `token_uri`.",
       "type": "object",
       "required": [
         "records"
