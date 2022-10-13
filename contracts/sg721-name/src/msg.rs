@@ -123,6 +123,10 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
 
 #[cw_serde]
 pub enum QueryMsg {
+    /// Returns NameResponse
+    Name {
+        address: String,
+    },
     /// Returns NameMarketplaceResponse
     NameMarketplace {},
     /// Returns BioResponse

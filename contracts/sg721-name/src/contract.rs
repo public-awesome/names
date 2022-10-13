@@ -10,7 +10,7 @@ use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{Metadata, NameMarketplaceResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -296,10 +296,9 @@ pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> 
     })
 }
 
-pub fn query_name(deps: Deps, address: String) -> StdResult<NameMarketplaceResponse> {
-    let address = NAME_MARKETPLACE.load(deps.storage)?;
+pub fn query_name(deps: Deps, address: String) -> StdResult<NameResponse> {
+    // TODO: De-code and re-encode address if needed (for remote chains)
+    let name = ADDRESS_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
 
-    Ok(NameMarketplaceResponse {
-        address: address.to_string(),
-    })
+    Ok(NameResponse { name })
 }

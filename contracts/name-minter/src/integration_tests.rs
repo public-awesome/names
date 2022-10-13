@@ -393,6 +393,7 @@ mod execute {
 
 mod query {
     use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
+    use sg_name::NameResponse;
 
     use super::*;
 
@@ -515,6 +516,24 @@ mod query {
             .unwrap();
         assert_eq!(res.asks.len(), 2);
         assert_eq!(res.asks[1].token_id, "hack".to_string());
+    }
+
+    #[test]
+    fn query_name() {
+        let mut app = instantiate_contracts();
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let res: NameResponse = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &SgNameQueryMsg::Name {
+                    address: USER.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.name, NAME.to_string());
     }
 }
 
