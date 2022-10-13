@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, CollectionBidsByBidderResponse, CollectionBidsByBidderSortedByExpirationResponse, CollectionBidsSortedByPriceResponse, ExecuteMsg, Timestamp, Uint64, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, ReverseCollectionBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;
@@ -54,9 +54,9 @@ export interface NameMarketplaceMessage {
     tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   processRenewals: ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   setup: ({
     collection,
@@ -227,9 +227,9 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     };
   };
   processRenewals = ({
-    height
+    time
   }: {
-    height: number;
+    time: Timestamp;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -238,7 +238,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           process_renewals: {
-            height
+            time
           }
         })),
         funds

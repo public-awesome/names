@@ -1,6 +1,6 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Timestamp, Uint128};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -9,8 +9,6 @@ pub struct InstantiateMsg {
     pub trading_fee_bps: u64,
     /// Min value for bids and asks
     pub min_price: Uint128,
-    /// Blocks per year
-    pub blocks_per_year: u64,
 }
 
 #[cw_serde]
@@ -33,7 +31,7 @@ pub enum ExecuteMsg {
     RefundRenewal { token_id: TokenId },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
-    ProcessRenewals { height: u64 },
+    ProcessRenewals { time: Timestamp },
     /// Setup contract with minter and collection addresses
     /// Can only be run once
     Setup { minter: String, collection: String },
@@ -46,7 +44,6 @@ pub enum SudoMsg {
     UpdateParams {
         trading_fee_bps: Option<u64>,
         min_price: Option<Uint128>,
-        blocks_per_year: Option<u64>,
     },
     /// Update the contract address of the name minter
     UpdateNameMinter { minter: String },
@@ -170,7 +167,7 @@ pub enum QueryMsg {
     /// Return type: `ParamsResponse`
     Params {},
     /// Get the renewal queue for a specific height
-    RenewalQueue { height: u64 },
+    RenewalQueue { time: Timestamp },
     /// Get the minter and collection
     Config {},
 }
@@ -179,11 +176,6 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub minter: Addr,
     pub collection: Addr,
-}
-
-#[cw_serde]
-pub struct RenewalQueueResponse {
-    pub queue: Vec<TokenId>,
 }
 
 #[cw_serde]

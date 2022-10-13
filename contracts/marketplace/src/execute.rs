@@ -11,7 +11,7 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
-    StdError, StdResult, Storage, Uint128, WasmMsg,
+    StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
@@ -41,7 +41,6 @@ pub fn instantiate(
     let params = SudoParams {
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps),
         min_price: msg.min_price,
-        blocks_per_year: msg.blocks_per_year,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -73,7 +72,7 @@ pub fn execute(
         }
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
-        ExecuteMsg::ProcessRenewals { height } => execute_process_renewal(deps, env, height),
+        ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, time),
         ExecuteMsg::Setup { minter, collection } => execute_setup(
             deps,
             api.addr_validate(&minter)?,
@@ -132,17 +131,13 @@ pub fn execute_set_ask(
     };
     store_ask(deps.storage, &ask)?;
 
-    let params = SUDO_PARAMS.load(deps.storage)?;
-
-    // store reference to ask in expiration queue for future renewal processing
-    let mut queue = RENEWAL_QUEUE
-        .may_load(deps.storage, env.block.height)?
-        .unwrap_or_default();
-    queue.push(token_id.to_string());
+    // store reference to ask in renewal queue for future processing
+    let seconds_per_year = 31536000;
+    let renewal_time = env.block.time.plus_seconds(seconds_per_year);
     RENEWAL_QUEUE.save(
         deps.storage,
-        env.block.height + params.blocks_per_year,
-        &queue,
+        (renewal_time.seconds(), ask.id),
+        &token_id.to_string(),
     )?;
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
@@ -376,12 +371,12 @@ pub fn execute_refund_renewal(
 pub fn execute_process_renewal(
     _deps: DepsMut,
     env: Env,
-    height: u64,
+    time: Timestamp,
 ) -> Result<Response, ContractError> {
-    println!("Processing renewals at height {}", height);
+    println!("Processing renewals at time {}", time);
 
-    if height > env.block.height {
-        return Err(ContractError::CannotProcessFutureHeight {});
+    if time > env.block.time {
+        return Err(ContractError::CannotProcessFutureRenewal {});
     }
 
     // // TODO: add renewal processing logic
@@ -411,7 +406,7 @@ pub fn execute_process_renewal(
     // }
 
     Ok(Response::new()
-        .add_event(Event::new("process-renewal").add_attribute("height", height.to_string())))
+        .add_event(Event::new("process-renewal").add_attribute("time", time.to_string())))
 }
 
 /// Transfers funds and NFT, updates bid

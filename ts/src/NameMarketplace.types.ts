@@ -18,7 +18,6 @@ export interface Ask {
   renewal_fund: Uint128;
   seller: Addr;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface AskHooksResponse {
   hooks: string[];
@@ -57,7 +56,6 @@ export interface Bid {
   bidder: Addr;
   height: number;
   token_id: string;
-  [k: string]: unknown;
 }
 export interface BidsByBidderResponse {
   bids: Bid[];
@@ -113,7 +111,7 @@ export type ExecuteMsg = {
   };
 } | {
   process_renewals: {
-    height: number;
+    time: Timestamp;
   };
 } | {
   setup: {
@@ -121,8 +119,9 @@ export type ExecuteMsg = {
     minter: string;
   };
 };
+export type Timestamp = Uint64;
+export type Uint64 = string;
 export interface InstantiateMsg {
-  blocks_per_year: number;
   min_price: Uint128;
   trading_fee_bps: number;
 }
@@ -132,10 +131,8 @@ export interface ParamsResponse {
   params: SudoParams;
 }
 export interface SudoParams {
-  blocks_per_year: number;
   min_price: Uint128;
   trading_fee_percent: Decimal;
-  [k: string]: unknown;
 }
 export type QueryMsg = {
   ask: {
@@ -196,7 +193,7 @@ export type QueryMsg = {
   params: {};
 } | {
   renewal_queue: {
-    height: number;
+    time: Timestamp;
   };
 } | {
   config: {};
@@ -217,7 +214,6 @@ export interface SaleHooksResponse {
 }
 export type SudoMsg = {
   update_params: {
-    blocks_per_year?: number | null;
     min_price?: Uint128 | null;
     trading_fee_bps?: number | null;
   };
