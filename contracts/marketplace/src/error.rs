@@ -35,29 +35,17 @@ pub enum ContractError {
     #[error("NoRenewalFund")]
     NoRenewalFund {},
 
-    #[error("AskExpired")]
-    AskExpired {},
-
-    #[error("AskNotActive")]
-    AskNotActive {},
-
     #[error("AskUnchanged")]
     AskUnchanged {},
 
     #[error("AskNotFound")]
     AskNotFound {},
 
-    #[error("BidExpired")]
-    BidExpired {},
-
-    #[error("BidNotStale")]
-    BidNotStale {},
-
     #[error("CannotProcessFutureRenewal")]
     CannotProcessFutureRenewal {},
 
-    #[error("InvalidFinder: {0}")]
-    InvalidFinder(String),
+    #[error("Cannot remove ask with existing bids")]
+    ExistingBids {},
 
     #[error("PriceTooSmall: {0}")]
     PriceTooSmall(Uint128),
@@ -65,32 +53,14 @@ pub enum ContractError {
     #[error("InvalidListingFee: {0}")]
     InvalidListingFee(Uint128),
 
-    #[error("Token reserved")]
-    TokenReserved {},
-
-    #[error("Invalid finders fee bps: {0}")]
-    InvalidFindersFeeBps(u64),
-
     #[error("Invalid finders fee bps: {0}")]
     InvalidTradingFeeBps(u64),
-
-    #[error("Invalid finders fee bps: {0}")]
-    InvalidBidRemovalRewardBps(u64),
 
     #[error("{0}")]
     BidPaymentError(#[from] PaymentError),
 
     #[error("{0}")]
     Hook(#[from] HookError),
-
-    #[error("Invalid reserve_for address: {reason}")]
-    InvalidReserveAddress { reason: String },
-
-    #[error("Given operator address already registered as an operator")]
-    OperatorAlreadyRegistered {},
-
-    #[error("Given operator address is not registered as an operator")]
-    OperatorNotRegistered {},
 
     #[error("InvalidContractVersion")]
     InvalidContractVersion {},

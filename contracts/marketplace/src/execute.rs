@@ -11,7 +11,7 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
-    StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
+    Order, StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
@@ -166,6 +166,15 @@ pub fn execute_remove_ask(
     let collection = NAME_COLLECTION.load(deps.storage)?;
     if info.sender != collection {
         return Err(ContractError::Unauthorized {});
+    }
+
+    // don't allow burning if ask has bids on it
+    let bid_count = bids()
+        .prefix(token_id.to_string())
+        .keys(deps.storage, None, None, Order::Ascending)
+        .count();
+    if bid_count > 0 {
+        return Err(ContractError::ExistingBids {});
     }
 
     let key = ask_key(token_id);

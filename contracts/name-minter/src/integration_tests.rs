@@ -676,4 +676,30 @@ mod collection {
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert!(res.ask.is_none());
     }
+
+    #[test]
+    fn burn_with_existing_bids() {
+        let mut app = instantiate_contracts(None);
+
+        mint_and_list(&mut app, NAME, USER);
+
+        bid(&mut app, BIDDER, BID_AMOUNT);
+
+        let msg = Sg721NameExecuteMsg::Burn {
+            token_id: NAME.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_err());
+
+        let msg = MarketplaceQueryMsg::Ask {
+            token_id: NAME.to_string(),
+        };
+        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert!(res.ask.is_some());
+    }
 }
