@@ -33,7 +33,4 @@ pub enum ContractError {
 
     #[error("RecordValueTooLong")]
     RecordValueTooLong {},
-
-    #[error("NotNFTOwner")]
-    NotNFTOwner {},
 }

@@ -83,6 +83,7 @@ pub mod entry {
                 token_id,
             } => execute_transfer_nft(deps, env, info, recipient, token_id),
             ExecuteMsg::Mint(msg) => execute_mint(deps, info, msg),
+            // ExecuteMsg::Burn { token_id } => Sg721NameContract::default().burn(deps, info, token_id),
             _ => Sg721NameContract::default()
                 .execute(deps, env, info, msg.into())
                 .map_err(|e| e.into()),

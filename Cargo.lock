@@ -852,7 +852,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name-market"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -862,9 +862,9 @@ dependencies = [
 
 [[package]]
 name = "sg-name-market"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "229ca89c8850bde1e7e0b10c04f8c5052a0148bd900ee2ef308f9297f62f224f"
+checksum = "48dd3f8ecc92ab40a1a9f901e0f617e8c69e840c34b13292cbe308b540b0eac6"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -970,7 +970,7 @@ dependencies = [
  "schemars",
  "serde",
  "sg-name 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sg-name-market 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sg-name-market 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg-std",
  "sg721",
  "sg721-base",

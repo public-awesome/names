@@ -62,6 +62,7 @@ pub fn execute(
         ExecuteMsg::SetAsk { token_id, seller } => {
             execute_set_ask(deps, env, info, &token_id, api.addr_validate(&seller)?)
         }
+        ExecuteMsg::RemoveAsk { token_id } => execute_remove_ask(deps, info, &token_id),
         ExecuteMsg::UpdateAsk { token_id, seller } => {
             execute_update_ask(deps, info, &token_id, api.addr_validate(&seller)?)
         }
@@ -149,6 +150,33 @@ pub fn execute_set_ask(
     let event = Event::new("set-ask")
         .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
+
+    Ok(Response::new().add_event(event).add_submessages(hook))
+}
+
+/// Removes the ask on a particular NFT
+pub fn execute_remove_ask(
+    deps: DepsMut,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    // `ask` can only be removed by burning from the collection
+    let collection = NAME_COLLECTION.load(deps.storage)?;
+    if info.sender != collection {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let key = ask_key(token_id);
+    let ask = asks().load(deps.storage, key.clone())?;
+    asks().remove(deps.storage, key)?;
+
+    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
+
+    let event = Event::new("remove-ask")
+        .add_attribute("collection", collection.to_string())
+        .add_attribute("token_id", token_id.to_string());
 
     Ok(Response::new().add_event(event).add_submessages(hook))
 }
