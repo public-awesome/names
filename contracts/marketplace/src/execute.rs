@@ -183,9 +183,7 @@ pub fn execute_remove_ask(
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
 
-    let event = Event::new("remove-ask")
-        .add_attribute("collection", collection.to_string())
-        .add_attribute("token_id", token_id.to_string());
+    let event = Event::new("remove-ask").add_attribute("token_id", token_id);
 
     Ok(Response::new().add_event(event).add_submessages(hook))
 }
