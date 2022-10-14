@@ -3,7 +3,7 @@
   "title": "ExecuteMsg",
   "oneOf": [
     {
-      "description": "List name NFT on the marketplace by creating a new ask Only the name minter can call this.",
+      "description": "List name NFT on the marketplace by creating a new ask. Only the name minter can call this.",
       "type": "object",
       "required": [
         "set_ask"
@@ -19,6 +19,28 @@
             "seller": {
               "type": "string"
             },
+            "token_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "Remove name on the marketplace. Only the name collection can call this (i.e: when burned).",
+      "type": "object",
+      "required": [
+        "remove_ask"
+      ],
+      "properties": {
+        "remove_ask": {
+          "type": "object",
+          "required": [
+            "token_id"
+          ],
+          "properties": {
             "token_id": {
               "type": "string"
             }

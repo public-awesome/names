@@ -14,9 +14,12 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    /// List name NFT on the marketplace by creating a new ask
+    /// List name NFT on the marketplace by creating a new ask.
     /// Only the name minter can call this.
     SetAsk { token_id: TokenId, seller: String },
+    /// Remove name on the marketplace.
+    /// Only the name collection can call this (i.e: when burned).
+    RemoveAsk { token_id: TokenId },
     /// Update ask when an NFT is transferred
     /// Only the name collection can call this
     UpdateAsk { token_id: TokenId, seller: String },

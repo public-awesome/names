@@ -297,6 +297,11 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     seller: string;
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  removeAsk: ({
+    tokenId
+  }: {
+    tokenId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   updateAsk: ({
     seller,
     tokenId
@@ -355,6 +360,7 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setAsk = this.setAsk.bind(this);
+    this.removeAsk = this.removeAsk.bind(this);
     this.updateAsk = this.updateAsk.bind(this);
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
@@ -375,6 +381,17 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     return await this.client.execute(this.sender, this.contractAddress, {
       set_ask: {
         seller,
+        token_id: tokenId
+      }
+    }, fee, memo, funds);
+  };
+  removeAsk = async ({
+    tokenId
+  }: {
+    tokenId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      remove_ask: {
         token_id: tokenId
       }
     }, fee, memo, funds);

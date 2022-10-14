@@ -75,6 +75,10 @@ export type ExecuteMsg = {
     token_id: string;
   };
 } | {
+  remove_ask: {
+    token_id: string;
+  };
+} | {
   update_ask: {
     seller: string;
     token_id: string;

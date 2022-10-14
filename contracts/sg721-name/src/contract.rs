@@ -187,7 +187,7 @@ pub fn execute_mint(
     // create the token
     let token = TokenInfo {
         owner: deps.api.addr_validate(&msg.owner)?,
-        approvals: vec![],          // TODO: set approval here?
+        approvals: vec![],
         token_uri: Some(token_uri), // stars address
         extension: msg.extension,
     };
@@ -205,6 +205,43 @@ pub fn execute_mint(
         .add_attribute("minter", info.sender)
         .add_attribute("owner", msg.owner)
         .add_attribute("token_id", msg.token_id))
+}
+
+pub fn execute_burn(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    token_id: String,
+) -> Result<Response, ContractError> {
+    let token = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &token_id)?;
+
+    Sg721NameContract::default()
+        .check_can_send(deps.as_ref(), &env, &info, &token)
+        .map_err(|_| ContractError::Base(Unauthorized {}))?;
+
+    ADDRESS_MAP.remove(deps.storage, &deps.api.addr_validate(&token_id)?);
+
+    let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
+        token_id: token_id.to_string(),
+    };
+    let remove_ask_msg = WasmMsg::Execute {
+        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        funds: vec![],
+        msg: to_binary(&msg)?,
+    };
+
+    Sg721NameContract::default()
+        .tokens
+        .remove(deps.storage, &token_id)?;
+    Sg721NameContract::default().decrement_tokens(deps.storage)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "burn")
+        .add_attribute("sender", info.sender)
+        .add_attribute("token_id", token_id)
+        .add_message(remove_ask_msg))
 }
 
 pub fn execute_transfer_nft(
