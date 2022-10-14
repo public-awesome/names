@@ -554,7 +554,7 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "name-marketplace"
-version = "0.2.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -581,7 +581,7 @@ dependencies = [
 
 [[package]]
 name = "name-minter"
-version = "0.2.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -599,7 +599,7 @@ dependencies = [
  "sg-multi-test",
  "sg-name 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg-std",
- "sg-whitelist-basic 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sg-whitelist-basic 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg721",
  "sg721-base",
  "sg721-name",
@@ -706,9 +706,9 @@ checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "schemars"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1847b767a3d62d95cbf3d8a9f0e421cf57a0d8aa4f411d4b16525afb0284d4ed"
+checksum = "2a5fb6c61f29e723026dc8e923d94c694313212abbecbbe5f55a7748eec5b307"
 dependencies = [
  "dyn-clone",
  "schemars_derive",
@@ -718,9 +718,9 @@ dependencies = [
 
 [[package]]
 name = "schemars_derive"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af4d7e1b012cb3d9129567661a63755ea4b8a7386d339dc945ae187e403c6743"
+checksum = "f188d036977451159430f3b8dc82ec76364a42b7e289c2b18a9a18f4470058e9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -750,9 +750,9 @@ checksum = "93f6841e709003d68bb2deee8c343572bf446003ec20a583e76f7b15cebf3711"
 
 [[package]]
 name = "serde"
-version = "1.0.144"
+version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f747710de3dcd43b88c9168773254e809d8ddbdf9653b84e2554ab219f17860"
+checksum = "728eb6351430bccb993660dfffc5a72f91ccc1295abaa8ce19b27ebe4f75568b"
 dependencies = [
  "serde_derive",
 ]
@@ -768,9 +768,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.144"
+version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94ed3a816fb1d101812f83e789f888322c34e291f894f19590dc310963e87a00"
+checksum = "81fa1584d3d1bcacd84c277a0dfe21f5b0f6accf4a23d04d4c6d61f1af522b4c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -852,7 +852,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name-market"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -862,9 +862,9 @@ dependencies = [
 
 [[package]]
 name = "sg-name-market"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca46410fed446d31ae954846f94f08fd30356efbdf90151c2d1fcf5bcd5da895"
+checksum = "229ca89c8850bde1e7e0b10c04f8c5052a0148bd900ee2ef308f9297f62f224f"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -889,7 +889,7 @@ dependencies = [
 
 [[package]]
 name = "sg-whitelist-basic"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -899,9 +899,9 @@ dependencies = [
 
 [[package]]
 name = "sg-whitelist-basic"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "462221865a46280f69bdd6cd5ffb5f8fde45b096741a65994e4c48576fcbc941"
+checksum = "858f6ad476bbf3bf49b3a2e7d2e2829e213a3f199b4fc1a745dfaa4c8d43d394"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -958,7 +958,7 @@ dependencies = [
 
 [[package]]
 name = "sg721-name"
-version = "0.2.0"
+version = "0.5.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -970,7 +970,7 @@ dependencies = [
  "schemars",
  "serde",
  "sg-name 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sg-name-market 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sg-name-market 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg-std",
  "sg721",
  "sg721-base",

@@ -1,6 +1,6 @@
 [package]
 name = "name-minter"
-version = "0.2.0"
+version = "0.5.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2021"
 
@@ -24,12 +24,12 @@ library = []
 cosmwasm-schema = "1.1.4"
 cosmwasm-std = "1.1.4"
 cosmwasm-storage = "1.1.4"
-cw-storage-plus = "0.15.0"
-cw-utils = "0.15.0"
-cw2 = "0.15.0"
-cw-controllers = "0.15.0"
-schemars = "0.8.8"
-serde = { version = "1.0.137", default-features = false, features = ["derive"] }
+cw-storage-plus = "0.15.1"
+cw-utils = "0.15.1"
+cw2 = "0.15.1"
+cw-controllers = "0.15.1"
+schemars = "0.8.11"
+serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cw721 = "0.15.0"
 cw721-base = { version = "0.15.0", features = ["library"] }
@@ -38,9 +38,9 @@ sg721 = "0.19.0"
 sg721-name = { path = "../sg721-name" }
 name-marketplace = { path = "../marketplace", features = ["library"] }
 sg-std = "0.19.0"
-sg-whitelist-basic = "0.4.0"
+sg-whitelist-basic = "0.5.0"
 
 [dev-dependencies]
-cw-multi-test = "0.15.0"
+cw-multi-test = "0.15.1"
 sg-multi-test = "0.19.0"
 sg721-base = "0.19.0"
