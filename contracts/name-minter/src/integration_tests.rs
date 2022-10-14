@@ -56,6 +56,8 @@ const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
 
+// NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
+
 pub fn custom_mock_app() -> StargazeApp {
     StargazeApp::default()
 }
@@ -187,7 +189,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         &msg,
         &name_fee,
     );
-    println!("{:?}", res);
+    // println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
@@ -586,7 +588,7 @@ mod query {
     }
 }
 
-mod transfer {
+mod collection {
     use super::*;
 
     fn transfer(app: &mut StargazeApp) {
@@ -649,5 +651,29 @@ mod transfer {
         };
         let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MKT), &msg, &[]);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn burn_nft() {
+        let mut app = instantiate_contracts(None);
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let msg = Sg721NameExecuteMsg::Burn {
+            token_id: NAME.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = MarketplaceQueryMsg::Ask {
+            token_id: NAME.to_string(),
+        };
+        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert!(res.ask.is_none());
     }
 }
