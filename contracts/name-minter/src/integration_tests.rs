@@ -589,12 +589,7 @@ mod query {
 mod transfer {
     use super::*;
 
-    #[test]
-    fn transfer_nft() {
-        let mut app = instantiate_contracts(None);
-
-        mint_and_list(&mut app, NAME, USER);
-
+    fn transfer(app: &mut StargazeApp) {
         let msg = Sg721NameExecuteMsg::TransferNft {
             recipient: USER2.to_string(),
             token_id: NAME.to_string(),
@@ -612,5 +607,23 @@ mod transfer {
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.ask.unwrap().seller.to_string(), USER2.to_string());
+    }
+
+    #[test]
+    fn transfer_nft() {
+        let mut app = instantiate_contracts(None);
+
+        mint_and_list(&mut app, NAME, USER);
+        transfer(&mut app);
+    }
+
+    #[test]
+    fn transfer_nft_and_bid() {
+        let mut app = instantiate_contracts(None);
+
+        mint_and_list(&mut app, NAME, USER);
+
+        transfer(&mut app);
+        bid(&mut app, BIDDER, BID_AMOUNT);
     }
 }
