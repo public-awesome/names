@@ -19,6 +19,11 @@ export interface NameMarketplaceMessage {
     seller: string;
     tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  removeAsk: ({
+    tokenId
+  }: {
+    tokenId: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   updateAsk: ({
     seller,
     tokenId
@@ -74,6 +79,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setAsk = this.setAsk.bind(this);
+    this.removeAsk = this.removeAsk.bind(this);
     this.updateAsk = this.updateAsk.bind(this);
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
@@ -99,6 +105,25 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         msg: toUtf8(JSON.stringify({
           set_ask: {
             seller,
+            token_id: tokenId
+          }
+        })),
+        funds
+      })
+    };
+  };
+  removeAsk = ({
+    tokenId
+  }: {
+    tokenId: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          remove_ask: {
             token_id: tokenId
           }
         })),
