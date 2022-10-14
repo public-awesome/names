@@ -69,15 +69,6 @@ export interface BidsResponse {
 export interface BidsSortedByPriceResponse {
   bids: Bid[];
 }
-export interface CollectionBidsByBidderResponse {
-  bids: Bid[];
-}
-export interface CollectionBidsByBidderSortedByExpirationResponse {
-  bids: Bid[];
-}
-export interface CollectionBidsSortedByPriceResponse {
-  bids: Bid[];
-}
 export type ExecuteMsg = {
   set_ask: {
     seller: string;
@@ -202,9 +193,6 @@ export interface ReverseAsksSortedByPriceResponse {
   asks: Ask[];
 }
 export interface ReverseBidsSortedByPriceResponse {
-  bids: Bid[];
-}
-export interface ReverseCollectionBidsSortedByPriceResponse {
   bids: Bid[];
 }
 export interface SaleHooksResponse {

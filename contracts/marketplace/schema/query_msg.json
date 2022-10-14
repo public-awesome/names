@@ -3,7 +3,7 @@
   "title": "QueryMsg",
   "oneOf": [
     {
-      "description": "Get the current ask for specific name Return type: `CurrentAskResponse`",
+      "description": "Get the current ask for specific name",
       "type": "object",
       "required": [
         "ask"
@@ -25,7 +25,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all asks for a collection Return type: `AsksResponse`",
+      "description": "Get all asks for a collection",
       "type": "object",
       "required": [
         "asks"
@@ -57,7 +57,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all asks in reverse Return type: `AsksResponse`",
+      "description": "Get all asks in reverse",
       "type": "object",
       "required": [
         "reverse_asks"
@@ -89,7 +89,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Count of all asks Return type: `AskCountResponse`",
+      "description": "Count of all asks",
       "type": "object",
       "required": [
         "ask_count"
@@ -103,7 +103,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all asks by seller Return type: `AsksResponse`",
+      "description": "Get all asks by seller",
       "type": "object",
       "required": [
         "asks_by_seller"
@@ -139,7 +139,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get data for a specific bid Return type: `BidResponse`",
+      "description": "Get data for a specific bid",
       "type": "object",
       "required": [
         "bid"
@@ -165,7 +165,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all bids by a bidder Return type: `BidsResponse`",
+      "description": "Get all bids by a bidder",
       "type": "object",
       "required": [
         "bids_by_bidder"
@@ -201,7 +201,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all bids for a specific NFT Return type: `BidsResponse`",
+      "description": "Get all bids for a specific NFT",
       "type": "object",
       "required": [
         "bids"
@@ -237,7 +237,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all bids for a collection, sorted by price Return type: `BidsResponse`",
+      "description": "Get all bids for a collection, sorted by price",
       "type": "object",
       "required": [
         "bids_sorted_by_price"
@@ -271,7 +271,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get all bids for a collection, sorted by price in reverse Return type: `BidsResponse`",
+      "description": "Get all bids for a collection, sorted by price in reverse",
       "type": "object",
       "required": [
         "reverse_bids_sorted_by_price"
@@ -305,7 +305,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Show all registered ask hooks Return type: `HooksResponse`",
+      "description": "Show all registered ask hooks",
       "type": "object",
       "required": [
         "ask_hooks"
@@ -319,7 +319,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Show all registered bid hooks Return type: `HooksResponse`",
+      "description": "Show all registered bid hooks",
       "type": "object",
       "required": [
         "bid_hooks"
@@ -333,7 +333,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Show all registered sale hooks Return type: `HooksResponse`",
+      "description": "Show all registered sale hooks",
       "type": "object",
       "required": [
         "sale_hooks"
@@ -347,7 +347,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get the config for the contract Return type: `ParamsResponse`",
+      "description": "Get the config for the contract",
       "type": "object",
       "required": [
         "params"
@@ -361,7 +361,7 @@
       "additionalProperties": false
     },
     {
-      "description": "Get the renewal queue for a specific height",
+      "description": "Get the renewal queue for a specific time",
       "type": "object",
       "required": [
         "renewal_queue"

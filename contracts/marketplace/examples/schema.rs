@@ -67,26 +67,5 @@ fn main() {
     );
     export_schema_with_title(&schema_for!(HooksResponse), &out_dir, "BidHooksResponse");
 
-    export_schema_with_title(
-        &schema_for!(BidsResponse),
-        &out_dir,
-        "CollectionBidsByBidderResponse",
-    );
-    export_schema_with_title(
-        &schema_for!(BidsResponse),
-        &out_dir,
-        "CollectionBidsSortedByPriceResponse",
-    );
-    export_schema_with_title(
-        &schema_for!(BidsResponse),
-        &out_dir,
-        "CollectionBidsByBidderSortedByExpirationResponse",
-    );
-    export_schema_with_title(
-        &schema_for!(BidsResponse),
-        &out_dir,
-        "ReverseCollectionBidsSortedByPriceResponse",
-    );
-
     export_schema_with_title(&schema_for!(SaleHookMsg), &out_dir, "SaleHooksResponse");
 }

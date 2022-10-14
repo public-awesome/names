@@ -1,6 +1,7 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Timestamp, Uint128};
+use sg_controllers::HooksResponse;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -99,76 +100,79 @@ impl BidOffset {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Get the current ask for specific name
-    /// Return type: `CurrentAskResponse`
+    #[returns(AskResponse)]
     Ask { token_id: TokenId },
     /// Get all asks for a collection
-    /// Return type: `AsksResponse`
+    #[returns(AsksResponse)]
     Asks {
         start_after: Option<Id>,
         limit: Option<u32>,
     },
     /// Get all asks in reverse
-    /// Return type: `AsksResponse`
+    #[returns(AsksResponse)]
     ReverseAsks {
         start_before: Option<Id>,
         limit: Option<u32>,
     },
     /// Count of all asks
-    /// Return type: `AskCountResponse`
+    #[returns(AskCountResponse)]
     AskCount {},
     /// Get all asks by seller
-    /// Return type: `AsksResponse`
+    #[returns(AsksResponse)]
     AsksBySeller {
         seller: Seller,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get data for a specific bid
-    /// Return type: `BidResponse`
+    #[returns(BidResponse)]
     Bid { token_id: TokenId, bidder: Bidder },
     /// Get all bids by a bidder
-    /// Return type: `BidsResponse`
+    #[returns(BidsResponse)]
     BidsByBidder {
         bidder: Bidder,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get all bids for a specific NFT
-    /// Return type: `BidsResponse`
+    #[returns(BidsResponse)]
     Bids {
         token_id: TokenId,
         start_after: Option<Bidder>,
         limit: Option<u32>,
     },
     /// Get all bids for a collection, sorted by price
-    /// Return type: `BidsResponse`
+    #[returns(BidsResponse)]
     BidsSortedByPrice {
         start_after: Option<BidOffset>,
         limit: Option<u32>,
     },
     /// Get all bids for a collection, sorted by price in reverse
-    /// Return type: `BidsResponse`
+    #[returns(BidsResponse)]
     ReverseBidsSortedByPrice {
         start_before: Option<BidOffset>,
         limit: Option<u32>,
     },
     /// Show all registered ask hooks
-    /// Return type: `HooksResponse`
+    #[returns(AsksResponse)]
     AskHooks {},
     /// Show all registered bid hooks
-    /// Return type: `HooksResponse`
+    #[returns(HooksResponse)]
     BidHooks {},
     /// Show all registered sale hooks
-    /// Return type: `HooksResponse`
+    #[returns(HooksResponse)]
     SaleHooks {},
     /// Get the config for the contract
-    /// Return type: `ParamsResponse`
+    #[returns(ParamsResponse)]
     Params {},
-    /// Get the renewal queue for a specific height
+    /// Get the renewal queue for a specific time
+    #[returns(AsksResponse)]
     RenewalQueue { time: Timestamp },
     /// Get the minter and collection
+    #[returns(ConfigResponse)]
     Config {},
 }
 
