@@ -623,7 +623,31 @@ mod transfer {
 
         mint_and_list(&mut app, NAME, USER);
 
+        // transfer to user2
         transfer(&mut app);
+
         bid(&mut app, BIDDER, BID_AMOUNT);
+
+        // user2 must approve the marketplace to transfer their name
+        let msg = Sg721NameExecuteMsg::Approve {
+            spender: MKT.to_string(),
+            token_id: NAME.to_string(),
+            expires: None,
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER2),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // accept bid
+        let msg = MarketplaceExecuteMsg::AcceptBid {
+            token_id: NAME.to_string(),
+            bidder: BIDDER.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MKT), &msg, &[]);
+        assert!(res.is_ok());
     }
 }
