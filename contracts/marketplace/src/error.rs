@@ -14,6 +14,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("NotApproved")]
+    NotApproved {},
+
     #[error("UnauthorizedMinter")]
     UnauthorizedMinter {},
 

@@ -228,20 +228,6 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
     .map_err(|err| println!("{:?}", err))
     .ok();
 
-    // TODO: why doesn't this work?
-    // // set approval for bidder, for specific token
-    // let msg = Sg721NameExecuteMsg::Approve {
-    //     spender: mkt.to_string(),
-    //     token_id: NAME.to_string(),
-    //     expires: None,
-    // };
-    let msg = Sg721NameExecuteMsg::ApproveAll {
-        operator: MKT.to_string(),
-        expires: None,
-    };
-    let res = app.execute_contract(bidder.clone(), Addr::unchecked(COLLECTION), &msg, &[]);
-    assert!(res.is_ok());
-
     let msg = MarketplaceExecuteMsg::SetBid {
         token_id: NAME.to_string(),
     };
@@ -383,6 +369,20 @@ mod execute {
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER2, BID_AMOUNT);
+
+        // have to approve marketplace spend for bid acceptor (bidder)
+        let msg = Sg721NameExecuteMsg::Approve {
+            spender: MKT.to_string(),
+            token_id: NAME.to_string(),
+            expires: None,
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(BIDDER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
             token_id: NAME.to_string(),
