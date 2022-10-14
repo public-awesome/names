@@ -10,6 +10,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord};
 use std::marker::PhantomData;
 
+use crate::contract::transcode;
 use crate::entry::{execute, instantiate};
 use crate::{ContractError, ExecuteMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
@@ -279,3 +280,9 @@ fn mint_and_update() {
 //     unimplemented!("TODO");
 //     // stub mock nft collection to return OwnerOfResponse nft
 // }
+
+#[test]
+fn test_transcode() {
+    let res = transcode("cosmos1y54exmx84cqtasvjnskf9f63djuuj68p7hqf47");
+    assert_eq!(res.unwrap(), "stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570");
+}
