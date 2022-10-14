@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
+    to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -150,7 +150,7 @@ pub fn execute_process_address(
         return Err(ContractError::Unauthorized {});
     }
 
-    let addr = deps.api.addr_validate(&address.clone())?;
+    let addr = deps.api.addr_validate(&address)?;
     if !WHITELIST.has(deps.storage, addr.clone()) {
         return Err(ContractError::AddressNotFound {});
     }
@@ -160,7 +160,7 @@ pub fn execute_process_address(
     }
 
     let count = WHITELIST.load(deps.storage, addr.clone())?;
-    WHITELIST.save(deps.storage, addr.clone(), &(count + 1))?;
+    WHITELIST.save(deps.storage, addr, &(count + 1))?;
 
     let event = Event::new("process_address")
         .add_attribute("address", address)
@@ -194,13 +194,14 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
         return Err(ContractError::Unauthorized {});
     }
 
-    let keys: Vec<Addr> = WHITELIST
+    let keys = WHITELIST
         .keys(deps.as_ref().storage, None, None, Order::Ascending)
         .map(|x| x.unwrap())
-        .collect::<Vec<Addr>>();
-    keys.into_iter().for_each(|key| {
+        .collect::<Vec<_>>();
+
+    for key in keys {
         WHITELIST.remove(deps.storage, key);
-    });
+    }
 
     let event = Event::new("purge").add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
@@ -224,7 +225,7 @@ pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {
 
 pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
     let addr = deps.api.addr_validate(&address)?;
-    Ok(WHITELIST.load(deps.storage, addr)?)
+    WHITELIST.load(deps.storage, addr)
 }
 
 pub fn query_admin(deps: Deps) -> StdResult<String> {
@@ -233,7 +234,7 @@ pub fn query_admin(deps: Deps) -> StdResult<String> {
 }
 
 pub fn query_count(deps: Deps) -> StdResult<u64> {
-    Ok(TOTAL_ADDRESS_COUNT.load(deps.storage)?)
+    TOTAL_ADDRESS_COUNT.load(deps.storage)
 }
 
 pub fn query_per_address_limit(deps: Deps) -> StdResult<u32> {
