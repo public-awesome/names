@@ -241,6 +241,3 @@ pub fn query_per_address_limit(deps: Deps) -> StdResult<u32> {
     let config = CONFIG.load(deps.storage)?;
     Ok(config.per_address_limit)
 }
-
-#[cfg(test)]
-mod tests {}
