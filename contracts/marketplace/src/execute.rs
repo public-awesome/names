@@ -112,15 +112,19 @@ pub fn execute_set_ask(
 
     let funds = may_pay(&info, NATIVE_DENOM)?;
 
-    // let collection = NAME_COLLECTION.load(deps.storage)?;
+    let collection = NAME_COLLECTION.load(deps.storage)?;
 
-    // // Check if this contract is approved to transfer the token
-    // Cw721Contract(collection.clone()).approval(
-    //     &deps.querier,
-    //     token_id.clone(),
-    //     env.contract.address.to_string(),
-    //     None,
-    // )?;
+    // check if collection is approved to transfer on behalf of the seller
+    let ops = Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).all_operators(
+        &deps.querier,
+        &seller.to_string(),
+        false,
+        None,
+        None,
+    )?;
+    if ops.is_empty() {
+        return Err(ContractError::NotApproved {});
+    }
 
     let ask = Ask {
         token_id: token_id.to_string(),
