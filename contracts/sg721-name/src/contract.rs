@@ -3,7 +3,9 @@ use crate::{
     state::{ADDRESS_MAP, NAME_MARKETPLACE},
 };
 
-use cosmwasm_std::{to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdResult, WasmMsg};
+use cosmwasm_std::{
+    to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdError, StdResult, WasmMsg,
+};
 
 use cw721_base::{state::TokenInfo, Extension, MintMsg};
 use cw_utils::nonpayable;
@@ -13,6 +15,8 @@ use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
+
+use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
 
@@ -333,9 +337,19 @@ pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> 
     })
 }
 
-pub fn query_name(deps: Deps, address: String) -> StdResult<NameResponse> {
-    // TODO: De-code and re-encode address if needed (for remote chains)
+pub fn query_name(deps: Deps, mut address: String) -> StdResult<NameResponse> {
+    if !address.starts_with("stars") {
+        address = transcode(&address)?;
+    }
+
     let name = ADDRESS_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
 
     Ok(NameResponse { name })
+}
+
+pub fn transcode(address: &str) -> StdResult<String> {
+    let (_, data) =
+        bech32::decode(address).map_err(|_| StdError::generic_err("Invalid bech32 address"))?;
+
+    Ok(bech32::encode("stars", data))
 }

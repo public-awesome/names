@@ -443,6 +443,7 @@ mod admin {
 }
 
 mod query {
+    use cosmwasm_std::StdResult;
     use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
     use sg_name::NameResponse;
 
@@ -575,16 +576,30 @@ mod query {
 
         mint_and_list(&mut app, NAME, USER);
 
+        // fails with "user" string, has to be a bech32 address
+        let res: StdResult<NameResponse> = app.wrap().query_wasm_smart(
+            COLLECTION,
+            &SgNameQueryMsg::Name {
+                address: USER.to_string(),
+            },
+        );
+        assert!(res.is_err());
+
+        let stars_address = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
+        let cosmos_address = "cosmos1hsk6jryyqjfhp5dhc55tc9jtckygx0eph6dd02";
+
+        mint_and_list(&mut app, "yoyo", stars_address);
+
         let res: NameResponse = app
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
                 &SgNameQueryMsg::Name {
-                    address: USER.to_string(),
+                    address: cosmos_address.to_string(),
                 },
             )
             .unwrap();
-        assert_eq!(res.name, NAME.to_string());
+        assert_eq!(res.name, "yoyo".to_string());
     }
 }
 
