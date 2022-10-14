@@ -20,14 +20,29 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(bool)]
+    #[returns(IncludesAddressResponse)]
     IncludesAddress { address: String },
-    #[returns(u32)]
+    #[returns(CountResponse)]
     MintCount { address: String },
-    #[returns(Option<String>)]
+    #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(u64)]
+    #[returns(CountResponse)]
     Count {},
-    #[returns(u32)]
+    #[returns(PerAddressLimitResponse)]
     PerAddressLimit {},
+}
+
+#[cw_serde]
+pub struct IncludesAddressResponse {
+    pub includes: bool,
+}
+
+#[cw_serde]
+pub struct CountResponse {
+    pub count: u64,
+}
+
+#[cw_serde]
+pub struct PerAddressLimitResponse {
+    pub limit: u64,
 }
