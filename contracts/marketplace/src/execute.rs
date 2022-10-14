@@ -283,6 +283,14 @@ pub fn execute_accept_bid(
     let ask = asks().load(deps.storage, ask_key)?;
     let bid = bids().load(deps.storage, bid_key.clone())?;
 
+    // check if token is approved for transfer
+    Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).approval(
+        &deps.querier,
+        token_id,
+        &info.sender.to_string(),
+        None,
+    )?;
+
     // Remove accepted bid
     bids().remove(deps.storage, bid_key)?;
 
