@@ -12,5 +12,5 @@ EOF
 starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
  --admin $ADMIN \
  --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
- --from testnet -y -b block
+ --from testnet -y -b block -o json | jq .
  
