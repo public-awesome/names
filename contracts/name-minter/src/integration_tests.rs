@@ -44,6 +44,7 @@ const USER2: &str = "user2";
 const BIDDER: &str = "bidder";
 const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
+const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
@@ -84,7 +85,7 @@ fn instantiate_contracts(admin: Option<String>) -> StargazeApp {
             &msg,
             &[],
             "Name-Marketplace",
-            None,
+            admin.clone(),
         )
         .unwrap();
 
@@ -100,7 +101,7 @@ fn instantiate_contracts(admin: Option<String>) -> StargazeApp {
     let minter = app
         .instantiate_contract(
             minter_id,
-            Addr::unchecked(ADMIN),
+            Addr::unchecked(ADMIN2),
             &msg,
             &[],
             "Name-Minter",
@@ -152,7 +153,7 @@ fn update_block_height(app: &mut StargazeApp, height: u64) {
     app.set_block(block);
 }
 
-fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
+fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str, contract: Option<String>) {
     // set approval for user, for all tokens
     // approve_all is needed because we don't know the token_id before-hand
     let approve_all_msg = Sg721NameExecuteMsg::ApproveAll {
@@ -182,7 +183,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
-        contract: None,
+        contract,
     };
     let res = app.execute_contract(
         Addr::unchecked(user),
@@ -190,6 +191,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         &msg,
         &name_fee,
     );
+    // println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace
@@ -262,7 +264,7 @@ mod execute {
     fn check_approvals() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         // check operators
         let res: OperatorsResponse = app
@@ -284,14 +286,33 @@ mod execute {
     fn test_mint() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
+    }
+
+    #[test]
+    fn test_mint_for_contract() {
+        // contract creator can mint a name for contract
+        let mut app = instantiate_contracts(None);
+        mint_and_list(&mut app, NAME, ADMIN2, Some(MINTER.to_string()));
+
+        // contract admin can mint a name for contract
+        let mut app = instantiate_contracts(Some(ADMIN.to_string()));
+        mint_and_list(&mut app, NAME, ADMIN, Some(MKT.to_string()));
+
+        // wrong creator cannot mint a name for contract
+        // let mut app = instantiate_contracts(None);
+        // mint_and_list(&mut app, NAME, ADMIN, Some(MINTER.to_string()));
+
+        // wrong admin cannot mint a name for contract
+        // let mut app = instantiate_contracts(Some(ADMIN.to_string()));
+        // mint_and_list(&mut app, NAME, ADMIN2, Some(MKT.to_string()));
     }
 
     #[test]
     fn test_bid() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
         bid(&mut app, BIDDER, BID_AMOUNT);
     }
 
@@ -299,7 +320,7 @@ mod execute {
     fn test_accept_bid() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
         bid(&mut app, BIDDER, BID_AMOUNT);
 
         // user (owner) starts off with 0 internet funny money
@@ -360,7 +381,7 @@ mod execute {
     fn test_two_sales_cycles() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
         bid(&mut app, BIDDER, BID_AMOUNT);
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
@@ -453,7 +474,7 @@ mod query {
     fn query_ask() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
@@ -466,11 +487,11 @@ mod query {
     fn query_asks() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER);
+        mint_and_list(&mut app, "hack", USER, None);
 
         let msg = MarketplaceQueryMsg::Asks {
             start_after: None,
@@ -484,11 +505,11 @@ mod query {
     fn query_reverse_asks() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER);
+        mint_and_list(&mut app, "hack", USER, None);
 
         let msg = MarketplaceQueryMsg::ReverseAsks {
             start_before: None,
@@ -502,11 +523,11 @@ mod query {
     fn query_asks_by_seller() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", "user2");
+        mint_and_list(&mut app, "hack", "user2", None);
 
         let msg = MarketplaceQueryMsg::AsksBySeller {
             seller: USER.to_string(),
@@ -521,11 +542,11 @@ mod query {
     fn query_ask_count() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER);
+        mint_and_list(&mut app, "hack", USER, None);
 
         let msg = MarketplaceQueryMsg::AskCount {};
         let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
@@ -536,7 +557,7 @@ mod query {
     fn query_top_bids() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
         bid(&mut app, BIDDER, BID_AMOUNT);
         bid(&mut app, BIDDER2, BID_AMOUNT * 5);
 
@@ -554,8 +575,8 @@ mod query {
         let mut app = instantiate_contracts(None);
 
         // mint two names at the same time
-        mint_and_list(&mut app, NAME, USER);
-        mint_and_list(&mut app, "hack", USER);
+        mint_and_list(&mut app, NAME, USER, None);
+        mint_and_list(&mut app, "hack", USER, None);
 
         let res: AsksResponse = app
             .wrap()
@@ -574,7 +595,7 @@ mod query {
     fn query_name() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         // fails with "user" string, has to be a bech32 address
         let res: StdResult<NameResponse> = app.wrap().query_wasm_smart(
@@ -588,7 +609,7 @@ mod query {
         let stars_address = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
         let cosmos_address = "cosmos1hsk6jryyqjfhp5dhc55tc9jtckygx0eph6dd02";
 
-        mint_and_list(&mut app, "yoyo", stars_address);
+        mint_and_list(&mut app, "yoyo", stars_address, None);
 
         let res: NameResponse = app
             .wrap()
@@ -630,7 +651,7 @@ mod collection {
     fn transfer_nft() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
         transfer(&mut app);
     }
 
@@ -638,7 +659,7 @@ mod collection {
     fn transfer_nft_and_bid() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         // transfer to user2
         transfer(&mut app);
@@ -672,7 +693,7 @@ mod collection {
     fn burn_nft() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         let msg = Sg721NameExecuteMsg::Burn {
             token_id: NAME.to_string(),
@@ -696,7 +717,7 @@ mod collection {
     fn burn_with_existing_bids() {
         let mut app = instantiate_contracts(None);
 
-        mint_and_list(&mut app, NAME, USER);
+        mint_and_list(&mut app, NAME, USER, None);
 
         bid(&mut app, BIDDER, BID_AMOUNT);
 
