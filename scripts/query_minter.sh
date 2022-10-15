@@ -1,6 +1,6 @@
 MSG=$(cat <<EOF
 {
-  "config": {}
+  "collection": {}
 }
 EOF
 )
