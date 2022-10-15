@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Expiration, Timestamp, Uint64, Addr, AllNftInfoResponse, OwnerOfResponse, Approval, NftInfoResponseForMetadataForEmpty, MetadataForEmpty, Empty, NFT, TextRecord, AllOperatorsResponse, AllTokensResponse, ApprovalResponse, ApprovalsResponse, Decimal, CollectionInfoResponse, RoyaltyInfoResponse, ContractInfoResponse, ExecuteMsg, Binary, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, MinterResponse, NftInfoResponse, NumTokensResponse, OperatorsResponse, QueryMsg, TokensResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadataForNullable_Empty, OwnerOfResponse, Approval, NftInfoResponseForMetadataForNullable_Empty, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
 export interface Sg721NameMessage {
   contractAddress: string;
   sender: string;

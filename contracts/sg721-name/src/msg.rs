@@ -1,10 +1,13 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Timestamp};
-use cw721::Expiration;
-use cw721_base::MintMsg;
+use cw721::{
+    AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, Expiration,
+    NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
+};
+use cw721_base::{Extension, MintMsg, MinterResponse};
 use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
-use sg721_base::msg::QueryMsg as Sg721QueryMsg;
-use sg_name::{TextRecord, NFT};
+use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
+use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
 
 // Add execute msgs related to bio, profile, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
@@ -122,64 +125,62 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
-    /// Returns NameResponse
     /// Reverse lookup of name for address
-    Name {
-        address: String,
-    },
-    /// Returns NameMarketplaceResponse
+    #[returns(NameResponse)]
+    Name { address: String },
+    /// Returns the marketplace contract address
+    #[returns(NameMarketplaceResponse)]
     NameMarketplace {},
-    /// Returns BioResponse
-    Bio {
-        name: String,
-    },
-    /// Returns ProfileResponse
-    Profile {
-        name: String,
-    },
-    /// Returns TextRecordListResponse
-    TextRecords {
-        name: String,
-    },
+    #[returns(OwnerOfResponse)]
     OwnerOf {
         token_id: String,
         include_expired: Option<bool>,
     },
+    #[returns(ApprovalResponse)]
     Approval {
         token_id: String,
         spender: String,
         include_expired: Option<bool>,
     },
+    #[returns(ApprovalsResponse)]
     Approvals {
         token_id: String,
         include_expired: Option<bool>,
     },
+    #[returns(OperatorsResponse)]
     AllOperators {
         owner: String,
         include_expired: Option<bool>,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(NumTokensResponse)]
     NumTokens {},
+    #[returns(ContractInfoResponse)]
     ContractInfo {},
-    NftInfo {
-        token_id: String,
-    },
+    #[returns(NftInfoResponse<Metadata<Extension>>)]
+    NftInfo { token_id: String },
+    #[returns(AllNftInfoResponse<Metadata<Extension>>)]
     AllNftInfo {
         token_id: String,
         include_expired: Option<bool>,
     },
+    #[returns(TokensResponse)]
     Tokens {
         owner: String,
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(TokensResponse)]
     AllTokens {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(MinterResponse)]
     Minter {},
+    #[returns(CollectionInfoResponse)]
     CollectionInfo {},
 }
 
