@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, ExecuteMsg, Timestamp, Uint64, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { AskCountResponse, AskHooksResponse, Uint128, AskOffset, Addr, AskResponse, Ask, AsksBySellerResponse, AsksResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsResponse, BidsSortedByPriceResponse, ConfigResponse, ExecuteMsg, Timestamp, Uint64, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, RenewalQueueResponse, ReverseAsksResponse, ReverseBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({

@@ -1,13 +1,16 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "AskCreatedHooksResponse",
+  "title": "ReverseAsksResponse",
   "type": "object",
   "required": [
-    "ask"
+    "asks"
   ],
   "properties": {
-    "ask": {
-      "$ref": "#/definitions/Ask"
+    "asks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Ask"
+      }
     }
   },
   "additionalProperties": false,

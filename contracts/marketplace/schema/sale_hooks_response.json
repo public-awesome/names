@@ -3,20 +3,14 @@
   "title": "SaleHooksResponse",
   "type": "object",
   "required": [
-    "buyer",
-    "seller",
-    "token_id"
+    "hooks"
   ],
   "properties": {
-    "buyer": {
-      "type": "string"
-    },
-    "seller": {
-      "type": "string"
-    },
-    "token_id": {
-      "type": "string"
+    "hooks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
-  },
-  "additionalProperties": false
+  }
 }

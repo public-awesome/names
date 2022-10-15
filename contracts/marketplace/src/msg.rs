@@ -160,7 +160,7 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     /// Show all registered ask hooks
-    #[returns(AsksResponse)]
+    #[returns(HooksResponse)]
     AskHooks {},
     /// Show all registered bid hooks
     #[returns(HooksResponse)]

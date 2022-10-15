@@ -7,10 +7,18 @@
 export interface AskCountResponse {
   count: number;
 }
+export interface AskHooksResponse {
+  hooks: string[];
+  [k: string]: unknown;
+}
 export type Uint128 = string;
+export interface AskOffset {
+  price: Uint128;
+  token_id: string;
+}
 export type Addr = string;
-export interface AskCreatedHooksResponse {
-  ask: Ask;
+export interface AskResponse {
+  ask?: Ask | null;
 }
 export interface Ask {
   height: number;
@@ -19,24 +27,10 @@ export interface Ask {
   seller: Addr;
   token_id: string;
 }
-export interface AskHooksResponse {
-  hooks: string[];
-  [k: string]: unknown;
-}
-export interface AskOffset {
-  price: Uint128;
-  token_id: string;
-}
-export interface AskResponse {
-  ask?: Ask | null;
-}
 export interface AsksBySellerResponse {
   asks: Ask[];
 }
 export interface AsksResponse {
-  asks: Ask[];
-}
-export interface AsksSortedByPriceResponse {
   asks: Ask[];
 }
 export interface BidHooksResponse {
@@ -60,14 +54,15 @@ export interface Bid {
 export interface BidsByBidderResponse {
   bids: Bid[];
 }
-export interface BidsByBidderSortedByExpirationResponse {
-  bids: Bid[];
-}
 export interface BidsResponse {
   bids: Bid[];
 }
 export interface BidsSortedByPriceResponse {
   bids: Bid[];
+}
+export interface ConfigResponse {
+  collection: Addr;
+  minter: Addr;
 }
 export type ExecuteMsg = {
   set_ask: {
@@ -193,16 +188,18 @@ export type QueryMsg = {
 } | {
   config: {};
 };
-export interface ReverseAsksSortedByPriceResponse {
+export interface RenewalQueueResponse {
+  asks: Ask[];
+}
+export interface ReverseAsksResponse {
   asks: Ask[];
 }
 export interface ReverseBidsSortedByPriceResponse {
   bids: Bid[];
 }
 export interface SaleHooksResponse {
-  buyer: string;
-  seller: string;
-  token_id: string;
+  hooks: string[];
+  [k: string]: unknown;
 }
 export type SudoMsg = {
   update_params: {
