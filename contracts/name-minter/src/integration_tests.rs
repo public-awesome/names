@@ -182,6 +182,7 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
+        contract: None,
     };
     let res = app.execute_contract(
         Addr::unchecked(user),
@@ -189,7 +190,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         &msg,
         &name_fee,
     );
-    // println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace

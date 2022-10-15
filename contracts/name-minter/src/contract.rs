@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, SubMsg, WasmMsg,
+    coin, to_binary, Addr, Coin, ContractInfoResponse, Deps, DepsMut, Env, MessageInfo, Reply,
+    SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
@@ -79,7 +80,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -92,7 +93,9 @@ pub fn execute(
         ExecuteMsg::UpdateWhitelist { whitelist } => {
             execute_update_whitelsit(deps, info, whitelist)
         }
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, env, info, name.trim()),
+        ExecuteMsg::MintAndList { name, contract } => {
+            execute_mint_and_list(deps, info, name.trim(), contract)
+        }
     }
 }
 
@@ -110,9 +113,9 @@ pub fn execute_update_whitelsit(
 
 pub fn execute_mint_and_list(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     name: &str,
+    contract: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut res = Response::new();
 
@@ -131,16 +134,18 @@ pub fn execute_mint_and_list(
     }
 
     validate_name(name, params.min_name_length, params.max_name_length)?;
+    validate_contract(deps.as_ref(), &info, &contract)?;
 
     let price = validate_payment(name.len(), &info, params.base_price)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
+
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
     let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
-        token_uri: Some(info.sender.to_string()),
+        token_uri: Some(contract.unwrap_or_else(|| info.sender.to_string())),
         extension: Metadata {
             bio: None,
             profile_nft: None,
@@ -216,6 +221,23 @@ fn validate_payment(
     }
 
     Ok(coin(amount, NATIVE_DENOM))
+}
+
+fn validate_contract(
+    deps: Deps,
+    info: &MessageInfo,
+    contract_addr: &Option<String>,
+) -> Result<(), ContractError> {
+    if let Some(contract) = contract_addr {
+        let res: ContractInfoResponse = deps.querier.query_wasm_contract_info(contract)?;
+
+        if res.creator != info.sender {
+            return Err(ContractError::UnauthorizedCreator {});
+        }
+    }
+    // TODO: what about res.admin?
+
+    Ok(())
 }
 
 fn invalid_char(c: char) -> bool {
