@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { CollectionResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, ParamsResponse, WhitelistResponse } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
   admin: () => Promise<AdminResponse>;
