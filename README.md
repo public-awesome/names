@@ -64,16 +64,14 @@ pub struct NFT {
 pub struct TextRecord {
     pub name: String,  // "twitter"
     pub value: String, // "shan3v"
-    pub verified_at: Option<Timestamp>
 }
 ```
 
 ```rs
 pub struct Metadata {
     pub bio: String,
-    pub profile: NFT,
+    pub profile_nft: NFT,
     pub record: Vec<TextRecord>,
-    pub extension: T,
 }
 ```
 
