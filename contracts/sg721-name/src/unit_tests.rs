@@ -1,10 +1,10 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
     from_slice, to_binary, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
-    QuerierResult, QueryRequest, SystemError, SystemResult, Timestamp, WasmQuery,
+    QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
-use cw721_base::{Extension, MintMsg};
+use cw721_base::MintMsg;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord};
@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 use crate::contract::transcode;
 use crate::entry::{execute, instantiate};
 use crate::{ContractError, ExecuteMsg};
-pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
+pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 const CREATOR: &str = "creator";
 const IMPOSTER: &str = "imposter";
 // const FRIEND: &str = "friend";
@@ -115,15 +115,14 @@ fn mint_and_update() {
     // mint token
     let token_id = "Enterprise";
 
-    let mint_msg = MintMsg::<Metadata<Extension>> {
+    let mint_msg = MintMsg::<Metadata> {
         token_id: token_id.to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
         extension: Metadata {
             bio: None,
-            profile: None,
+            profile_nft: None,
             records: vec![],
-            extension: None,
         },
     };
     let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
@@ -165,7 +164,6 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "test".to_string(),
         value: "test".to_string(),
-        verified_at: Some(Timestamp::from_seconds(100)),
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -190,13 +188,11 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension.records.len(), 1);
-    assert_eq!(res.extension.records[0].verified_at, None);
 
     // add another txt record
     let record = TextRecord {
         name: "twitter".to_string(),
         value: "jackdorsey".to_string(),
-        verified_at: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -208,13 +204,11 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension.records.len(), 2);
-    assert_eq!(res.extension.records[0].verified_at, None);
 
     // add duplicate record RecordNameAlreadyExist
     let record = TextRecord {
         name: "test".to_string(),
         value: "testtesttest".to_string(),
-        verified_at: Some(Timestamp::from_seconds(100)),
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),

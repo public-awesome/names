@@ -4,7 +4,7 @@ use cw721::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, Expiration,
     NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
 };
-use cw721_base::{Extension, MintMsg, MinterResponse};
+use cw721_base::{MintMsg, MinterResponse};
 use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
@@ -18,7 +18,7 @@ pub enum ExecuteMsg<T> {
     /// Update bio
     UpdateBio { name: String, bio: Option<String> },
     /// Update profile
-    UpdateProfile { name: String, profile: Option<NFT> },
+    UpdateProfileNft { name: String, nft: Option<NFT> },
     /// Add text record ex: twitter handle, discord name, etc
     AddTextRecord { name: String, record: TextRecord },
     /// Remove text record ex: twitter handle, discord name, etc
@@ -160,9 +160,9 @@ pub enum QueryMsg {
     NumTokens {},
     #[returns(ContractInfoResponse)]
     ContractInfo {},
-    #[returns(NftInfoResponse<Metadata<Extension>>)]
+    #[returns(NftInfoResponse<Metadata>)]
     NftInfo { token_id: String },
-    #[returns(AllNftInfoResponse<Metadata<Extension>>)]
+    #[returns(AllNftInfoResponse<Metadata>)]
     AllNftInfo {
         token_id: String,
         include_expired: Option<bool>,

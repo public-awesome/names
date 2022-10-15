@@ -7,7 +7,7 @@ use cosmwasm_std::{
     to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdError, StdResult, WasmMsg,
 };
 
-use cw721_base::{state::TokenInfo, Extension, MintMsg};
+use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
@@ -18,7 +18,7 @@ use sg_std::Response;
 
 use subtle_encoding::bech32;
 
-pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
+pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 
 pub fn execute_update_bio(
     deps: DepsMut,
@@ -44,11 +44,11 @@ pub fn execute_update_bio(
     Ok(Response::new())
 }
 
-pub fn execute_update_profile(
+pub fn execute_update_profile_nft(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    profile: Option<NFT>,
+    nft: Option<NFT>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
 
@@ -59,7 +59,7 @@ pub fn execute_update_profile(
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.profile = profile;
+                token_info.extension.profile_nft = nft;
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
@@ -71,13 +71,13 @@ pub fn execute_add_text_record(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    mut record: TextRecord,
+    record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), info.sender, &token_id)?;
-    validate_and_sanitize_record(&mut record)?;
+    validate_and_sanitize_record(&record)?;
 
     Sg721NameContract::default()
         .tokens
@@ -127,13 +127,13 @@ pub fn execute_update_text_record(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    mut record: TextRecord,
+    record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), info.sender, &token_id)?;
-    validate_and_sanitize_record(&mut record)?;
+    validate_and_sanitize_record(&record)?;
 
     Sg721NameContract::default()
         .tokens
@@ -171,7 +171,7 @@ pub fn execute_set_name_marketplace(
 pub fn execute_mint(
     deps: DepsMut,
     info: MessageInfo,
-    msg: MintMsg<Metadata<Extension>>,
+    msg: MintMsg<Metadata>,
 ) -> Result<Response, ContractError> {
     let minter = Sg721NameContract::default().minter.load(deps.storage)?;
     if info.sender != minter {
@@ -274,7 +274,7 @@ pub fn execute_transfer_nft(
 
     // Reset bio, profile, records
     token.extension.bio = None;
-    token.extension.profile = None;
+    token.extension.profile_nft = None;
     token.extension.records = vec![];
     Sg721NameContract::default()
         .tokens
@@ -312,7 +312,7 @@ fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
     Ok(())
 }
 
-fn validate_and_sanitize_record(record: &mut TextRecord) -> Result<(), ContractError> {
+fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
     let len = record.name.len() as u64;
     if len > MAX_TEXT_LENGTH {
         return Err(ContractError::RecordNameTooLong {});
@@ -320,12 +320,11 @@ fn validate_and_sanitize_record(record: &mut TextRecord) -> Result<(), ContractE
     if len == 0 {
         return Err(ContractError::RecordNameEmpty {});
     }
+
     let len = record.value.len() as u64;
     if len > MAX_TEXT_LENGTH {
         return Err(ContractError::RecordValueTooLong {});
     }
-    // new or updated records need to be verified
-    record.verified_at = None;
     Ok(())
 }
 

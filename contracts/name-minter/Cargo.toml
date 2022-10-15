@@ -1,6 +1,6 @@
 [package]
 name = "name-minter"
-version = "0.5.0"
+version = "0.7.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2021"
 
@@ -33,7 +33,7 @@ serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cw721 = "0.15.0"
 cw721-base = { version = "0.15.0", features = ["library"] }
-sg-name = "0.5.0"
+sg-name = "0.6.0"
 sg721 = "0.19.0"
 sg721-name = { path = "../sg721-name" }
 name-marketplace = { path = "../marketplace", features = ["library"] }

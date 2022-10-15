@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadataForNullable_Empty, OwnerOfResponse, Approval, NftInfoResponseForMetadataForNullable_Empty, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadata, Metadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
 export interface Sg721NameMessage {
   contractAddress: string;
   sender: string;
@@ -24,12 +24,12 @@ export interface Sg721NameMessage {
     bio?: string;
     name: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateProfile: ({
+  updateProfileNft: ({
     name,
-    profile
+    nft
   }: {
     name: string;
-    profile?: NFT;
+    nft?: NFT;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   addTextRecord: ({
     name,
@@ -102,7 +102,7 @@ export interface Sg721NameMessage {
     tokenId,
     tokenUri
   }: {
-    extension: MetadataForNullable_Empty;
+    extension: Metadata;
     owner: string;
     tokenId: string;
     tokenUri?: string;
@@ -129,7 +129,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.contractAddress = contractAddress;
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
     this.updateBio = this.updateBio.bind(this);
-    this.updateProfile = this.updateProfile.bind(this);
+    this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
@@ -187,12 +187,12 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
       })
     };
   };
-  updateProfile = ({
+  updateProfileNft = ({
     name,
-    profile
+    nft
   }: {
     name: string;
-    profile?: NFT;
+    nft?: NFT;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -200,9 +200,9 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          update_profile: {
+          update_profile_nft: {
             name,
-            profile
+            nft
           }
         })),
         funds
@@ -416,7 +416,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     tokenId,
     tokenUri
   }: {
-    extension: MetadataForNullable_Empty;
+    extension: Metadata;
     owner: string;
     tokenId: string;
     tokenUri?: string;

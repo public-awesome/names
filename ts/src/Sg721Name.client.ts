@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadataForNullable_Empty, OwnerOfResponse, Approval, NftInfoResponseForMetadataForNullable_Empty, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadata, Metadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   name: ({
@@ -55,14 +55,14 @@ export interface Sg721NameReadOnlyInterface {
     tokenId
   }: {
     tokenId: string;
-  }) => Promise<NftInfoResponseForMetadataForNullableEmpty>;
+  }) => Promise<NftInfoResponseForMetadata>;
   allNftInfo: ({
     includeExpired,
     tokenId
   }: {
     includeExpired?: boolean;
     tokenId: string;
-  }) => Promise<AllNftInfoResponseForMetadataForNullableEmpty>;
+  }) => Promise<AllNftInfoResponseForMetadata>;
   tokens: ({
     limit,
     owner,
@@ -200,7 +200,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     tokenId
   }: {
     tokenId: string;
-  }): Promise<NftInfoResponseForMetadataForNullableEmpty> => {
+  }): Promise<NftInfoResponseForMetadata> => {
     return this.client.queryContractSmart(this.contractAddress, {
       nft_info: {
         token_id: tokenId
@@ -213,7 +213,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   }: {
     includeExpired?: boolean;
     tokenId: string;
-  }): Promise<AllNftInfoResponseForMetadataForNullableEmpty> => {
+  }): Promise<AllNftInfoResponseForMetadata> => {
     return this.client.queryContractSmart(this.contractAddress, {
       all_nft_info: {
         include_expired: includeExpired,
@@ -278,12 +278,12 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     bio?: string;
     name: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateProfile: ({
+  updateProfileNft: ({
     name,
-    profile
+    nft
   }: {
     name: string;
-    profile?: NFT;
+    nft?: NFT;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addTextRecord: ({
     name,
@@ -356,7 +356,7 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     tokenId,
     tokenUri
   }: {
-    extension: MetadataForNullable_Empty;
+    extension: Metadata;
     owner: string;
     tokenId: string;
     tokenUri?: string;
@@ -386,7 +386,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.contractAddress = contractAddress;
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
     this.updateBio = this.updateBio.bind(this);
-    this.updateProfile = this.updateProfile.bind(this);
+    this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
@@ -428,17 +428,17 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       }
     }, fee, memo, funds);
   };
-  updateProfile = async ({
+  updateProfileNft = async ({
     name,
-    profile
+    nft
   }: {
     name: string;
-    profile?: NFT;
+    nft?: NFT;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      update_profile: {
+      update_profile_nft: {
         name,
-        profile
+        nft
       }
     }, fee, memo, funds);
   };
@@ -577,7 +577,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     tokenId,
     tokenUri
   }: {
-    extension: MetadataForNullable_Empty;
+    extension: Metadata;
     owner: string;
     tokenId: string;
     tokenUri?: string;
