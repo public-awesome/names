@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Expiration, Timestamp, Uint64, Addr, AllNftInfoResponse, OwnerOfResponse, Approval, NftInfoResponseForMetadataForEmpty, MetadataForEmpty, Empty, NFT, TextRecord, AllOperatorsResponse, AllTokensResponse, ApprovalResponse, ApprovalsResponse, Decimal, CollectionInfoResponse, RoyaltyInfoResponse, ContractInfoResponse, ExecuteMsg, Binary, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, MinterResponse, NftInfoResponse, NumTokensResponse, OperatorsResponse, QueryMsg, TokensResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadataForNullable_Empty, MetadataForNullable_Empty, Empty, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadataForNullable_Empty, OwnerOfResponse, Approval, NftInfoResponseForMetadataForNullable_Empty, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   name: ({
@@ -15,21 +15,6 @@ export interface Sg721NameReadOnlyInterface {
     address: string;
   }) => Promise<NameResponse>;
   nameMarketplace: () => Promise<NameMarketplaceResponse>;
-  bio: ({
-    name
-  }: {
-    name: string;
-  }) => Promise<BioResponse>;
-  profile: ({
-    name
-  }: {
-    name: string;
-  }) => Promise<ProfileResponse>;
-  textRecords: ({
-    name
-  }: {
-    name: string;
-  }) => Promise<TextRecordsResponse>;
   ownerOf: ({
     includeExpired,
     tokenId
@@ -63,21 +48,21 @@ export interface Sg721NameReadOnlyInterface {
     limit?: number;
     owner: string;
     startAfter?: string;
-  }) => Promise<AllOperatorsResponse>;
+  }) => Promise<OperatorsResponse>;
   numTokens: () => Promise<NumTokensResponse>;
   contractInfo: () => Promise<ContractInfoResponse>;
   nftInfo: ({
     tokenId
   }: {
     tokenId: string;
-  }) => Promise<NftInfoResponse>;
+  }) => Promise<NftInfoResponseForMetadataForNullableEmpty>;
   allNftInfo: ({
     includeExpired,
     tokenId
   }: {
     includeExpired?: boolean;
     tokenId: string;
-  }) => Promise<AllNftInfoResponse>;
+  }) => Promise<AllNftInfoResponseForMetadataForNullableEmpty>;
   tokens: ({
     limit,
     owner,
@@ -93,7 +78,7 @@ export interface Sg721NameReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: string;
-  }) => Promise<AllTokensResponse>;
+  }) => Promise<TokensResponse>;
   minter: () => Promise<MinterResponse>;
   collectionInfo: () => Promise<CollectionInfoResponse>;
 }
@@ -106,9 +91,6 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.contractAddress = contractAddress;
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
-    this.bio = this.bio.bind(this);
-    this.profile = this.profile.bind(this);
-    this.textRecords = this.textRecords.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
     this.approval = this.approval.bind(this);
     this.approvals = this.approvals.bind(this);
@@ -137,39 +119,6 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   nameMarketplace = async (): Promise<NameMarketplaceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name_marketplace: {}
-    });
-  };
-  bio = async ({
-    name
-  }: {
-    name: string;
-  }): Promise<BioResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      bio: {
-        name
-      }
-    });
-  };
-  profile = async ({
-    name
-  }: {
-    name: string;
-  }): Promise<ProfileResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      profile: {
-        name
-      }
-    });
-  };
-  textRecords = async ({
-    name
-  }: {
-    name: string;
-  }): Promise<TextRecordsResponse> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      text_records: {
-        name
-      }
     });
   };
   ownerOf = async ({
@@ -227,7 +176,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     limit?: number;
     owner: string;
     startAfter?: string;
-  }): Promise<AllOperatorsResponse> => {
+  }): Promise<OperatorsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       all_operators: {
         include_expired: includeExpired,
@@ -251,7 +200,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     tokenId
   }: {
     tokenId: string;
-  }): Promise<NftInfoResponse> => {
+  }): Promise<NftInfoResponseForMetadataForNullableEmpty> => {
     return this.client.queryContractSmart(this.contractAddress, {
       nft_info: {
         token_id: tokenId
@@ -264,7 +213,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   }: {
     includeExpired?: boolean;
     tokenId: string;
-  }): Promise<AllNftInfoResponse> => {
+  }): Promise<AllNftInfoResponseForMetadataForNullableEmpty> => {
     return this.client.queryContractSmart(this.contractAddress, {
       all_nft_info: {
         include_expired: includeExpired,
@@ -295,7 +244,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: string;
-  }): Promise<AllTokensResponse> => {
+  }): Promise<TokensResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       all_tokens: {
         limit,
