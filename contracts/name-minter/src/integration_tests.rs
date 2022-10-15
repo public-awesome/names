@@ -292,18 +292,30 @@ mod execute {
     #[test]
     fn test_mint_for_contract() {
         // contract creator can mint a name for contract
+        // sender = admin2
+        // creator = admin2
+        // admin = None
         let mut app = instantiate_contracts(None);
         mint_and_list(&mut app, NAME, ADMIN2, Some(MINTER.to_string()));
 
         // contract admin can mint a name for contract
+        // sender = admin
+        // creator = admin2
+        // admin = admin
         let mut app = instantiate_contracts(Some(ADMIN.to_string()));
-        mint_and_list(&mut app, NAME, ADMIN, Some(MKT.to_string()));
+        mint_and_list(&mut app, NAME, ADMIN, Some(MINTER.to_string()));
 
         // wrong creator cannot mint a name for contract
+        // sender = admin
+        // creator = admin2
+        // admin = None
         // let mut app = instantiate_contracts(None);
         // mint_and_list(&mut app, NAME, ADMIN, Some(MINTER.to_string()));
 
         // wrong admin cannot mint a name for contract
+        // sender = admin2
+        // creator = admin
+        // admin = admin
         // let mut app = instantiate_contracts(Some(ADMIN.to_string()));
         // mint_and_list(&mut app, NAME, ADMIN2, Some(MKT.to_string()));
     }

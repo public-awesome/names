@@ -237,8 +237,9 @@ fn validate_contract(
         let admin = res.admin;
         let creator = res.creator;
 
-        if admin.map_or(false, |a| &a != sender) || &creator != sender {
-            return Err(ContractError::UnauthorizedCreator {});
+        // If the sender is not the admin or creator, return an error
+        if admin.map_or(false, |a| &a != sender) && &creator != sender {
+            return Err(ContractError::UnauthorizedCreatorOrAdmin {});
         }
     }
 
