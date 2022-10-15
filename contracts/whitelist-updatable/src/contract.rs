@@ -99,8 +99,14 @@ pub fn execute_add_addresses(
 
     for address in addresses.into_iter() {
         let addr = deps.api.addr_validate(&address.clone())?;
-        WHITELIST.save(deps.storage, addr, &0u32)?;
-        count += 1;
+        if WHITELIST.has(deps.storage, addr.clone()) {
+            return Err(ContractError::AddressAlreadyExists {
+                addr: addr.to_string(),
+            });
+        } else {
+            WHITELIST.save(deps.storage, addr, &0u32)?;
+            count += 1;
+        }
     }
 
     TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
@@ -131,9 +137,14 @@ pub fn execute_remove_addresses(
         if WHITELIST.has(deps.storage, addr.clone()) {
             WHITELIST.remove(deps.storage, addr);
             count -= 1;
+        } else {
+            return Err(ContractError::AddressNotFound {
+                addr: addr.to_string(),
+            });
         }
     }
 
+    TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
     let event = Event::new("remove_addresses")
         .add_attribute("new-count", count.to_string())
         .add_attribute("sender", info.sender);
@@ -152,7 +163,9 @@ pub fn execute_process_address(
 
     let addr = deps.api.addr_validate(&address)?;
     if !WHITELIST.has(deps.storage, addr.clone()) {
-        return Err(ContractError::AddressNotFound {});
+        return Err(ContractError::AddressNotFound {
+            addr: addr.to_string(),
+        });
     }
 
     if WHITELIST.load(deps.storage, addr.clone())? >= config.per_address_limit {

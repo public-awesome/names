@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::msg::*;
+    use crate::ContractError;
 
     use cosmwasm_std::Addr;
     use cosmwasm_std::Coin;
@@ -117,6 +118,7 @@ mod tests {
         assert_eq!(res, 1);
     }
 
+    #[test]
     fn exec() {
         let addrs: Vec<String> = vec![
             "addr0001".to_string(),
@@ -155,11 +157,116 @@ mod tests {
             .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
             .unwrap();
         assert_eq!(res, OTHER_ADMIN.to_string());
-        // AddAddresses { addresses: Vec<String> },
-        // RemoveAddresses { addresses: Vec<String> },
-        // // Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
-        // ProcessAddress { address: String },
-        // UpdatePerAddressLimit { limit: u32 },
+
+        // add addresses
+        let msg = ExecuteMsg::AddAddresses {
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                "addr0003".to_string(),
+                "addr0004".to_string(),
+                "addr0006".to_string(),
+            ],
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_err());
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IncludesAddress {
+                    address: "addr0006".to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, false);
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .unwrap();
+        assert_eq!(res, 5);
+        let msg = ExecuteMsg::AddAddresses {
+            addresses: vec!["addr0007".to_string(), "addr0006".to_string()],
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IncludesAddress {
+                    address: "addr0006".to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, true);
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .unwrap();
+        assert_eq!(res, 7);
+
+        // remove addresses
+        let msg = ExecuteMsg::RemoveAddresses {
+            addresses: vec![
+                "addr0000".to_string(),
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                "addr0003".to_string(),
+                "addr0004".to_string(),
+                "addr0006".to_string(),
+            ],
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_err());
+        let msg = ExecuteMsg::RemoveAddresses {
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                "addr0003".to_string(),
+                "addr0004".to_string(),
+                "addr0006".to_string(),
+            ],
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IncludesAddress {
+                    address: "addr0006".to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, false);
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .unwrap();
+        assert_eq!(res, 2);
+
+        // per address limit
+        let msg = ExecuteMsg::UpdatePerAddressLimit { limit: 1 };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let res: u32 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::PerAddressLimit {})
+            .unwrap();
+        assert_eq!(res, 1);
+        // surpass limit
+        let msg = ExecuteMsg::ProcessAddress {
+            address: "addr0007".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let msg = ExecuteMsg::ProcessAddress {
+            address: "addr0007".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_err());
+
         // Purge {},
     }
 }
