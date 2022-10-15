@@ -23,8 +23,10 @@ export interface NameMinterMessage {
     whitelist?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   mintAndList: ({
+    contract,
     name
   }: {
+    contract?: string;
     name: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
@@ -79,8 +81,10 @@ export class NameMinterMessageComposer implements NameMinterMessage {
     };
   };
   mintAndList = ({
+    contract,
     name
   }: {
+    contract?: string;
     name: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
@@ -90,6 +94,7 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           mint_and_list: {
+            contract,
             name
           }
         })),

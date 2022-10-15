@@ -78,6 +78,7 @@
         "additionalProperties": false
       },
       {
+        "description": "Change to another whitelist or set to null",
         "type": "object",
         "required": [
           "update_whitelist"
@@ -99,6 +100,7 @@
         "additionalProperties": false
       },
       {
+        "description": "Mint a name for the sender or contract addresss If `contract` is given, name is minted for that contract address",
         "type": "object",
         "required": [
           "mint_and_list"
@@ -110,6 +112,12 @@
               "name"
             ],
             "properties": {
+              "contract": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "name": {
                 "type": "string"
               }

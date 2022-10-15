@@ -16,14 +16,14 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// Change the admin that manages the whitelist
     /// Will be set to null after go-to-market
-    UpdateAdmin {
-        admin: Option<String>,
-    },
-    UpdateWhitelist {
-        whitelist: Option<String>,
-    },
+    UpdateAdmin { admin: Option<String> },
+    /// Change to another whitelist or set to null
+    UpdateWhitelist { whitelist: Option<String> },
+    /// Mint a name for the sender or contract addresss
+    /// If `contract` is given, name is minted for that contract address
     MintAndList {
         name: String,
+        contract: Option<String>,
     },
 }
 
