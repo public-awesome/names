@@ -23,6 +23,7 @@ export type ExecuteMsg = {
   };
 } | {
   mint_and_list: {
+    contract?: string | null;
     name: string;
   };
 };

@@ -111,6 +111,7 @@ pub fn execute_update_whitelsit(
     Ok(Response::new())
 }
 
+/// Mint a name for the sender, or `contract` if specified
 pub fn execute_mint_and_list(
     deps: DepsMut,
     info: MessageInfo,
@@ -223,19 +224,23 @@ fn validate_payment(
     Ok(coin(amount, NATIVE_DENOM))
 }
 
+/// Validate if the contract creator or admin is the sender
 fn validate_contract(
     deps: Deps,
     info: &MessageInfo,
     contract_addr: &Option<String>,
 ) -> Result<(), ContractError> {
+    let sender = &info.sender;
+
     if let Some(contract) = contract_addr {
         let res: ContractInfoResponse = deps.querier.query_wasm_contract_info(contract)?;
+        let admin = res.admin;
+        let creator = res.creator;
 
-        if res.creator != info.sender {
+        if admin.map_or(true, |a| &a != sender) || &creator != sender {
             return Err(ContractError::UnauthorizedCreator {});
         }
     }
-    // TODO: what about res.admin?
 
     Ok(())
 }
