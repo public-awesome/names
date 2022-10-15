@@ -1,15 +1,12 @@
 pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cw721_base::Extension;
 use sg_name::Metadata;
 
 pub mod contract;
 mod error;
 pub mod msg;
 pub mod state;
-
-// TODO: add lookup map
 
 #[cfg(test)]
 pub mod unit_tests;
@@ -18,9 +15,9 @@ pub mod unit_tests;
 const CONTRACT_NAME: &str = "crates.io:sg721-name";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata<Extension>>;
+pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 pub type InstantiateMsg = sg721::InstantiateMsg;
-pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata<Extension>>;
+pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
@@ -33,7 +30,7 @@ pub mod entry {
 
     use contract::{
         execute_add_text_record, execute_remove_text_record, execute_transfer_nft,
-        execute_update_bio, execute_update_profile, execute_update_text_record,
+        execute_update_bio, execute_update_profile_nft, execute_update_text_record,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::ContractError as Sg721ContractError;
@@ -64,8 +61,8 @@ pub mod entry {
     ) -> Result<Response, ContractError> {
         match msg {
             ExecuteMsg::UpdateBio { name, bio } => execute_update_bio(deps, info, name, bio),
-            ExecuteMsg::UpdateProfile { name, profile } => {
-                execute_update_profile(deps, info, name, profile)
+            ExecuteMsg::UpdateProfileNft { name, nft } => {
+                execute_update_profile_nft(deps, info, name, nft)
             }
             ExecuteMsg::AddTextRecord { name, record } => {
                 execute_add_text_record(deps, info, name, record)

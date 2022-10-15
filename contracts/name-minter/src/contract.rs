@@ -4,7 +4,7 @@ use cosmwasm_std::{
     coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721_base::{Extension, MintMsg};
+use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
@@ -137,15 +137,14 @@ pub fn execute_mint_and_list(
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
-    let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata<Extension>> {
+    let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
         token_id: name.trim().to_string(),
         owner: info.sender.to_string(),
         token_uri: Some(info.sender.to_string()),
         extension: Metadata {
             bio: None,
-            profile: None,
+            profile_nft: None,
             records: vec![],
-            extension: None,
         },
     });
     let mint_msg_exec = WasmMsg::Execute {

@@ -31,7 +31,7 @@ cw-utils = "0.15.1"
 cw2 = "0.15.1"
 schemars = "0.8.11"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
-sg-name = "0.5.0"
+sg-name = "0.6.0"
 sg-std = "0.19.0"
 sg721 = "0.19.0"
 sg721-base = { version = "0.19.0", features = ["library"] }

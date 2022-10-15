@@ -36,9 +36,9 @@ export type ExecuteMsg = {
     name: string;
   };
 } | {
-  update_profile: {
+  update_profile_nft: {
     name: string;
-    profile?: NFT | null;
+    nft?: NFT | null;
   };
 } | {
   add_text_record: {
@@ -87,7 +87,7 @@ export type ExecuteMsg = {
     operator: string;
   };
 } | {
-  mint: MintMsgForMetadataForNullable_Empty;
+  mint: MintMsgForMetadata;
 } | {
   burn: {
     token_id: string;
@@ -117,22 +117,17 @@ export interface NFT {
 export interface TextRecord {
   name: string;
   value: string;
-  verified_at?: Timestamp | null;
 }
-export interface MintMsgForMetadataForNullable_Empty {
-  extension: MetadataForNullable_Empty;
+export interface MintMsgForMetadata {
+  extension: Metadata;
   owner: string;
   token_id: string;
   token_uri?: string | null;
 }
-export interface MetadataForNullable_Empty {
+export interface Metadata {
   bio?: string | null;
-  extension?: Empty | null;
-  profile?: NFT | null;
+  profile_nft?: NFT | null;
   records: TextRecord[];
-}
-export interface Empty {
-  [k: string]: unknown;
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;
@@ -199,9 +194,9 @@ export type QueryMsg = {
 } | {
   collection_info: {};
 };
-export interface AllNftInfoResponseForMetadataForNullable_Empty {
+export interface AllNftInfoResponseForMetadata {
   access: OwnerOfResponse;
-  info: NftInfoResponseForMetadataForNullable_Empty;
+  info: NftInfoResponseForMetadata;
 }
 export interface OwnerOfResponse {
   approvals: Approval[];
@@ -211,8 +206,8 @@ export interface Approval {
   expires: Expiration;
   spender: string;
 }
-export interface NftInfoResponseForMetadataForNullable_Empty {
-  extension: MetadataForNullable_Empty;
+export interface NftInfoResponseForMetadata {
+  extension: Metadata;
   token_uri?: string | null;
 }
 export interface OperatorsResponse {
