@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { CollectionResponse, ExecuteMsg, Uint128, InstantiateMsg, QueryMsg } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, ParamsResponse, WhitelistResponse } from "./NameMinter.types";
 export interface NameMinterMessage {
   contractAddress: string;
   sender: string;

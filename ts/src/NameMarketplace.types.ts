@@ -4,70 +4,10 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export interface AskCountResponse {
-  count: number;
-}
 export type Uint128 = string;
-export type Addr = string;
-export interface AskCreatedHooksResponse {
-  ask: Ask;
-}
-export interface Ask {
-  height: number;
-  id: number;
-  renewal_fund: Uint128;
-  seller: Addr;
-  token_id: string;
-}
-export interface AskHooksResponse {
-  hooks: string[];
-  [k: string]: unknown;
-}
-export interface AskOffset {
-  price: Uint128;
-  token_id: string;
-}
-export interface AskResponse {
-  ask?: Ask | null;
-}
-export interface AsksBySellerResponse {
-  asks: Ask[];
-}
-export interface AsksResponse {
-  asks: Ask[];
-}
-export interface AsksSortedByPriceResponse {
-  asks: Ask[];
-}
-export interface BidHooksResponse {
-  hooks: string[];
-  [k: string]: unknown;
-}
-export interface BidOffset {
-  bidder: Addr;
-  price: Uint128;
-  token_id: string;
-}
-export interface BidResponse {
-  bid?: Bid | null;
-}
-export interface Bid {
-  amount: Uint128;
-  bidder: Addr;
-  height: number;
-  token_id: string;
-}
-export interface BidsByBidderResponse {
-  bids: Bid[];
-}
-export interface BidsByBidderSortedByExpirationResponse {
-  bids: Bid[];
-}
-export interface BidsResponse {
-  bids: Bid[];
-}
-export interface BidsSortedByPriceResponse {
-  bids: Bid[];
+export interface InstantiateMsg {
+  min_price: Uint128;
+  trading_fee_bps: number;
 }
 export type ExecuteMsg = {
   set_ask: {
@@ -116,19 +56,6 @@ export type ExecuteMsg = {
 };
 export type Timestamp = Uint64;
 export type Uint64 = string;
-export interface InstantiateMsg {
-  min_price: Uint128;
-  trading_fee_bps: number;
-}
-export type MarketplaceContract = Addr;
-export type Decimal = string;
-export interface ParamsResponse {
-  params: SudoParams;
-}
-export interface SudoParams {
-  min_price: Uint128;
-  trading_fee_percent: Decimal;
-}
 export type QueryMsg = {
   ask: {
     token_id: string;
@@ -193,52 +120,53 @@ export type QueryMsg = {
 } | {
   config: {};
 };
-export interface ReverseAsksSortedByPriceResponse {
-  asks: Ask[];
-}
-export interface ReverseBidsSortedByPriceResponse {
-  bids: Bid[];
-}
-export interface SaleHooksResponse {
-  buyer: string;
-  seller: string;
+export type Addr = string;
+export interface BidOffset {
+  bidder: Addr;
+  price: Uint128;
   token_id: string;
 }
-export type SudoMsg = {
-  update_params: {
-    min_price?: Uint128 | null;
-    trading_fee_bps?: number | null;
-  };
-} | {
-  update_name_minter: {
-    minter: string;
-  };
-} | {
-  update_name_collection: {
-    collection: string;
-  };
-} | {
-  add_ask_hook: {
-    hook: string;
-  };
-} | {
-  remove_ask_hook: {
-    hook: string;
-  };
-} | {
-  add_bid_hook: {
-    hook: string;
-  };
-} | {
-  remove_bid_hook: {
-    hook: string;
-  };
-} | {
-  add_sale_hook: {
-    hook: string;
-  };
-} | {
-  remove_sale_hook: {
-    hook: string;
-  };
-};
+export interface AskResponse {
+  ask?: Ask | null;
+}
+export interface Ask {
+  height: number;
+  id: number;
+  renewal_fund: Uint128;
+  seller: Addr;
+  token_id: string;
+}
+export interface AskCountResponse {
+  count: number;
+}
+export interface HooksResponse {
+  hooks: string[];
+  [k: string]: unknown;
+}
+export interface AsksResponse {
+  asks: Ask[];
+}
+export interface BidResponse {
+  bid?: Bid | null;
+}
+export interface Bid {
+  amount: Uint128;
+  bidder: Addr;
+  height: number;
+  token_id: string;
+}
+export interface BidsResponse {
+  bids: Bid[];
+}
+export interface ConfigResponse {
+  collection: Addr;
+  minter: Addr;
+}
+export type Decimal = string;
+export interface ParamsResponse {
+  params: SudoParams;
+}
+export interface SudoParams {
+  min_price: Uint128;
+  trading_fee_percent: Decimal;
+}

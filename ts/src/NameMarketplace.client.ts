@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { AskCountResponse, Uint128, Addr, AskCreatedHooksResponse, Ask, AskHooksResponse, AskOffset, AskResponse, AsksBySellerResponse, AsksResponse, AsksSortedByPriceResponse, BidHooksResponse, BidOffset, BidResponse, Bid, BidsByBidderResponse, BidsByBidderSortedByExpirationResponse, BidsResponse, BidsSortedByPriceResponse, ExecuteMsg, Timestamp, Uint64, InstantiateMsg, MarketplaceContract, Decimal, ParamsResponse, SudoParams, QueryMsg, ReverseAsksSortedByPriceResponse, ReverseBidsSortedByPriceResponse, SaleHooksResponse, SudoMsg } from "./NameMarketplace.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, QueryMsg, Addr, BidOffset, AskResponse, Ask, AskCountResponse, HooksResponse, AsksResponse, BidResponse, Bid, BidsResponse, ConfigResponse, Decimal, ParamsResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -27,7 +27,7 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     limit?: number;
     startBefore?: number;
-  }) => Promise<ReverseAsksResponse>;
+  }) => Promise<AsksResponse>;
   askCount: () => Promise<AskCountResponse>;
   asksBySeller: ({
     limit,
@@ -37,7 +37,7 @@ export interface NameMarketplaceReadOnlyInterface {
     limit?: number;
     seller: string;
     startAfter?: string;
-  }) => Promise<AsksBySellerResponse>;
+  }) => Promise<AsksResponse>;
   bid: ({
     bidder,
     tokenId
@@ -53,7 +53,7 @@ export interface NameMarketplaceReadOnlyInterface {
     bidder: string;
     limit?: number;
     startAfter?: string;
-  }) => Promise<BidsByBidderResponse>;
+  }) => Promise<BidsResponse>;
   bids: ({
     limit,
     startAfter,
@@ -69,23 +69,23 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     limit?: number;
     startAfter?: BidOffset;
-  }) => Promise<BidsSortedByPriceResponse>;
+  }) => Promise<BidsResponse>;
   reverseBidsSortedByPrice: ({
     limit,
     startBefore
   }: {
     limit?: number;
     startBefore?: BidOffset;
-  }) => Promise<ReverseBidsSortedByPriceResponse>;
-  askHooks: () => Promise<AskHooksResponse>;
-  bidHooks: () => Promise<BidHooksResponse>;
-  saleHooks: () => Promise<SaleHooksResponse>;
+  }) => Promise<BidsResponse>;
+  askHooks: () => Promise<HooksResponse>;
+  bidHooks: () => Promise<HooksResponse>;
+  saleHooks: () => Promise<HooksResponse>;
   params: () => Promise<ParamsResponse>;
   renewalQueue: ({
     time
   }: {
     time: Timestamp;
-  }) => Promise<RenewalQueueResponse>;
+  }) => Promise<AsksResponse>;
   config: () => Promise<ConfigResponse>;
 }
 export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterface {
@@ -144,7 +144,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     limit?: number;
     startBefore?: number;
-  }): Promise<ReverseAsksResponse> => {
+  }): Promise<AsksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reverse_asks: {
         limit,
@@ -165,7 +165,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     limit?: number;
     seller: string;
     startAfter?: string;
-  }): Promise<AsksBySellerResponse> => {
+  }): Promise<AsksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       asks_by_seller: {
         limit,
@@ -196,7 +196,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     bidder: string;
     limit?: number;
     startAfter?: string;
-  }): Promise<BidsByBidderResponse> => {
+  }): Promise<BidsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids_by_bidder: {
         bidder,
@@ -228,7 +228,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     limit?: number;
     startAfter?: BidOffset;
-  }): Promise<BidsSortedByPriceResponse> => {
+  }): Promise<BidsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids_sorted_by_price: {
         limit,
@@ -242,7 +242,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     limit?: number;
     startBefore?: BidOffset;
-  }): Promise<ReverseBidsSortedByPriceResponse> => {
+  }): Promise<BidsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       reverse_bids_sorted_by_price: {
         limit,
@@ -250,17 +250,17 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       }
     });
   };
-  askHooks = async (): Promise<AskHooksResponse> => {
+  askHooks = async (): Promise<HooksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       ask_hooks: {}
     });
   };
-  bidHooks = async (): Promise<BidHooksResponse> => {
+  bidHooks = async (): Promise<HooksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bid_hooks: {}
     });
   };
-  saleHooks = async (): Promise<SaleHooksResponse> => {
+  saleHooks = async (): Promise<HooksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       sale_hooks: {}
     });
@@ -274,7 +274,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     time
   }: {
     time: Timestamp;
-  }): Promise<RenewalQueueResponse> => {
+  }): Promise<AsksResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       renewal_queue: {
         time

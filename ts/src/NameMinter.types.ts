@@ -4,8 +4,14 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-export interface CollectionResponse {
-  collection: string;
+export type Uint128 = string;
+export interface InstantiateMsg {
+  admin?: string | null;
+  base_price: Uint128;
+  collection_code_id: number;
+  marketplace_addr: string;
+  max_name_length: number;
+  min_name_length: number;
 }
 export type ExecuteMsg = {
   update_admin: {
@@ -20,15 +26,6 @@ export type ExecuteMsg = {
     name: string;
   };
 };
-export type Uint128 = string;
-export interface InstantiateMsg {
-  admin?: string | null;
-  base_price: Uint128;
-  collection_code_id: number;
-  marketplace_addr: string;
-  max_name_length: number;
-  min_name_length: number;
-}
 export type QueryMsg = {
   admin: {};
 } | {
@@ -38,3 +35,17 @@ export type QueryMsg = {
 } | {
   params: {};
 };
+export interface AdminResponse {
+  admin?: string | null;
+}
+export interface CollectionResponse {
+  collection: string;
+}
+export interface ParamsResponse {
+  base_price: Uint128;
+  max_name_length: number;
+  min_name_length: number;
+}
+export interface WhitelistResponse {
+  whitelist?: string | null;
+}
