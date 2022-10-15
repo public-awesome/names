@@ -118,6 +118,7 @@ pub fn execute_mint_and_list(
     name: &str,
     contract: Option<String>,
 ) -> Result<Response, ContractError> {
+    let sender = &info.sender.to_string();
     let mut res = Response::new();
 
     let params = SUDO_PARAMS.load(deps.storage)?;
@@ -128,7 +129,7 @@ pub fn execute_mint_and_list(
             contract_addr: whitelist.to_string(),
             funds: vec![],
             msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
-                address: info.sender.to_string(),
+                address: sender.to_string(),
             })?,
         };
         res = res.add_message(msg);
@@ -144,9 +145,9 @@ pub fn execute_mint_and_list(
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
     let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
-        token_id: name.trim().to_string(),
-        owner: info.sender.to_string(),
-        token_uri: Some(contract.unwrap_or_else(|| info.sender.to_string())),
+        token_id: name.to_string(),
+        owner: sender.to_string(),
+        token_uri: Some(contract.unwrap_or_else(|| sender.to_string())),
         extension: Metadata {
             bio: None,
             profile_nft: None,
@@ -161,7 +162,7 @@ pub fn execute_mint_and_list(
 
     let msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
-        seller: info.sender.to_string(),
+        seller: sender.to_string(),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),
