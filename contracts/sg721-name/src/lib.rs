@@ -22,8 +22,8 @@ pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::contract::{
-        execute_burn, execute_mint, execute_set_name_marketplace, query_name,
-        query_name_marketplace,
+        execute_associate_address, execute_burn, execute_mint, execute_set_name_marketplace,
+        query_name, query_name_marketplace,
     };
 
     use super::*;
@@ -60,6 +60,9 @@ pub mod entry {
         msg: ExecuteMsg,
     ) -> Result<Response, ContractError> {
         match msg {
+            ExecuteMsg::AssociateAddress { name, address } => {
+                execute_associate_address(deps, info, name, address)
+            }
             ExecuteMsg::UpdateBio { name, bio } => execute_update_bio(deps, info, name, bio),
             ExecuteMsg::UpdateProfileNft { name, nft } => {
                 execute_update_profile_nft(deps, info, name, nft)

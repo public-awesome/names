@@ -27,6 +27,9 @@ pub struct Metadata {
 pub enum SgNameExecuteMsg {
     /// Set name marketplace contract address
     SetNameMarketplace { address: String },
+    /// Set an address for name reverse lookup
+    /// Can be an EOA or a contract address
+    AssociateAddress { name: String, address: String },
     /// Update bio
     UpdateBio { name: String, bio: Option<String> },
     /// Update profile

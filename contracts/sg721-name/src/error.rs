@@ -13,9 +13,6 @@ pub enum ContractError {
     #[error("{0}")]
     Base(#[from] sg721_base::ContractError),
 
-    #[error("MissingTokenUri")]
-    MissingTokenUri {},
-
     #[error("NameNotFound")]
     NameNotFound {},
 
@@ -36,4 +33,7 @@ pub enum ContractError {
 
     #[error("RecordValueTooLong")]
     RecordValueTooLong {},
+
+    #[error("Unauthorized: Not contract creator or admin")]
+    UnauthorizedCreatorOrAdmin {},
 }

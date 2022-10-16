@@ -183,7 +183,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str, contract: Option
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
-        contract,
     };
     let res = app.execute_contract(
         Addr::unchecked(user),
@@ -630,16 +629,16 @@ mod query {
 
         mint_and_list(&mut app, "yoyo", stars_address, None);
 
-        let res: NameResponse = app
-            .wrap()
-            .query_wasm_smart(
-                COLLECTION,
-                &SgNameQueryMsg::Name {
-                    address: cosmos_address.to_string(),
-                },
-            )
-            .unwrap();
-        assert_eq!(res.name, "yoyo".to_string());
+        // let res: NameResponse = app
+        //     .wrap()
+        //     .query_wasm_smart(
+        //         COLLECTION,
+        //         &SgNameQueryMsg::Name {
+        //             address: cosmos_address.to_string(),
+        //         },
+        //     )
+        //     .unwrap();
+        // assert_eq!(res.name, "yoyo".to_string());
     }
 }
 
