@@ -271,6 +271,13 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
   }: {
     address: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  associateAddress: ({
+    address,
+    name
+  }: {
+    address: string;
+    name: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   updateBio: ({
     bio,
     name
@@ -385,6 +392,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
+    this.associateAddress = this.associateAddress.bind(this);
     this.updateBio = this.updateBio.bind(this);
     this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
@@ -411,6 +419,20 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     return await this.client.execute(this.sender, this.contractAddress, {
       set_name_marketplace: {
         address
+      }
+    }, fee, memo, funds);
+  };
+  associateAddress = async ({
+    address,
+    name
+  }: {
+    address: string;
+    name: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      associate_address: {
+        address,
+        name
       }
     }, fee, memo, funds);
   };

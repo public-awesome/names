@@ -31,6 +31,11 @@ export type ExecuteMsg = {
     address: string;
   };
 } | {
+  associate_address: {
+    address: string;
+    name: string;
+  };
+} | {
   update_bio: {
     bio?: string | null;
     name: string;
