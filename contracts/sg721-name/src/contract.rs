@@ -1,6 +1,6 @@
 use crate::{
     error::ContractError,
-    state::{ADDRESS_MAP, NAME_MARKETPLACE},
+    state::{NAME_MARKETPLACE, REVERSE_MAP},
 };
 
 use cosmwasm_std::{
@@ -182,10 +182,17 @@ pub fn execute_mint(
         Some(token_uri) => token_uri,
         None => return Err(ContractError::MissingTokenUri {}),
     };
-    ADDRESS_MAP.save(
+
+    // reject an already mapped address
+    // name:address must have a 1:1 relationship
+    // address must be validated here at the entry point
+    REVERSE_MAP.update(
         deps.storage,
         &deps.api.addr_validate(&token_uri)?,
-        &msg.token_id,
+        |t| match t {
+            Some(_) => Err(ContractError::AddressAlreadyMapped {}),
+            None => Ok(msg.token_id.clone()),
+        },
     )?;
 
     // create the token
@@ -225,7 +232,9 @@ pub fn execute_burn(
         .check_can_send(deps.as_ref(), &env, &info, &token)
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    ADDRESS_MAP.remove(deps.storage, &deps.api.addr_validate(&token_id)?);
+    // removing a known previously mapped address is safe
+    // thus no validation is required
+    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token.token_uri.unwrap()));
 
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
         token_id: token_id.to_string(),
@@ -256,6 +265,7 @@ pub fn execute_transfer_nft(
     token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
+    let recipient = deps.api.addr_validate(&recipient)?;
 
     // Update the ask on the marketplace
     let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
@@ -272,6 +282,16 @@ pub fn execute_transfer_nft(
         .tokens
         .load(deps.storage, &token_id)?;
 
+    // no validation is required since this is a previously mapped address
+    let token_uri = &token.token_uri.clone().unwrap();
+
+    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+    REVERSE_MAP.save(
+        deps.storage,
+        &Addr::unchecked(token_uri),
+        &recipient.to_string(),
+    )?;
+
     // Reset bio, profile, records
     token.extension.bio = None;
     token.extension.profile_nft = None;
@@ -281,7 +301,7 @@ pub fn execute_transfer_nft(
         .save(deps.storage, &token_id, &token)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
-        recipient,
+        recipient: recipient.to_string(),
         token_id: token_id.to_string(),
     };
     Sg721NameContract::default().execute(deps, env, info, msg)?;
@@ -341,7 +361,7 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<NameResponse> {
         address = transcode(&address)?;
     }
 
-    let name = ADDRESS_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
+    let name = REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
 
     Ok(NameResponse { name })
 }

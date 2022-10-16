@@ -510,7 +510,7 @@ mod query {
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER, None);
+        mint_and_list(&mut app, "hack", ADMIN2, Some(MINTER.to_string()));
 
         let msg = MarketplaceQueryMsg::Asks {
             start_after: None,
@@ -528,7 +528,7 @@ mod query {
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER, None);
+        mint_and_list(&mut app, "hack", ADMIN2, Some(MINTER.to_string()));
 
         let msg = MarketplaceQueryMsg::ReverseAsks {
             start_before: None,
@@ -565,7 +565,7 @@ mod query {
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        mint_and_list(&mut app, "hack", USER, None);
+        mint_and_list(&mut app, "hack", ADMIN2, Some(MINTER.to_string()));
 
         let msg = MarketplaceQueryMsg::AskCount {};
         let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
@@ -595,7 +595,7 @@ mod query {
 
         // mint two names at the same time
         mint_and_list(&mut app, NAME, USER, None);
-        mint_and_list(&mut app, "hack", USER, None);
+        mint_and_list(&mut app, "hack", ADMIN2, Some(MINTER.to_string()));
 
         let res: AsksResponse = app
             .wrap()
