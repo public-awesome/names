@@ -185,6 +185,7 @@ pub fn execute_mint(
 
     // reject an already mapped address
     // name:address must have a 1:1 relationship
+    // address must be validated here at the entry point
     REVERSE_MAP.update(
         deps.storage,
         &deps.api.addr_validate(&token_uri)?,
@@ -232,6 +233,7 @@ pub fn execute_burn(
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
     // removing a known previously mapped address is safe
+    // thus no validation is required
     REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token.token_uri.unwrap()));
 
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
@@ -263,6 +265,7 @@ pub fn execute_transfer_nft(
     token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
+    let recipient = deps.api.addr_validate(&recipient)?;
 
     // Update the ask on the marketplace
     let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
@@ -279,6 +282,16 @@ pub fn execute_transfer_nft(
         .tokens
         .load(deps.storage, &token_id)?;
 
+    // no validation is required since this is a previously mapped address
+    let token_uri = &token.token_uri.clone().unwrap();
+
+    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+    REVERSE_MAP.save(
+        deps.storage,
+        &Addr::unchecked(token_uri),
+        &recipient.to_string(),
+    )?;
+
     // Reset bio, profile, records
     token.extension.bio = None;
     token.extension.profile_nft = None;
@@ -288,7 +301,7 @@ pub fn execute_transfer_nft(
         .save(deps.storage, &token_id, &token)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
-        recipient,
+        recipient: recipient.to_string(),
         token_id: token_id.to_string(),
     };
     Sg721NameContract::default().execute(deps, env, info, msg)?;
