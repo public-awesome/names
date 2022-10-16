@@ -2,7 +2,7 @@ MSG=$(cat <<EOF
 {
   "associate_address": {
     "name": "$1",
-    "address": "$2",
+    "address": "$ADMIN"
   }
 }
 EOF

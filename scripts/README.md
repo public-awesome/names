@@ -71,8 +71,32 @@ You should see the minter and collection addresses.
 ./exec_mint.sh [name]
 ```
 
+## Associate name with an address
+
+```sh
+./exec_assoc.sh [name]
+```
+
+Reverse lookup:
+
+```sh
+./query_lookup.sh
+```
+
+Query name metadata:
+
+```sh
+./query_metadata.sh [name]
+```
+
 ## Place a bid
 
 ```
 ./exec_bid.sh [name] [price (in STARS)]
+```
+
+## Accept a bid
+
+```
+./exec_accept_bid.sh [name] [bidder] [price (in STARS)]
 ```
