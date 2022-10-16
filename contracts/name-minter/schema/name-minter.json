@@ -1,6 +1,6 @@
 {
   "contract_name": "name-minter",
-  "contract_version": "0.8.0",
+  "contract_version": "0.9.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -100,7 +100,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Mint a name for the sender or contract addresss If `contract` is given, name is minted for that contract address",
+        "description": "Mint a name and list on Stargaze Name Marketplace",
         "type": "object",
         "required": [
           "mint_and_list"
@@ -112,12 +112,6 @@
               "name"
             ],
             "properties": {
-              "contract": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
               "name": {
                 "type": "string"
               }

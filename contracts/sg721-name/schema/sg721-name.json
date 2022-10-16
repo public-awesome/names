@@ -1,6 +1,6 @@
 {
   "contract_name": "sg721-name",
-  "contract_version": "0.8.0",
+  "contract_version": "0.9.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -130,6 +130,32 @@
             ],
             "properties": {
               "address": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Set an address for name reverse lookup Can be an EOA or a contract address",
+        "type": "object",
+        "required": [
+          "associate_address"
+        ],
+        "properties": {
+          "associate_address": {
+            "type": "object",
+            "required": [
+              "address",
+              "name"
+            ],
+            "properties": {
+              "address": {
+                "type": "string"
+              },
+              "name": {
                 "type": "string"
               }
             },

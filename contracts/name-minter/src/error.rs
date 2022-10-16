@@ -17,9 +17,6 @@ pub enum ContractError {
     #[error("Name Minter: Unauthorized")]
     Unauthorized {},
 
-    #[error("Unauthorized: Not contract creator or admin")]
-    UnauthorizedCreatorOrAdmin {},
-
     #[error("Invalid reply ID")]
     InvalidReplyID {},
 

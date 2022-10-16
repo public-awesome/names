@@ -4,7 +4,8 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Deps, DepsMut, Env, MessageInfo, StdError, StdResult, WasmMsg,
+    to_binary, Addr, ContractInfoResponse, Deps, DepsMut, Env, MessageInfo, StdError, StdResult,
+    WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
@@ -20,150 +21,31 @@ use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 
-pub fn execute_update_bio(
+pub fn execute_associate_address(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    bio: Option<String>,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), info.sender, &token_id)?;
-    validate_bio(bio.clone())?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info.extension.bio = bio;
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
-pub fn execute_update_profile_nft(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    nft: Option<NFT>,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), info.sender, &token_id)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info.extension.profile_nft = nft;
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
-pub fn execute_add_text_record(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    record: TextRecord,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), info.sender, &token_id)?;
-    validate_and_sanitize_record(&record)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                // can not add a record with existing name
-                for r in token_info.extension.records.iter() {
-                    if r.name == record.name {
-                        return Err(ContractError::RecordNameAlreadyExists {});
-                    }
-                }
-                token_info.extension.records.push(record);
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
-pub fn execute_remove_text_record(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    record_name: String,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), info.sender, &token_id)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info
-                    .extension
-                    .records
-                    .retain(|r| r.name != record_name);
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
-pub fn execute_update_text_record(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    record: TextRecord,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), info.sender, &token_id)?;
-    validate_and_sanitize_record(&record)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info
-                    .extension
-                    .records
-                    .retain(|r| r.name != record.name);
-                token_info.extension.records.push(record);
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
-pub fn execute_set_name_marketplace(
-    deps: DepsMut,
-    info: MessageInfo,
     address: String,
 ) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
+    let sender = info.sender;
 
-    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
-    if minter != info.sender {
-        return Err(ContractError::Base(Unauthorized {}));
-    }
+    only_owner(deps.as_ref(), &sender, &name)?;
 
-    NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
+    let token_uri = deps.api.addr_validate(&address)?;
+
+    validate_address(deps.as_ref(), &sender, &token_uri.clone())?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &name, |token| match token {
+            Some(mut token_info) => {
+                token_info.token_uri = Some(address);
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+
+    REVERSE_MAP.save(deps.storage, &token_uri, &name)?;
 
     Ok(Response::new())
 }
@@ -177,29 +59,11 @@ pub fn execute_mint(
     if info.sender != minter {
         return Err(ContractError::Base(Unauthorized {}));
     }
-
-    let token_uri = match msg.token_uri {
-        Some(token_uri) => token_uri,
-        None => return Err(ContractError::MissingTokenUri {}),
-    };
-
-    // reject an already mapped address
-    // name:address must have a 1:1 relationship
-    // address must be validated here at the entry point
-    REVERSE_MAP.update(
-        deps.storage,
-        &deps.api.addr_validate(&token_uri)?,
-        |t| match t {
-            Some(_) => Err(ContractError::AddressAlreadyMapped {}),
-            None => Ok(msg.token_id.clone()),
-        },
-    )?;
-
     // create the token
     let token = TokenInfo {
         owner: deps.api.addr_validate(&msg.owner)?,
         approvals: vec![],
-        token_uri: Some(token_uri), // stars address
+        token_uri: None,
         extension: msg.extension,
     };
     Sg721NameContract::default()
@@ -232,9 +96,9 @@ pub fn execute_burn(
         .check_can_send(deps.as_ref(), &env, &info, &token)
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    // removing a known previously mapped address is safe
-    // thus no validation is required
-    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token.token_uri.unwrap()));
+    if let Some(token_uri) = token.token_uri {
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+    }
 
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
         token_id: token_id.to_string(),
@@ -282,16 +146,6 @@ pub fn execute_transfer_nft(
         .tokens
         .load(deps.storage, &token_id)?;
 
-    // no validation is required since this is a previously mapped address
-    let token_uri = &token.token_uri.clone().unwrap();
-
-    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
-    REVERSE_MAP.save(
-        deps.storage,
-        &Addr::unchecked(token_uri),
-        &recipient.to_string(),
-    )?;
-
     // Reset bio, profile, records
     token.extension.bio = None;
     token.extension.profile_nft = None;
@@ -299,6 +153,11 @@ pub fn execute_transfer_nft(
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, &token_id, &token)?;
+
+    // remove reverse mapping if exists
+    if let Some(token_uri) = token.token_uri {
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+    }
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient: recipient.to_string(),
@@ -309,13 +168,161 @@ pub fn execute_transfer_nft(
     Ok(Response::new().add_message(update_ask_msg))
 }
 
-fn only_owner(deps: Deps, sender: Addr, token_id: &str) -> Result<Addr, ContractError> {
+pub fn execute_update_bio(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    bio: Option<String>,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+    validate_bio(bio.clone())?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                token_info.extension.bio = bio;
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_update_profile_nft(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    nft: Option<NFT>,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                token_info.extension.profile_nft = nft;
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_add_text_record(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    record: TextRecord,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+    validate_and_sanitize_record(&record)?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                // can not add a record with existing name
+                for r in token_info.extension.records.iter() {
+                    if r.name == record.name {
+                        return Err(ContractError::RecordNameAlreadyExists {});
+                    }
+                }
+                token_info.extension.records.push(record);
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_remove_text_record(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    record_name: String,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                token_info
+                    .extension
+                    .records
+                    .retain(|r| r.name != record_name);
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_update_text_record(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    record: TextRecord,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+    validate_and_sanitize_record(&record)?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                token_info
+                    .extension
+                    .records
+                    .retain(|r| r.name != record.name);
+                token_info.extension.records.push(record);
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_set_name_marketplace(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let minter = Sg721NameContract::default().minter.load(deps.storage)?;
+    if minter != info.sender {
+        return Err(ContractError::Base(Unauthorized {}));
+    }
+
+    NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
+
+    Ok(Response::new())
+}
+
+fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, ContractError> {
     let owner = Sg721NameContract::default()
         .tokens
         .load(deps.storage, token_id)?
         .owner;
 
-    if owner != sender {
+    if &owner != sender {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -324,8 +331,7 @@ fn only_owner(deps: Deps, sender: Addr, token_id: &str) -> Result<Addr, Contract
 
 fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
     if let Some(bio) = bio {
-        let len = bio.len() as u64;
-        if len > MAX_TEXT_LENGTH {
+        if bio.len() > MAX_TEXT_LENGTH as usize {
             return Err(ContractError::BioTooLong {});
         }
     }
@@ -333,16 +339,14 @@ fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
-    let len = record.name.len() as u64;
-    if len > MAX_TEXT_LENGTH {
+    let name_len = record.name.len();
+    if name_len > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordNameTooLong {});
-    }
-    if len == 0 {
+    } else if name_len == 0 {
         return Err(ContractError::RecordNameEmpty {});
     }
 
-    let len = record.value.len() as u64;
-    if len > MAX_TEXT_LENGTH {
+    if record.value.len() > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordValueTooLong {});
     }
     Ok(())
@@ -371,4 +375,22 @@ pub fn transcode(address: &str) -> StdResult<String> {
         bech32::decode(address).map_err(|_| StdError::generic_err("Invalid bech32 address"))?;
 
     Ok(bech32::encode("stars", data))
+}
+
+fn validate_address(deps: Deps, sender: &Addr, addr: &Addr) -> Result<(), ContractError> {
+    // we have an EOA registration
+    if sender == addr {
+        return Ok(());
+    }
+
+    let ContractInfoResponse { admin, creator, .. } =
+        deps.querier.query_wasm_contract_info(addr)?;
+
+    // If the sender is not the admin or creator, return an error
+    if admin.map_or(true, |a| &a != sender) && &creator != sender {
+        return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+    }
+
+    // we have a contract registration
+    Ok(())
 }

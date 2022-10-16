@@ -19,12 +19,8 @@ pub enum ExecuteMsg {
     UpdateAdmin { admin: Option<String> },
     /// Change to another whitelist or set to null
     UpdateWhitelist { whitelist: Option<String> },
-    /// Mint a name for the sender or contract addresss
-    /// If `contract` is given, name is minted for that contract address
-    MintAndList {
-        name: String,
-        contract: Option<String>,
-    },
+    /// Mint a name and list on Stargaze Name Marketplace
+    MintAndList { name: String },
 }
 
 #[cw_serde]

@@ -15,6 +15,9 @@ use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
 pub enum ExecuteMsg<T> {
     /// Set name marketplace contract address
     SetNameMarketplace { address: String },
+    /// Set an address for name reverse lookup
+    /// Can be an EOA or a contract address
+    AssociateAddress { name: String, address: String },
     /// Update bio
     UpdateBio { name: String, bio: Option<String> },
     /// Update profile

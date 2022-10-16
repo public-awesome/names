@@ -17,6 +17,13 @@ export interface Sg721NameMessage {
   }: {
     address: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  associateAddress: ({
+    address,
+    name
+  }: {
+    address: string;
+    name: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   updateBio: ({
     bio,
     name
@@ -128,6 +135,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.sender = sender;
     this.contractAddress = contractAddress;
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
+    this.associateAddress = this.associateAddress.bind(this);
     this.updateBio = this.updateBio.bind(this);
     this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
@@ -159,6 +167,28 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
         msg: toUtf8(JSON.stringify({
           set_name_marketplace: {
             address
+          }
+        })),
+        funds
+      })
+    };
+  };
+  associateAddress = ({
+    address,
+    name
+  }: {
+    address: string;
+    name: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          associate_address: {
+            address,
+            name
           }
         })),
         funds

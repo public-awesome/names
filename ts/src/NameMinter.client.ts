@@ -62,10 +62,8 @@ export interface NameMinterInterface extends NameMinterReadOnlyInterface {
     whitelist?: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   mintAndList: ({
-    contract,
     name
   }: {
-    contract?: string;
     name: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
@@ -107,15 +105,12 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     }, fee, memo, funds);
   };
   mintAndList = async ({
-    contract,
     name
   }: {
-    contract?: string;
     name: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       mint_and_list: {
-        contract,
         name
       }
     }, fee, memo, funds);

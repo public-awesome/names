@@ -1,8 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, ContractInfoResponse, Deps, DepsMut, Env, MessageInfo, Reply,
-    SubMsg, WasmMsg,
+    coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
@@ -93,9 +92,7 @@ pub fn execute(
         ExecuteMsg::UpdateWhitelist { whitelist } => {
             execute_update_whitelsit(deps, info, whitelist)
         }
-        ExecuteMsg::MintAndList { name, contract } => {
-            execute_mint_and_list(deps, info, name.trim(), contract)
-        }
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
     }
 }
 
@@ -116,7 +113,6 @@ pub fn execute_mint_and_list(
     deps: DepsMut,
     info: MessageInfo,
     name: &str,
-    contract: Option<String>,
 ) -> Result<Response, ContractError> {
     let sender = &info.sender.to_string();
     let mut res = Response::new();
@@ -136,7 +132,6 @@ pub fn execute_mint_and_list(
     }
 
     validate_name(name, params.min_name_length, params.max_name_length)?;
-    validate_contract(deps.as_ref(), &info, &contract)?;
 
     let price = validate_payment(name.len(), &info, params.base_price)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
@@ -147,7 +142,7 @@ pub fn execute_mint_and_list(
     let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
         token_id: name.to_string(),
         owner: sender.to_string(),
-        token_uri: Some(contract.unwrap_or_else(|| sender.to_string())),
+        token_uri: None,
         extension: Metadata {
             bio: None,
             profile_nft: None,
@@ -223,28 +218,6 @@ fn validate_payment(
     }
 
     Ok(coin(amount, NATIVE_DENOM))
-}
-
-/// Validate if the contract creator or admin is the sender
-fn validate_contract(
-    deps: Deps,
-    info: &MessageInfo,
-    contract_addr: &Option<String>,
-) -> Result<(), ContractError> {
-    let sender = &info.sender;
-
-    if let Some(contract) = contract_addr {
-        let res: ContractInfoResponse = deps.querier.query_wasm_contract_info(contract)?;
-        let admin = res.admin;
-        let creator = res.creator;
-
-        // If the sender is not the admin or creator, return an error
-        if admin.map_or(true, |a| &a != sender) && &creator != sender {
-            return Err(ContractError::UnauthorizedCreatorOrAdmin {});
-        }
-    }
-
-    Ok(())
 }
 
 fn invalid_char(c: char) -> bool {
