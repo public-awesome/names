@@ -154,10 +154,9 @@ pub fn execute_transfer_nft(
         .tokens
         .save(deps.storage, &token_id, &token)?;
 
+    // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
-        let addr = Addr::unchecked(token_uri);
-        REVERSE_MAP.remove(deps.storage, &addr);
-        REVERSE_MAP.save(deps.storage, &addr, &token_id)?;
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
     let msg = Sg721ExecuteMsg::TransferNft {

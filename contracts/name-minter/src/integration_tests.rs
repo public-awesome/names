@@ -700,21 +700,33 @@ mod query {
         );
         assert!(res.is_err());
 
-        let stars_address = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
+        let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
         let cosmos_address = "cosmos1hsk6jryyqjfhp5dhc55tc9jtckygx0eph6dd02";
 
-        mint_and_list(&mut app, "yoyo", stars_address);
+        mint_and_list(&mut app, "yoyo", user);
 
-        // let res: NameResponse = app
-        //     .wrap()
-        //     .query_wasm_smart(
-        //         COLLECTION,
-        //         &SgNameQueryMsg::Name {
-        //             address: cosmos_address.to_string(),
-        //         },
-        //     )
-        //     .unwrap();
-        // assert_eq!(res.name, "yoyo".to_string());
+        let msg = Sg721NameExecuteMsg::AssociateAddress {
+            name: "yoyo".to_string(),
+            address: user.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(user),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let res: NameResponse = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &SgNameQueryMsg::Name {
+                    address: cosmos_address.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.name, "yoyo".to_string());
     }
 }
 
@@ -724,25 +736,25 @@ mod collection {
 
     use super::*;
 
-    fn transfer(app: &mut StargazeApp) {
+    fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
         let msg = Sg721NameExecuteMsg::TransferNft {
-            recipient: USER2.to_string(),
+            recipient: to.to_string(),
             token_id: NAME.to_string(),
         };
         let res = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(from),
             Addr::unchecked(COLLECTION),
             &msg,
             &[],
         );
-        println!("{:?}", res);
+        // println!("{:?}", res);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.ask.unwrap().seller.to_string(), USER2.to_string());
+        assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
     }
 
     #[test]
@@ -750,7 +762,7 @@ mod collection {
         let mut app = instantiate_contracts(None, None);
 
         mint_and_list(&mut app, NAME, USER);
-        transfer(&mut app);
+        transfer(&mut app, USER, USER2);
     }
 
     #[test]
@@ -759,8 +771,7 @@ mod collection {
 
         mint_and_list(&mut app, NAME, USER);
 
-        // transfer to user2
-        transfer(&mut app);
+        transfer(&mut app, USER, USER2);
 
         bid(&mut app, BIDDER, BID_AMOUNT);
 
@@ -792,9 +803,40 @@ mod collection {
         let mut app = instantiate_contracts(None, None);
 
         let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
-
+        let user2 = "stars1wh3wjjgprxeww4cgqyaw8k75uslzh3sd3s2yfk";
         mint_and_list(&mut app, NAME, user);
-        transfer(&mut app);
+
+        let msg = Sg721NameExecuteMsg::AssociateAddress {
+            name: NAME.to_string(),
+            address: user.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(user),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = SgNameQueryMsg::Name {
+            address: user.to_string(),
+        };
+        let res: NameResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(res.name, NAME.to_string());
+
+        transfer(&mut app, user, user2);
+
+        let msg = SgNameQueryMsg::Name {
+            address: user.to_string(),
+        };
+        let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        assert!(err.is_err());
+
+        let msg = SgNameQueryMsg::Name {
+            address: user2.to_string(),
+        };
+        let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        assert!(err.is_err());
     }
 
     #[test]
