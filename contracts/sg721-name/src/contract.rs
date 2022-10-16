@@ -182,10 +182,16 @@ pub fn execute_mint(
         Some(token_uri) => token_uri,
         None => return Err(ContractError::MissingTokenUri {}),
     };
-    ADDRESS_MAP.save(
+
+    // reject an already mapped address
+    // name:address must have a 1:1 relationship
+    ADDRESS_MAP.update(
         deps.storage,
         &deps.api.addr_validate(&token_uri)?,
-        &msg.token_id,
+        |t| match t {
+            Some(_) => Err(ContractError::AddressAlreadyMapped {}),
+            None => Ok(msg.token_id.clone()),
+        },
     )?;
 
     // create the token

@@ -19,6 +19,9 @@ pub enum ContractError {
     #[error("NameNotFound")]
     NameNotFound {},
 
+    #[error("AddressAlreadyMapped")]
+    AddressAlreadyMapped {},
+
     #[error("BioTooLong")]
     BioTooLong {},
 
