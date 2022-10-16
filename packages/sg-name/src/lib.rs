@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
-pub const MAX_TEXT_LENGTH: u64 = 512;
+pub const MAX_TEXT_LENGTH: u32 = 512;
 
 #[cw_serde]
 pub struct NFT {

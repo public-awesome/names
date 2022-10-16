@@ -7,8 +7,8 @@ pub struct InstantiateMsg {
     pub admin: Option<String>,
     pub collection_code_id: u64,
     pub marketplace_addr: String,
-    pub min_name_length: u64,
-    pub max_name_length: u64,
+    pub min_name_length: u32,
+    pub max_name_length: u32,
     pub base_price: Uint128,
 }
 
@@ -26,8 +26,8 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub enum SudoMsg {
     UpdateParams {
-        min_name_length: u64,
-        max_name_length: u64,
+        min_name_length: u32,
+        max_name_length: u32,
         base_price: Uint128,
     },
     UpdateNameCollection {
@@ -63,7 +63,7 @@ pub struct WhitelistResponse {
 
 #[cw_serde]
 pub struct ParamsResponse {
-    pub min_name_length: u64,
-    pub max_name_length: u64,
+    pub min_name_length: u32,
+    pub max_name_length: u32,
     pub base_price: Uint128,
 }

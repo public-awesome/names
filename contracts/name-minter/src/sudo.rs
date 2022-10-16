@@ -30,8 +30,8 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> Result<Response, Contract
 
 pub fn sudo_update_params(
     deps: DepsMut,
-    min_name_length: u64,
-    max_name_length: u64,
+    min_name_length: u32,
+    max_name_length: u32,
     base_price: u128,
 ) -> Result<Response, ContractError> {
     SUDO_PARAMS.save(

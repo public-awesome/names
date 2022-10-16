@@ -34,12 +34,12 @@
       },
       "max_name_length": {
         "type": "integer",
-        "format": "uint64",
+        "format": "uint32",
         "minimum": 0.0
       },
       "min_name_length": {
         "type": "integer",
-        "format": "uint64",
+        "format": "uint32",
         "minimum": 0.0
       }
     },
@@ -228,12 +228,12 @@
         },
         "max_name_length": {
           "type": "integer",
-          "format": "uint64",
+          "format": "uint32",
           "minimum": 0.0
         },
         "min_name_length": {
           "type": "integer",
-          "format": "uint64",
+          "format": "uint32",
           "minimum": 0.0
         }
       },

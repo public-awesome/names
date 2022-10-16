@@ -173,8 +173,8 @@ pub fn execute_mint_and_list(
 }
 
 // This follows the same rules as Internet domain names
-fn validate_name(name: &str, min: u64, max: u64) -> Result<(), ContractError> {
-    let len = name.len() as u64;
+fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
+    let len = name.len() as u32;
     if len < min {
         return Err(ContractError::NameTooShort {});
     } else if len >= max {
