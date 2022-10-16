@@ -96,10 +96,8 @@ pub fn execute_burn(
         .check_can_send(deps.as_ref(), &env, &info, &token)
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    if token.token_uri.is_some() {
-        // removing a known previously mapped address is safe
-        // thus no validation is required
-        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token.token_uri.unwrap()));
+    if let Some(token_uri) = token.token_uri {
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
@@ -157,13 +155,9 @@ pub fn execute_transfer_nft(
         .save(deps.storage, &token_id, &token)?;
 
     if let Some(token_uri) = token.token_uri {
-        // no validation is required since this is a previously mapped address
-        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri.clone()));
-        REVERSE_MAP.save(
-            deps.storage,
-            &Addr::unchecked(token_uri),
-            &recipient.to_string(),
-        )?;
+        let addr = Addr::unchecked(token_uri);
+        REVERSE_MAP.remove(deps.storage, &addr);
+        REVERSE_MAP.save(deps.storage, &addr, &token_id)?;
     }
 
     let msg = Sg721ExecuteMsg::TransferNft {
@@ -338,8 +332,7 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
 
 fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
     if let Some(bio) = bio {
-        let len = bio.len() as u64;
-        if len > MAX_TEXT_LENGTH {
+        if bio.len() > MAX_TEXT_LENGTH as usize {
             return Err(ContractError::BioTooLong {});
         }
     }
@@ -347,16 +340,14 @@ fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
-    let len = record.name.len() as u64;
-    if len > MAX_TEXT_LENGTH {
+    let name_len = record.name.len();
+    if name_len > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordNameTooLong {});
-    }
-    if len == 0 {
+    } else if name_len == 0 {
         return Err(ContractError::RecordNameEmpty {});
     }
 
-    let len = record.value.len() as u64;
-    if len > MAX_TEXT_LENGTH {
+    if record.value.len() > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordValueTooLong {});
     }
     Ok(())
