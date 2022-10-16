@@ -1,6 +1,6 @@
 use crate::{
     error::ContractError,
-    state::{ADDRESS_MAP, NAME_MARKETPLACE},
+    state::{NAME_MARKETPLACE, REVERSE_MAP},
 };
 
 use cosmwasm_std::{
@@ -185,7 +185,7 @@ pub fn execute_mint(
 
     // reject an already mapped address
     // name:address must have a 1:1 relationship
-    ADDRESS_MAP.update(
+    REVERSE_MAP.update(
         deps.storage,
         &deps.api.addr_validate(&token_uri)?,
         |t| match t {
@@ -231,7 +231,8 @@ pub fn execute_burn(
         .check_can_send(deps.as_ref(), &env, &info, &token)
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    ADDRESS_MAP.remove(deps.storage, &deps.api.addr_validate(&token_id)?);
+    // removing a known previously mapped address is safe
+    REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token.token_uri.unwrap()));
 
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
         token_id: token_id.to_string(),
@@ -347,7 +348,7 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<NameResponse> {
         address = transcode(&address)?;
     }
 
-    let name = ADDRESS_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
+    let name = REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
 
     Ok(NameResponse { name })
 }
