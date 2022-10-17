@@ -119,11 +119,7 @@ fn mint_and_update() {
         token_id: token_id.to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
-        extension: Metadata {
-            bio: None,
-            profile_nft: None,
-            records: vec![],
-        },
+        extension: Metadata::default(),
     };
     let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
     contract

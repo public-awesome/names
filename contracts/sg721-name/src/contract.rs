@@ -41,11 +41,7 @@ pub fn execute_update_metadata(
     match metadata {
         None => {
             // reset metadata to empty
-            token_info.extension = Metadata {
-                bio: None,
-                profile_nft: None,
-                records: vec![],
-            };
+            token_info.extension = Metadata::default();
             Sg721NameContract::default()
                 .tokens
                 .save(deps.storage, &token_id, &token_info)?;
@@ -213,9 +209,7 @@ pub fn execute_transfer_nft(
         .load(deps.storage, &token_id)?;
 
     // Reset bio, profile, records
-    token.extension.bio = None;
-    token.extension.profile_nft = None;
-    token.extension.records = vec![];
+    token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, &token_id, &token)?;

@@ -23,6 +23,16 @@ pub struct Metadata {
     pub records: Vec<TextRecord>,
 }
 
+impl Default for Metadata {
+    fn default() -> Self {
+        Self {
+            bio: None,
+            profile_nft: None,
+            records: vec![],
+        }
+    }
+}
+
 #[cw_serde]
 pub enum SgNameExecuteMsg {
     /// Set name marketplace contract address
