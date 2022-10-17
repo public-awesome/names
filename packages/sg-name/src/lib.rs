@@ -17,20 +17,11 @@ pub struct TextRecord {
 
 /// Note that the address mapped to the name is stored in `token_uri`.
 #[cw_serde]
+#[derive(Default)]
 pub struct Metadata {
     pub bio: Option<String>,
     pub profile_nft: Option<NFT>,
     pub records: Vec<TextRecord>,
-}
-
-impl Default for Metadata {
-    fn default() -> Self {
-        Self {
-            bio: None,
-            profile_nft: None,
-            records: vec![],
-        }
-    }
 }
 
 #[cw_serde]
