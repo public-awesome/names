@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::msg::*;
-    use crate::ContractError;
 
     use cosmwasm_std::Addr;
     use cosmwasm_std::Coin;
@@ -80,7 +79,7 @@ mod tests {
                 },
             )
             .unwrap();
-        assert_eq!(res, true);
+        assert!(res);
 
         let res: u32 = app
             .wrap()
@@ -130,7 +129,7 @@ mod tests {
 
         let msg = InstantiateMsg {
             per_address_limit: 10,
-            addresses: addrs.clone(),
+            addresses: addrs,
         };
 
         let mut app = mock_app(&[]);
@@ -179,7 +178,7 @@ mod tests {
                 },
             )
             .unwrap();
-        assert_eq!(res, false);
+        assert!(!res);
         let res: u64 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
@@ -199,7 +198,7 @@ mod tests {
                 },
             )
             .unwrap();
-        assert_eq!(res, true);
+        assert!(res);
         let res: u64 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
@@ -239,7 +238,7 @@ mod tests {
                 },
             )
             .unwrap();
-        assert_eq!(res, false);
+        assert!(!res);
         let res: u64 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
@@ -264,7 +263,7 @@ mod tests {
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr, &msg, &[]);
         assert!(res.is_err());
 
         // Purge {},
