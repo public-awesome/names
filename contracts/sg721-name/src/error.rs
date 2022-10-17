@@ -34,6 +34,9 @@ pub enum ContractError {
     #[error("RecordValueTooLong")]
     RecordValueTooLong {},
 
+    #[error("Invalid Metadata")]
+    InvalidMetadata {},
+
     #[error("Unauthorized: Not contract creator or admin")]
     UnauthorizedCreatorOrAdmin {},
 }
