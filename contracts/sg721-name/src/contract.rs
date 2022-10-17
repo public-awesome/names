@@ -52,6 +52,8 @@ pub fn execute_update_metadata(
                 None => token_info.extension.bio,
                 Some(bio) => Some(bio),
             };
+
+            // update nft profile
             token_info.extension.profile_nft = match metadata.profile_nft {
                 None => token_info.extension.profile_nft,
                 Some(profile_nft) => Some(profile_nft),
@@ -64,12 +66,6 @@ pub fn execute_update_metadata(
     };
 
     validate_bio(token_info.clone().extension.bio)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .save(deps.storage, &token_id, &token_info)?;
-
-    // validate_bio(bio.clone())?;
 
     Sg721NameContract::default()
         .tokens
