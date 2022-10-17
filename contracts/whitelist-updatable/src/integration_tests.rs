@@ -263,9 +263,28 @@ mod tests {
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr, &msg, &[]);
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
         assert!(res.is_err());
 
-        // Purge {},
+        // purge
+        let msg = ExecuteMsg::Purge {};
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let res: u32 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .unwrap();
+        assert_eq!(res, 0);
+        // does not include addr0007
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IncludesAddress {
+                    address: "addr0007".to_string(),
+                },
+            )
+            .unwrap();
+        assert!(!res);
     }
 }

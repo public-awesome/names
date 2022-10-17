@@ -216,6 +216,8 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
         WHITELIST.remove(deps.storage, key);
     }
 
+    TOTAL_ADDRESS_COUNT.save(deps.storage, &0u64)?;
+
     let event = Event::new("purge").add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
 }
