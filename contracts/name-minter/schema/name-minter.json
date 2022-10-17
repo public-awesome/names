@@ -1,6 +1,6 @@
 {
   "contract_name": "name-minter",
-  "contract_version": "0.9.0",
+  "contract_version": "0.10.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -11,7 +11,8 @@
       "collection_code_id",
       "marketplace_addr",
       "max_name_length",
-      "min_name_length"
+      "min_name_length",
+      "whitelists"
     ],
     "properties": {
       "admin": {
@@ -41,6 +42,12 @@
         "type": "integer",
         "format": "uint32",
         "minimum": 0.0
+      },
+      "whitelists": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       }
     },
     "additionalProperties": false,
@@ -55,6 +62,28 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ExecuteMsg",
     "oneOf": [
+      {
+        "description": "Mint a name and list on Stargaze Name Marketplace",
+        "type": "object",
+        "required": [
+          "mint_and_list"
+        ],
+        "properties": {
+          "mint_and_list": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
       {
         "description": "Change the admin that manages the whitelist Will be set to null after go-to-market",
         "type": "object",
@@ -78,20 +107,20 @@
         "additionalProperties": false
       },
       {
-        "description": "Change to another whitelist or set to null",
+        "description": "Add a whiltelist address",
         "type": "object",
         "required": [
-          "update_whitelist"
+          "add_whitelist"
         ],
         "properties": {
-          "update_whitelist": {
+          "add_whitelist": {
             "type": "object",
+            "required": [
+              "address"
+            ],
             "properties": {
-              "whitelist": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "address": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -100,19 +129,19 @@
         "additionalProperties": false
       },
       {
-        "description": "Mint a name and list on Stargaze Name Marketplace",
+        "description": "Remove a whiltelist address",
         "type": "object",
         "required": [
-          "mint_and_list"
+          "remove_whitelist"
         ],
         "properties": {
-          "mint_and_list": {
+          "remove_whitelist": {
             "type": "object",
             "required": [
-              "name"
+              "address"
             ],
             "properties": {
-              "name": {
+              "address": {
                 "type": "string"
               }
             },
@@ -143,10 +172,10 @@
       {
         "type": "object",
         "required": [
-          "whitelist"
+          "whitelists"
         ],
         "properties": {
-          "whitelist": {
+          "whitelists": {
             "type": "object",
             "additionalProperties": false
           }
@@ -245,19 +274,28 @@
         }
       }
     },
-    "whitelist": {
+    "whitelists": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "WhitelistResponse",
+      "title": "WhitelistsResponse",
       "type": "object",
+      "required": [
+        "whitelists"
+      ],
       "properties": {
-        "whitelist": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "whitelists": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        }
+      }
     }
   }
 }

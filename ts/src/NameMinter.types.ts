@@ -12,24 +12,29 @@ export interface InstantiateMsg {
   marketplace_addr: string;
   max_name_length: number;
   min_name_length: number;
+  whitelists: string[];
 }
 export type ExecuteMsg = {
+  mint_and_list: {
+    name: string;
+  };
+} | {
   update_admin: {
     admin?: string | null;
   };
 } | {
-  update_whitelist: {
-    whitelist?: string | null;
+  add_whitelist: {
+    address: string;
   };
 } | {
-  mint_and_list: {
-    name: string;
+  remove_whitelist: {
+    address: string;
   };
 };
 export type QueryMsg = {
   admin: {};
 } | {
-  whitelist: {};
+  whitelists: {};
 } | {
   collection: {};
 } | {
@@ -46,6 +51,7 @@ export interface ParamsResponse {
   max_name_length: number;
   min_name_length: number;
 }
-export interface WhitelistResponse {
-  whitelist?: string | null;
+export type Addr = string;
+export interface WhitelistsResponse {
+  whitelists: Addr[];
 }
