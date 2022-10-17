@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Addr, Uint128};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -10,17 +10,20 @@ pub struct InstantiateMsg {
     pub min_name_length: u32,
     pub max_name_length: u32,
     pub base_price: Uint128,
+    pub whitelists: Vec<String>,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    /// Mint a name and list on Stargaze Name Marketplace
+    MintAndList { name: String },
     /// Change the admin that manages the whitelist
     /// Will be set to null after go-to-market
     UpdateAdmin { admin: Option<String> },
-    /// Change to another whitelist or set to null
-    UpdateWhitelist { whitelist: Option<String> },
-    /// Mint a name and list on Stargaze Name Marketplace
-    MintAndList { name: String },
+    /// Add a whiltelist address
+    AddWhitelist { address: String },
+    /// Remove a whiltelist address
+    RemoveWhitelist { address: String },
 }
 
 #[cw_serde]
@@ -43,8 +46,8 @@ pub enum SudoMsg {
 pub enum QueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(WhitelistResponse)]
-    Whitelist {},
+    #[returns(WhitelistsResponse)]
+    Whitelists {},
     #[returns(CollectionResponse)]
     Collection {},
     #[returns(ParamsResponse)]
@@ -57,8 +60,8 @@ pub struct CollectionResponse {
 }
 
 #[cw_serde]
-pub struct WhitelistResponse {
-    pub whitelist: Option<String>,
+pub struct WhitelistsResponse {
+    pub whitelists: Vec<Addr>,
 }
 
 #[cw_serde]

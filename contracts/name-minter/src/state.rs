@@ -21,6 +21,5 @@ pub const NAME_MARKETPLACE: Item<Addr> = Item::new("name-marketplace");
 
 pub const ADMIN: Admin = Admin::new("admin");
 
-/// The currently active whitelist
 /// Can only be updated by admin
-pub const WHITELIST: Item<Option<Addr>> = Item::new("whitelist");
+pub const WHITELISTS: Item<Vec<Addr>> = Item::new("whitelists");

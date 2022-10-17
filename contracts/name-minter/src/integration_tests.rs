@@ -97,6 +97,7 @@ fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> Starga
         base_price: Uint128::from(BASE_PRICE),
         min_name_length: 3,
         max_name_length: 63,
+        whitelists: vec![],
     };
     let minter = app
         .instantiate_contract(
@@ -511,7 +512,7 @@ mod execute {
 }
 
 mod admin {
-    use crate::msg::{QueryMsg, WhitelistResponse};
+    use crate::msg::{QueryMsg, WhitelistsResponse};
 
     use super::*;
 
@@ -540,20 +541,29 @@ mod admin {
     }
 
     #[test]
-    fn update_whitelist() {
+    fn add_remove_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
 
-        let msg = ExecuteMsg::UpdateWhitelist { whitelist: None };
-
-        let res = app.execute_contract(Addr::unchecked(USER), Addr::unchecked(MINTER), &msg, &[]);
-        assert!(res.is_err());
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "whitelist".to_string(),
+        };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
 
-        let msg = QueryMsg::Whitelist {};
-        let res: WhitelistResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelist, None);
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), 1);
+
+        let msg = ExecuteMsg::RemoveWhitelist {
+            address: "whitelist".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), 0);
     }
 }
 

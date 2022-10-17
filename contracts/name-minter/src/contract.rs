@@ -1,3 +1,5 @@
+use std::vec;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -15,7 +17,7 @@ use sg_whitelist_basic::SgWhitelistExecuteMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS, WHITELIST};
+use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS, WHITELISTS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -35,7 +37,15 @@ pub fn instantiate(
     let admin_addr = maybe_addr(deps.api, msg.admin)?;
     ADMIN.set(deps.branch(), admin_addr)?;
 
-    WHITELIST.save(deps.storage, &None)?;
+    let api = deps.api;
+
+    let lists = msg
+        .whitelists
+        .iter()
+        .filter_map(|addr| api.addr_validate(addr).ok())
+        .collect::<Vec<_>>();
+
+    WHITELISTS.save(deps.storage, &lists)?;
 
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
@@ -86,26 +96,13 @@ pub fn execute(
     let api = deps.api;
 
     match msg {
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
         ExecuteMsg::UpdateAdmin { admin } => {
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
-        ExecuteMsg::UpdateWhitelist { whitelist } => {
-            execute_update_whitelsit(deps, info, whitelist)
-        }
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
+        ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
+        ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
     }
-}
-
-pub fn execute_update_whitelsit(
-    deps: DepsMut,
-    info: MessageInfo,
-    whitelist: Option<String>,
-) -> Result<Response, ContractError> {
-    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
-
-    WHITELIST.save(deps.storage, &maybe_addr(deps.api, whitelist)?)?;
-
-    Ok(Response::new())
 }
 
 /// Mint a name for the sender, or `contract` if specified
@@ -118,18 +115,19 @@ pub fn execute_mint_and_list(
     let mut res = Response::new();
 
     let params = SUDO_PARAMS.load(deps.storage)?;
-    let whitelist = WHITELIST.load(deps.storage)?;
+    let whitelists = WHITELISTS.load(deps.storage)?;
 
-    if let Some(whitelist) = whitelist {
+    whitelists.iter().for_each(|whitelist| {
         let msg = WasmMsg::Execute {
             contract_addr: whitelist.to_string(),
             funds: vec![],
             msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
                 address: sender.to_string(),
-            })?,
+            })
+            .unwrap(),
         };
-        res = res.add_message(msg);
-    }
+        res = res.clone().add_message(msg);
+    });
 
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
@@ -170,6 +168,38 @@ pub fn execute_mint_and_list(
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
+}
+
+pub fn execute_add_whitelist(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+) -> Result<Response, ContractError> {
+    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
+
+    let whitelist = deps.api.addr_validate(&address)?;
+    let mut lists = WHITELISTS.load(deps.storage)?;
+    lists.push(whitelist);
+
+    WHITELISTS.save(deps.storage, &lists)?;
+
+    Ok(Response::new())
+}
+
+pub fn execute_remove_whitelist(
+    deps: DepsMut,
+    info: MessageInfo,
+    address: String,
+) -> Result<Response, ContractError> {
+    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
+
+    let whitelist = deps.api.addr_validate(&address)?;
+    let mut lists = WHITELISTS.load(deps.storage)?;
+    lists.retain(|addr| addr != &whitelist);
+
+    WHITELISTS.save(deps.storage, &lists)?;
+
+    Ok(Response::new())
 }
 
 // This follows the same rules as Internet domain names
