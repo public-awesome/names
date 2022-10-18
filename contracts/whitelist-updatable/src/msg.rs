@@ -1,5 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
+use crate::state::Config;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub addresses: Vec<String>,
@@ -14,12 +16,15 @@ pub enum ExecuteMsg {
     // Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
     ProcessAddress { address: String },
     UpdatePerAddressLimit { limit: u32 },
+    UpdateMinterContract { minter_contract: String },
     Purge {},
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
+    Config {},
     #[returns(IncludesAddressResponse)]
     IncludesAddress { address: String },
     #[returns(CountResponse)]
@@ -32,6 +37,10 @@ pub enum QueryMsg {
     PerAddressLimit {},
 }
 
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
+}
 #[cw_serde]
 pub struct IncludesAddressResponse {
     pub includes: bool,

@@ -1169,8 +1169,10 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw2",
+ "name-minter",
  "schemars",
  "serde",
+ "sg-std",
  "sg-whitelist-basic 0.9.0",
  "thiserror",
 ]

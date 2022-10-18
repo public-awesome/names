@@ -6,6 +6,7 @@ use cw_storage_plus::{Item, Map};
 pub struct Config {
     pub admin: Addr,
     pub per_address_limit: u32,
+    pub minter_contract: Option<Addr>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
