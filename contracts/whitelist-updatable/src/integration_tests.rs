@@ -4,7 +4,7 @@ mod tests {
 
     use cosmwasm_std::Addr;
     use cosmwasm_std::Coin;
-    use cosmwasm_std::Empty;
+    use sg_name::Metadata;
     use sg_std::StargazeMsgWrapper;
 
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
@@ -18,8 +18,8 @@ mod tests {
         StargazeApp::default()
     }
 
-    pub fn wl_contract() -> Box<dyn Contract<Empty>> {
-        let contract = ContractWrapper::new(
+    pub fn wl_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new_with_empty(
             crate::contract::execute,
             crate::contract::instantiate,
             crate::contract::query,
