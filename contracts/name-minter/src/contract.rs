@@ -123,6 +123,9 @@ pub fn execute_mint_and_list(
                 address: sender.to_string(),
             })
             .unwrap(),
+            // TODO: DO NOT unwrap(), throw error
+            // TODO: needs to handle case where address is in one list
+            // but not in another
         };
         res = res.clone().add_message(msg);
     });
