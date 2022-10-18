@@ -115,8 +115,6 @@ pub fn execute_set_ask(
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
-    // TODO: possible to do approval with token_id after mint but before ask?
-
     // check if collection is approved to transfer on behalf of the seller
     let ops = Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).all_operators(
         &deps.querier,
@@ -331,6 +329,8 @@ pub fn execute_accept_bid(
     // Remove accepted bid
     bids().remove(deps.storage, bid_key)?;
 
+    // TODO: update renewal queue
+
     let mut res = Response::new();
 
     // Return renewal funds if there's any
@@ -377,10 +377,6 @@ pub fn execute_fund_renewal(
     let payment = must_pay(&info, NATIVE_DENOM)?;
 
     let mut ask = asks().load(deps.storage, ask_key(token_id))?;
-    // TODO: should anyone be able to fund a renewal?
-    // if ask.seller != info.sender {
-    //     return Err(ContractError::Unauthorized {});
-    // }
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 

@@ -13,7 +13,7 @@ use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
-use sg_whitelist_basic::SgWhitelistExecuteMsg;
+use sg_whitelist_basic::{IncludesAddressResponse, SgWhitelistExecuteMsg, SgWhitelistQueryMsg};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -117,20 +117,37 @@ pub fn execute_mint_and_list(
     let params = SUDO_PARAMS.load(deps.storage)?;
     let whitelists = WHITELISTS.load(deps.storage)?;
 
-    whitelists.iter().for_each(|whitelist| {
-        let msg = WasmMsg::Execute {
-            contract_addr: whitelist.to_string(),
-            funds: vec![],
-            msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
+    // TODO: add a pause minter function
+    // this to allow changing whitelists
+
+    // process each whitelist
+    // if one of them is a success, then continue
+    // if not in any list, then return error
+
+    let mut count = whitelists.len();
+    for whitelist in whitelists.iter() {
+        count -= 1;
+        let qres: IncludesAddressResponse = deps.querier.query_wasm_smart(
+            whitelist,
+            &SgWhitelistQueryMsg::IncludesAddress {
                 address: sender.to_string(),
-            })
-            .unwrap(),
-            // TODO: DO NOT unwrap(), throw error
-            // TODO: needs to handle case where address is in one list
-            // but not in another
-        };
-        res = res.clone().add_message(msg);
-    });
+            },
+        )?;
+        if qres.included {
+            let msg = WasmMsg::Execute {
+                contract_addr: whitelist.to_string(),
+                funds: vec![],
+                msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
+                    address: sender.to_string(),
+                })?,
+            };
+            res = res.add_message(msg);
+            break;
+        }
+    }
+    if !whitelists.is_empty() && count == 0 {
+        return Err(ContractError::NotWhitelisted {});
+    }
 
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
