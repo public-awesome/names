@@ -18,8 +18,8 @@ mod tests {
         StargazeApp::default()
     }
 
-    pub fn wl_contract() -> Box<dyn Contract<Empty>> {
-        let contract = ContractWrapper::new(
+    pub fn wl_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new_with_empty(
             crate::contract::execute,
             crate::contract::instantiate,
             crate::contract::query,
