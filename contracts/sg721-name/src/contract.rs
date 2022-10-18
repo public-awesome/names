@@ -21,6 +21,71 @@ use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 
+pub fn execute_update_metadata(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    name: String,
+    metadata: Option<Metadata>,
+) -> Result<Response, ContractError> {
+    let token_id = name;
+
+    nonpayable(&info)?;
+    only_owner(deps.as_ref(), &info.sender, &token_id)?;
+
+    let mut token_info = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &token_id)?;
+
+    // Update to new metadata or current metadata
+    match metadata {
+        None => {
+            // reset metadata to empty
+            token_info.extension = Metadata::default();
+            Sg721NameContract::default()
+                .tokens
+                .save(deps.storage, &token_id, &token_info)?;
+        }
+        Some(metadata) => {
+            // update metadata
+            token_info.extension.bio = match metadata.bio {
+                None => token_info.extension.bio,
+                Some(bio) => Some(bio),
+            };
+
+            // update nft profile
+            token_info.extension.profile_nft = match metadata.profile_nft {
+                None => token_info.extension.profile_nft,
+                Some(profile_nft) => Some(profile_nft),
+            };
+            // update records. If empty, do nothing.
+            if !metadata.records.is_empty() {
+                for record in metadata.records.iter() {
+                    // update same record name
+                    token_info
+                        .extension
+                        .records
+                        .retain(|r| r.name != record.name);
+                    token_info.extension.records.push(record.clone());
+                }
+            };
+        }
+    };
+
+    validate_bio(token_info.clone().extension.bio)?;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut new_token_info) => {
+                new_token_info = token_info;
+                Ok(new_token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
 pub fn execute_associate_address(
     deps: DepsMut,
     info: MessageInfo,
@@ -147,9 +212,7 @@ pub fn execute_transfer_nft(
         .load(deps.storage, &token_id)?;
 
     // Reset bio, profile, records
-    token.extension.bio = None;
-    token.extension.profile_nft = None;
-    token.extension.records = vec![];
+    token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, &token_id, &token)?;

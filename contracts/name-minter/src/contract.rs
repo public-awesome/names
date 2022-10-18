@@ -141,11 +141,7 @@ pub fn execute_mint_and_list(
         token_id: name.to_string(),
         owner: sender.to_string(),
         token_uri: None,
-        extension: Metadata {
-            bio: None,
-            profile_nft: None,
-            records: vec![],
-        },
+        extension: Metadata::default(),
     });
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: collection.to_string(),

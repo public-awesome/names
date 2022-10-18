@@ -17,6 +17,7 @@ pub struct TextRecord {
 
 /// Note that the address mapped to the name is stored in `token_uri`.
 #[cw_serde]
+#[derive(Default)]
 pub struct Metadata {
     pub bio: Option<String>,
     pub profile_nft: Option<NFT>,
