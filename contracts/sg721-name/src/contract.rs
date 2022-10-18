@@ -46,7 +46,7 @@ pub fn execute_update_metadata(
                 .tokens
                 .save(deps.storage, &token_id, &token_info)?;
         }
-        Some(mut metadata) => {
+        Some(metadata) => {
             // update metadata
             token_info.extension.bio = match metadata.bio {
                 None => token_info.extension.bio,
@@ -60,7 +60,14 @@ pub fn execute_update_metadata(
             };
             // update records. If empty, do nothing.
             if !metadata.records.is_empty() {
-                token_info.extension.records.append(&mut metadata.records);
+                for record in metadata.records.iter() {
+                    // update same record name
+                    token_info
+                        .extension
+                        .records
+                        .retain(|r| r.name != record.name);
+                    token_info.extension.records.push(record.clone());
+                }
             };
         }
     };
