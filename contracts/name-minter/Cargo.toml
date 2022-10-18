@@ -1,6 +1,6 @@
 [package]
 name = "name-minter"
-version = "0.9.0"
+version = "0.10.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2021"
 

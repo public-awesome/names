@@ -8,24 +8,29 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, ParamsResponse, WhitelistResponse } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, ParamsResponse, Addr, WhitelistsResponse } from "./NameMinter.types";
 export interface NameMinterMessage {
   contractAddress: string;
   sender: string;
+  mintAndList: ({
+    name
+  }: {
+    name: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   updateAdmin: ({
     admin
   }: {
     admin?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateWhitelist: ({
-    whitelist
+  addWhitelist: ({
+    address
   }: {
-    whitelist?: string;
+    address: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  mintAndList: ({
-    name
+  removeWhitelist: ({
+    address
   }: {
-    name: string;
+    address: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMinterMessageComposer implements NameMinterMessage {
@@ -35,11 +40,31 @@ export class NameMinterMessageComposer implements NameMinterMessage {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
-    this.updateAdmin = this.updateAdmin.bind(this);
-    this.updateWhitelist = this.updateWhitelist.bind(this);
     this.mintAndList = this.mintAndList.bind(this);
+    this.updateAdmin = this.updateAdmin.bind(this);
+    this.addWhitelist = this.addWhitelist.bind(this);
+    this.removeWhitelist = this.removeWhitelist.bind(this);
   }
 
+  mintAndList = ({
+    name
+  }: {
+    name: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          mint_and_list: {
+            name
+          }
+        })),
+        funds
+      })
+    };
+  };
   updateAdmin = ({
     admin
   }: {
@@ -59,10 +84,10 @@ export class NameMinterMessageComposer implements NameMinterMessage {
       })
     };
   };
-  updateWhitelist = ({
-    whitelist
+  addWhitelist = ({
+    address
   }: {
-    whitelist?: string;
+    address: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -70,18 +95,18 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          update_whitelist: {
-            whitelist
+          add_whitelist: {
+            address
           }
         })),
         funds
       })
     };
   };
-  mintAndList = ({
-    name
+  removeWhitelist = ({
+    address
   }: {
-    name: string;
+    address: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -89,8 +114,8 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          mint_and_list: {
-            name
+          remove_whitelist: {
+            address
           }
         })),
         funds

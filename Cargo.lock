@@ -581,7 +581,7 @@ dependencies = [
 
 [[package]]
 name = "name-minter"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1171,7 +1171,7 @@ dependencies = [
  "cw2",
  "schemars",
  "serde",
- "sg-whitelist-basic 0.5.0",
+ "sg-whitelist-basic 0.9.0",
  "thiserror",
 ]
 
