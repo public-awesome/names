@@ -72,6 +72,7 @@ fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> Starga
     let mkt_id = app.store_code(contract_marketplace());
     let minter_id = app.store_code(contract_minter());
     let sg721_id = app.store_code(contract_collection());
+    let wl_id = app.store_code(contract_whitelist());
 
     // 1. Instantiate Name Marketplace
     let msg = name_marketplace::msg::InstantiateMsg {

@@ -9,8 +9,14 @@ mod tests {
 
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
+    use sg_multi_test::StargazeApp;
+
     const CREATOR: &str = "creator";
     const OTHER_ADMIN: &str = "other_admin";
+
+    fn custom_mock_app() -> StargazeApp {
+        StargazeApp::default()
+    }
 
     pub fn wl_contract() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
@@ -54,7 +60,7 @@ mod tests {
             addresses: addrs.clone(),
         };
 
-        let mut app = mock_app(&[]);
+        let mut app = custom_mock_app();
         let wl_id = app.store_code(wl_contract());
 
         let wl_addr = app
