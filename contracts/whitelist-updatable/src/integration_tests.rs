@@ -32,7 +32,9 @@ mod tests {
             name_minter::contract::execute,
             name_minter::contract::instantiate,
             name_minter::query::query,
-        );
+        )
+        .with_reply(name_minter::contract::reply)
+        .with_sudo(name_minter::sudo::sudo);
         Box::new(contract)
     }
 
