@@ -66,7 +66,7 @@ const SECONDS_PER_YEAR: u64 = 31536000;
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
-const WHITELIST: &str = "contract3";
+// const WHITELIST: &str = "contract3";
 
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
@@ -147,7 +147,7 @@ fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> Starga
     // 5. Instantiate Whitelist
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
-        addresses: vec![],
+        addresses: vec!["addr0001".to_string(), "addr0002".to_string()],
     };
     let wl = app
         .instantiate_contract(
@@ -164,12 +164,7 @@ fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> Starga
     let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
         minter_contract: MINTER.to_string(),
     };
-    let res = app.execute_contract(
-        Addr::unchecked(ADMIN2),
-        Addr::unchecked(WHITELIST),
-        &msg,
-        &[],
-    );
+    let res = app.execute_contract(Addr::unchecked(ADMIN2), Addr::unchecked(wl), &msg, &[]);
     assert!(res.is_ok());
 
     app
@@ -233,7 +228,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) {
         &msg,
         &name_fee,
     );
-    // println!("{:?}", res);
     assert!(res.is_ok());
 
     // check if name is listed in marketplace

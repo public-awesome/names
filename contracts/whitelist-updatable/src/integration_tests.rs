@@ -3,9 +3,7 @@ mod tests {
     use crate::msg::*;
 
     use cosmwasm_std::Addr;
-    use cosmwasm_std::Coin;
     use name_minter::msg::InstantiateMsg as NameMinterInstantiateMsg;
-    use sg_name::Metadata;
     use sg_std::StargazeMsgWrapper;
 
     use cw_multi_test::{Contract, ContractWrapper, Executor};
