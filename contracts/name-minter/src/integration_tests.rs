@@ -820,9 +820,9 @@ mod collection {
         let msg = to_binary("You now have the melting power").unwrap();
         let target = to.to_string();
         let send_msg = Sg721NameExecuteMsg::SendNft {
-            contract: target.clone(),
+            contract: target,
             token_id: NAME.to_string(),
-            msg: msg.clone(),
+            msg,
         };
         let res = app.execute_contract(
             Addr::unchecked(from),
