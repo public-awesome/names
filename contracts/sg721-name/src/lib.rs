@@ -23,7 +23,7 @@ pub type QueryMsg = crate::msg::QueryMsg;
 pub mod entry {
     use crate::contract::{
         execute_associate_address, execute_burn, execute_mint, execute_set_name_marketplace,
-        query_name, query_name_marketplace,
+        execute_update_metadata, query_name, query_name_marketplace,
     };
 
     use super::*;
@@ -60,6 +60,9 @@ pub mod entry {
         msg: ExecuteMsg,
     ) -> Result<Response, ContractError> {
         match msg {
+            ExecuteMsg::UpdateMetadata { name, metadata } => {
+                execute_update_metadata(deps, env, info, name, metadata)
+            }
             ExecuteMsg::AssociateAddress { name, address } => {
                 execute_associate_address(deps, info, name, address)
             }

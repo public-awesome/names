@@ -1,13 +1,13 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_slice, to_binary, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
+    from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
-use sg_name::{Metadata, TextRecord};
+use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
 use crate::contract::transcode;
@@ -119,11 +119,7 @@ fn mint_and_update() {
         token_id: token_id.to_string(),
         owner: info.sender.to_string(),
         token_uri: None,
-        extension: Metadata {
-            bio: None,
-            profile_nft: None,
-            records: vec![],
-        },
+        extension: Metadata::default(),
     };
     let exec_msg = Sg721ExecuteMsg::Mint(mint_msg.clone());
     contract
@@ -137,6 +133,42 @@ fn mint_and_update() {
         .unwrap();
     assert_eq!(res.token_uri, mint_msg.token_uri);
     assert_eq!(res.extension, mint_msg.extension);
+
+    // update metadata
+    // update bio, profile, records
+    let new_metadata = Metadata {
+        bio: Some("I am a bio".to_string()),
+        profile_nft: Some(NFT {
+            collection: Addr::unchecked("contract"),
+            token_id: "token_id".to_string(),
+        }),
+        records: vec![TextRecord {
+            name: "key".to_string(),
+            value: "value".to_string(),
+        }],
+    };
+    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
+        name: token_id.to_string(),
+        metadata: Some(new_metadata.clone()),
+    };
+    execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension, new_metadata);
+
+    // reset metadata
+    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
+        name: token_id.to_string(),
+        metadata: None,
+    };
+    execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
+    let res = contract
+        .parent
+        .nft_info(deps.as_ref(), token_id.into())
+        .unwrap();
+    assert_eq!(res.extension, Metadata::default());
 
     // update bio
     // too long

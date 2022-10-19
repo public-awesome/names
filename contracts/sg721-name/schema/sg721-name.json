@@ -167,6 +167,38 @@
         "additionalProperties": false
       },
       {
+        "description": "Update metadata",
+        "type": "object",
+        "required": [
+          "update_metadata"
+        ],
+        "properties": {
+          "update_metadata": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "metadata": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Metadata"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Update bio",
         "type": "object",
         "required": [

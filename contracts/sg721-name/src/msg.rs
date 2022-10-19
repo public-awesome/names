@@ -21,6 +21,11 @@ pub enum ExecuteMsg<T> {
         name: String,
         address: Option<String>,
     },
+    /// Update metadata
+    UpdateMetadata {
+        name: String,
+        metadata: Option<Metadata>,
+    },
     /// Update bio
     UpdateBio { name: String, bio: Option<String> },
     /// Update profile
