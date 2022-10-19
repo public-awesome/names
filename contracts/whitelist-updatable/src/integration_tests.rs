@@ -7,7 +7,7 @@ mod tests {
     use sg_name::Metadata;
     use sg_std::StargazeMsgWrapper;
 
-    use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+    use cw_multi_test::{AppBuilder, Contract, ContractWrapper, Executor};
 
     use sg_multi_test::StargazeApp;
 
@@ -36,15 +36,6 @@ mod tests {
         .with_reply(name_minter::contract::reply)
         .with_sudo(name_minter::sudo::sudo);
         Box::new(contract)
-    }
-
-    fn mock_app(init_funds: &[Coin]) -> App {
-        AppBuilder::new().build(|router, _, storage| {
-            router
-                .bank
-                .init_balance(storage, &Addr::unchecked(CREATOR), init_funds.to_vec())
-                .unwrap();
-        })
     }
 
     #[test]

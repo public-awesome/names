@@ -54,6 +54,6 @@ name-minter = { path = "../name-minter"}
 
 [dev-dependencies]
 cw-multi-test = "0.15.1"
-sg-std = { path = "../../../launchpad/packages/sg-std" }
+sg-std = "0.19.0"
 sg-name = { path = "../../packages/sg-name" }
-sg-multi-test = { path = "../../../launchpad/packages/sg-multi-test" }
+sg-multi-test = "0.19.0"
