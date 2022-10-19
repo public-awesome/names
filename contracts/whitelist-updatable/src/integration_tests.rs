@@ -3,16 +3,23 @@ mod tests {
     use crate::msg::*;
 
     use cosmwasm_std::Addr;
-    use cosmwasm_std::Coin;
-    use cosmwasm_std::Empty;
+    use name_minter::msg::InstantiateMsg as NameMinterInstantiateMsg;
+    use sg_std::StargazeMsgWrapper;
 
-    use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+    use cw_multi_test::{Contract, ContractWrapper, Executor};
+
+    use sg_multi_test::StargazeApp;
 
     const CREATOR: &str = "creator";
     const OTHER_ADMIN: &str = "other_admin";
+    const PER_ADDRESS_LIMIT: u32 = 10;
 
-    pub fn wl_contract() -> Box<dyn Contract<Empty>> {
-        let contract = ContractWrapper::new(
+    fn custom_mock_app() -> StargazeApp {
+        StargazeApp::default()
+    }
+
+    pub fn wl_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new_with_empty(
             crate::contract::execute,
             crate::contract::instantiate,
             crate::contract::query,
@@ -20,14 +27,27 @@ mod tests {
         Box::new(contract)
     }
 
-    fn mock_app(init_funds: &[Coin]) -> App {
-        AppBuilder::new().build(|router, _, storage| {
-            router
-                .bank
-                .init_balance(storage, &Addr::unchecked(CREATOR), init_funds.to_vec())
-                .unwrap();
-        })
+    pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new(
+            sg721_name::entry::execute,
+            sg721_name::entry::instantiate,
+            sg721_name::entry::query,
+        );
+        Box::new(contract)
     }
+
+    pub fn name_minter_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new(
+            name_minter::contract::execute,
+            name_minter::contract::instantiate,
+            name_minter::query::query,
+        )
+        .with_reply(name_minter::contract::reply)
+        .with_sudo(name_minter::sudo::sudo);
+        Box::new(contract)
+    }
+
+    // pub fn mock_params() ->
 
     #[test]
     pub fn init() {
@@ -40,12 +60,14 @@ mod tests {
         ];
 
         let msg = InstantiateMsg {
-            per_address_limit: 10,
+            per_address_limit: PER_ADDRESS_LIMIT,
             addresses: addrs.clone(),
         };
 
-        let mut app = mock_app(&[]);
+        let mut app = custom_mock_app();
         let wl_id = app.store_code(wl_contract());
+        let sg721_id = app.store_code(contract_collection());
+        let minter_id = app.store_code(name_minter_contract());
 
         let wl_addr = app
             .instantiate_contract(
@@ -54,6 +76,27 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
+                None,
+            )
+            .unwrap();
+
+        let msg = NameMinterInstantiateMsg {
+            admin: Some(CREATOR.to_string()),
+            collection_code_id: sg721_id,
+            marketplace_addr: "marketplace".to_string(),
+            base_price: 100u128.into(),
+            min_name_length: 3,
+            max_name_length: 63,
+            whitelists: vec![],
+        };
+
+        let minter_addr = app
+            .instantiate_contract(
+                minter_id,
+                Addr::unchecked(CREATOR),
+                &msg,
+                &[],
+                "name-minter-contract".to_string(),
                 None,
             )
             .unwrap();
@@ -98,12 +141,18 @@ mod tests {
             .unwrap();
         assert_eq!(res, 10);
 
+        // set minter_addr in whitelist
+        let msg = ExecuteMsg::UpdateMinterContract {
+            minter_contract: minter_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
         // process_address to increase mint count and check mint count incremented
         // execute_process_address
         let msg = ExecuteMsg::ProcessAddress {
             address: addrs[0].clone(),
         };
-        let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(Addr::unchecked(minter_addr), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
         let res: u32 = app
             .wrap()
@@ -132,8 +181,10 @@ mod tests {
             addresses: addrs,
         };
 
-        let mut app = mock_app(&[]);
+        let mut app = custom_mock_app();
         let wl_id = app.store_code(wl_contract());
+        let sg721_id = app.store_code(contract_collection());
+        let minter_id = app.store_code(name_minter_contract());
 
         let wl_addr = app
             .instantiate_contract(
@@ -142,6 +193,27 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
+                None,
+            )
+            .unwrap();
+
+        let msg = NameMinterInstantiateMsg {
+            admin: Some(CREATOR.to_string()),
+            collection_code_id: sg721_id,
+            marketplace_addr: "marketplace".to_string(),
+            base_price: 100u128.into(),
+            min_name_length: 3,
+            max_name_length: 63,
+            whitelists: vec![],
+        };
+
+        let minter_addr = app
+            .instantiate_contract(
+                minter_id,
+                Addr::unchecked(CREATOR),
+                &msg,
+                &[],
+                "name-minter-contract".to_string(),
                 None,
             )
             .unwrap();
@@ -246,7 +318,10 @@ mod tests {
         assert_eq!(res, 2);
 
         // per address limit
-        let msg = ExecuteMsg::UpdatePerAddressLimit { limit: 1 };
+        let new_per_address_limit = 1;
+        let msg = ExecuteMsg::UpdatePerAddressLimit {
+            limit: new_per_address_limit,
+        };
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
         let res: u32 = app
@@ -254,16 +329,34 @@ mod tests {
             .query_wasm_smart(&wl_addr, &QueryMsg::PerAddressLimit {})
             .unwrap();
         assert_eq!(res, 1);
+
+        // set minter_addr in whitelist
+        let msg = ExecuteMsg::UpdateMinterContract {
+            minter_contract: minter_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+
         // surpass limit
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(
+            Addr::unchecked(minter_addr.clone()),
+            wl_addr.clone(),
+            &msg,
+            &[],
+        );
         assert!(res.is_ok());
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(
+            Addr::unchecked(minter_addr.clone()),
+            wl_addr.clone(),
+            &msg,
+            &[],
+        );
         assert!(res.is_err());
 
         // purge
@@ -286,5 +379,14 @@ mod tests {
             )
             .unwrap();
         assert!(!res);
+
+        // query config
+        let res: ConfigResponse = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
+            .unwrap();
+        assert_eq!(res.config.admin, Addr::unchecked(OTHER_ADMIN).to_string());
+        assert_eq!(res.config.minter_contract, Some(minter_addr));
+        assert_eq!(res.config.per_address_limit, new_per_address_limit);
     }
 }

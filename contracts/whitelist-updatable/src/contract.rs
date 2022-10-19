@@ -7,7 +7,10 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use name_minter::msg::{
+    ParamsResponse as NameMinterParamsResponse, QueryMsg as NameMinterQueryMsg,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:whitelist-updatable";
@@ -24,6 +27,7 @@ pub fn instantiate(
     let config = Config {
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
+        minter_contract: None,
     };
 
     // remove duplicate addresses
@@ -60,8 +64,35 @@ pub fn execute(
         ExecuteMsg::UpdatePerAddressLimit { limit } => {
             execute_update_per_address_limit(deps, info, limit)
         }
+        ExecuteMsg::UpdateMinterContract { minter_contract } => {
+            execute_update_minter_contract(deps, info, minter_contract)
+        }
         ExecuteMsg::Purge {} => execute_purge(deps, info),
     }
+}
+
+pub fn execute_update_minter_contract(
+    deps: DepsMut,
+    info: MessageInfo,
+    minter_contract: String,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    if config.admin != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let minter_addr = deps.api.addr_validate(&minter_contract)?;
+    // Make sure the sender is the name minter contract
+    // This will fail if the sender cannot parse a response from the name minter contract
+    let _: NameMinterParamsResponse = deps
+        .querier
+        .query_wasm_smart(minter_addr.clone(), &NameMinterQueryMsg::Params {})?;
+
+    config.minter_contract = Some(minter_addr);
+    CONFIG.save(deps.storage, &config)?;
+    let event =
+        Event::new("update_minter_contract").add_attribute("minter_contract", minter_contract);
+    Ok(Response::default().add_event(event))
 }
 
 pub fn execute_update_admin(
@@ -157,7 +188,11 @@ pub fn execute_process_address(
     address: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
+    if let Some(minter_contract) = config.minter_contract {
+        if minter_contract != info.sender {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -225,12 +260,18 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
         QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
         QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
         QueryMsg::Count {} => to_binary(&query_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
     }
+}
+
+pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(ConfigResponse { config })
 }
 
 pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {

@@ -2,9 +2,7 @@ use std::vec;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, SubMsg, WasmMsg,
-};
+use cosmwasm_std::{coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, WasmMsg};
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
@@ -12,7 +10,7 @@ use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
-use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
+use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use sg_whitelist_basic::SgWhitelistExecuteMsg;
 
 use crate::error::ContractError;
