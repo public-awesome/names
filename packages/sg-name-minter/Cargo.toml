@@ -1,5 +1,5 @@
 [package]
-name = "sg-name"
+name = "sg-name-minter"
 version = "0.9.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 edition = "2021"
