@@ -790,7 +790,7 @@ mod query {
 }
 
 mod collection {
-    use cosmwasm_std::StdResult;
+    use cosmwasm_std::{to_binary, StdResult};
     use sg_name::NameResponse;
 
     use super::*;
@@ -816,12 +816,44 @@ mod collection {
         assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
     }
 
+    fn send(app: &mut StargazeApp, from: &str, to: &str) {
+        let msg = to_binary("You now have the melting power").unwrap();
+        let target = to.to_string();
+        let send_msg = Sg721NameExecuteMsg::SendNft {
+            contract: target.clone(),
+            token_id: NAME.to_string(),
+            msg: msg.clone(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(from),
+            Addr::unchecked(COLLECTION),
+            &send_msg,
+            &[],
+        );
+        // println!("{:?}", res);
+        assert!(res.is_ok());
+
+        let msg = MarketplaceQueryMsg::Ask {
+            token_id: NAME.to_string(),
+        };
+        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
+    }
+
     #[test]
     fn transfer_nft() {
         let mut app = instantiate_contracts(None, None);
 
         mint_and_list(&mut app, NAME, USER);
         transfer(&mut app, USER, USER2);
+    }
+
+    #[test]
+    fn send_nft() {
+        let mut app = instantiate_contracts(None, None);
+
+        mint_and_list(&mut app, NAME, USER);
+        send(&mut app, USER, USER2);
     }
 
     #[test]
