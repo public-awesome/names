@@ -23,3 +23,6 @@ pub const ADMIN: Admin = Admin::new("admin");
 
 /// Can only be updated by admin
 pub const WHITELISTS: Item<Vec<Addr>> = Item::new("whitelists");
+
+/// Controls if minting is paused or not by admin
+pub const PAUSED: Item<bool> = Item::new("paused");

@@ -20,6 +20,8 @@ pub enum ExecuteMsg {
     /// Change the admin that manages the whitelist
     /// Will be set to null after go-to-market
     UpdateAdmin { admin: Option<String> },
+    /// Admin can pause minting during whitelist switching
+    Pause { pause: bool },
     /// Add a whiltelist address
     AddWhitelist { address: String },
     /// Remove a whiltelist address

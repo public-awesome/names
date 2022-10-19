@@ -13,13 +13,14 @@ use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
-// use sg_whitelist_basic::SgWhitelistExecuteMsg;
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, SUDO_PARAMS, WHITELISTS};
+use crate::state::{
+    SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -48,6 +49,8 @@ pub fn instantiate(
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
+
+    PAUSED.save(deps.storage, &false)?;
 
     let marketplace = deps.api.addr_validate(&msg.marketplace_addr)?;
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
@@ -102,6 +105,7 @@ pub fn execute(
         ExecuteMsg::UpdateAdmin { admin } => {
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
+        ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
         ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
         ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
     }
@@ -113,14 +117,15 @@ pub fn execute_mint_and_list(
     info: MessageInfo,
     name: &str,
 ) -> Result<Response, ContractError> {
+    if PAUSED.load(deps.storage)? {
+        return Err(ContractError::MintingPaused {});
+    }
+
     let sender = &info.sender.to_string();
     let mut res = Response::new();
 
     let params = SUDO_PARAMS.load(deps.storage)?;
     let whitelists = WHITELISTS.load(deps.storage)?;
-
-    // TODO: add a pause minter function
-    // this to allow changing whitelists
 
     // process each whitelist
     // if one of them is a success, then continue
@@ -176,6 +181,19 @@ pub fn execute_mint_and_list(
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
+}
+
+/// Pause or unpause minting
+pub fn execute_pause(
+    deps: DepsMut,
+    info: MessageInfo,
+    pause: bool,
+) -> Result<Response, ContractError> {
+    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
+
+    PAUSED.save(deps.storage, &pause)?;
+
+    Ok(Response::new())
 }
 
 pub fn execute_add_whitelist(

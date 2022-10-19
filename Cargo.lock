@@ -599,7 +599,6 @@ dependencies = [
  "sg-multi-test",
  "sg-name",
  "sg-std",
- "sg-whitelist-basic 0.5.0",
  "sg721",
  "sg721-base",
  "sg721-name",
@@ -878,18 +877,6 @@ dependencies = [
 
 [[package]]
 name = "sg-whitelist-basic"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "858f6ad476bbf3bf49b3a2e7d2e2829e213a3f199b4fc1a745dfaa4c8d43d394"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "sg-whitelist-basic"
 version = "0.9.0"
 dependencies = [
  "cosmwasm-schema",
@@ -1161,7 +1148,7 @@ dependencies = [
  "schemars",
  "serde",
  "sg-std",
- "sg-whitelist-basic 0.9.0",
+ "sg-whitelist-basic",
  "thiserror",
 ]
 
