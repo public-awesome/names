@@ -8,9 +8,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use name_minter::msg::{
-    ParamsResponse as NameMinterParamsResponse, QueryMsg as NameMinterQueryMsg,
-};
+use sg_name_minter::{ParamsResponse as NameMinterParamsResponse, SgNameMinterQueryMsg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:whitelist-updatable";
@@ -86,7 +84,7 @@ pub fn execute_update_minter_contract(
     // This will fail if the sender cannot parse a response from the name minter contract
     let _: NameMinterParamsResponse = deps
         .querier
-        .query_wasm_smart(minter_addr.clone(), &NameMinterQueryMsg::Params {})?;
+        .query_wasm_smart(minter_addr.clone(), &SgNameMinterQueryMsg::Params {})?;
 
     config.minter_contract = Some(minter_addr);
     CONFIG.save(deps.storage, &config)?;
