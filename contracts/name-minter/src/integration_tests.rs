@@ -59,12 +59,14 @@ const NAME: &str = "bobo";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
+const PER_ADDRESS_LIMIT: u32 = 10;
 
 const SECONDS_PER_YEAR: u64 = 31536000;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
+const WHITELIST: &str = "contract3";
 
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
@@ -77,7 +79,7 @@ pub fn custom_mock_app() -> StargazeApp {
 // 3. Update Name Marketplace with Name Minter address
 // 4. Update Name Marketplace with Name Collection address
 // 5. Instantiate Whitelist
-// 6. Update Whitelist with Name Minter address
+// 6. Update Whitelist with Name Minter
 fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> StargazeApp {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
@@ -140,6 +142,34 @@ fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> Starga
         collection: COLLECTION.to_string(),
     };
     let res = app.wasm_sudo(marketplace, &msg);
+    assert!(res.is_ok());
+
+    // 5. Instantiate Whitelist
+    let msg = whitelist_updatable::msg::InstantiateMsg {
+        per_address_limit: PER_ADDRESS_LIMIT,
+        addresses: vec![],
+    };
+    let wl = app
+        .instantiate_contract(
+            wl_id,
+            Addr::unchecked(ADMIN2),
+            &msg,
+            &[],
+            "Name-Minter",
+            None,
+        )
+        .unwrap();
+
+    // 6. Update Whitelist with Name Minter
+    let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
+        minter_contract: MINTER.to_string(),
+    };
+    let res = app.execute_contract(
+        Addr::unchecked(ADMIN2),
+        Addr::unchecked(WHITELIST),
+        &msg,
+        &[],
+    );
     assert!(res.is_ok());
 
     app
