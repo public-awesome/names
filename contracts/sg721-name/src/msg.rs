@@ -17,7 +17,10 @@ pub enum ExecuteMsg<T> {
     SetNameMarketplace { address: String },
     /// Set an address for name reverse lookup
     /// Can be an EOA or a contract address
-    AssociateAddress { name: String, address: String },
+    AssociateAddress {
+        name: String,
+        address: Option<String>,
+    },
     /// Update metadata
     UpdateMetadata {
         name: String,

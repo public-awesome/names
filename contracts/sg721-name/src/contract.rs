@@ -90,27 +90,44 @@ pub fn execute_associate_address(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    address: String,
+    address: Option<String>,
 ) -> Result<Response, ContractError> {
     let sender = info.sender;
-
+    let mut token_uri_key: Option<Addr> = None;
     only_owner(deps.as_ref(), &sender, &name)?;
 
-    let token_uri = deps.api.addr_validate(&address)?;
+    let token_uri = match address {
+        Some(address) => {
+            let addr = deps.api.addr_validate(&address)?;
+            token_uri_key = Some(addr.clone());
+            validate_address(deps.as_ref(), &sender, &addr)?;
 
-    validate_address(deps.as_ref(), &sender, &token_uri.clone())?;
+            Some(addr.to_string())
+        }
+        None => None,
+    };
+
+    let token = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &name)?;
 
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &name, |token| match token {
             Some(mut token_info) => {
-                token_info.token_uri = Some(address);
+                token_info.token_uri = token_uri;
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    REVERSE_MAP.save(deps.storage, &token_uri, &name)?;
+    // save addr in reverse map if present
+    if let Some(token_uri_key) = token_uri_key {
+        REVERSE_MAP.save(deps.storage, &token_uri_key, &name)?;
+    } else if let Some(token_uri) = token.token_uri {
+        // if no new token_uri, and existing token_uri, wipe entry from reverse map
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+    }
 
     Ok(Response::new())
 }
@@ -217,10 +234,15 @@ pub fn execute_transfer_nft(
         .tokens
         .save(deps.storage, &token_id, &token)?;
 
-    // remove reverse mapping if exists
-    if let Some(token_uri) = token.token_uri {
+    // remove reverse mapping and reset token_uri if exists
+    if let Some(token_uri) = token.clone().token_uri {
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+        token.token_uri = None;
     }
+
+    Sg721NameContract::default()
+        .tokens
+        .save(deps.storage, &token_id, &token)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient: recipient.to_string(),

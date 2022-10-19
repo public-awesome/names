@@ -442,7 +442,20 @@ mod execute {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: USER.to_string(),
+            address: Some(USER.to_string()),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // remove address
+        let msg = Sg721NameExecuteMsg::AssociateAddress {
+            name: NAME.to_string(),
+            address: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(USER),
@@ -461,7 +474,7 @@ mod execute {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: MINTER.to_string(),
+            address: Some(MINTER.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN2),
@@ -480,7 +493,7 @@ mod execute {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: MINTER.to_string(),
+            address: Some(MINTER.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(USER),
@@ -499,7 +512,7 @@ mod execute {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: USER2.to_string(),
+            address: Some(USER2.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(USER2),
@@ -717,7 +730,7 @@ mod query {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: "yoyo".to_string(),
-            address: user.to_string(),
+            address: Some(user.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(user),
@@ -818,7 +831,7 @@ mod collection {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: user.to_string(),
+            address: Some(user.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(user),
@@ -909,7 +922,7 @@ mod collection {
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: user.to_string(),
+            address: Some(user.to_string()),
         };
         let res = app.execute_contract(
             Addr::unchecked(user),

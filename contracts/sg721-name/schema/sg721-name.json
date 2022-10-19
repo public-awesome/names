@@ -148,12 +148,14 @@
           "associate_address": {
             "type": "object",
             "required": [
-              "address",
               "name"
             ],
             "properties": {
               "address": {
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "name": {
                 "type": "string"
