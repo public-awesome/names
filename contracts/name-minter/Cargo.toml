@@ -39,6 +39,7 @@ sg721-name = { path = "../sg721-name" }
 name-marketplace = { path = "../marketplace", features = ["library"] }
 sg-std = "0.19.0"
 sg-whitelist-basic = "0.5.0"
+whitelist-updatable = { path = "../whitelist-updatable" }
 
 [dev-dependencies]
 cw-multi-test = "0.15.1"
