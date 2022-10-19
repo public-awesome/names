@@ -862,6 +862,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "sg-name-minter"
+version = "0.9.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+]
+
+[[package]]
+name = "sg-name-minter"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b2f2d6cccd5d59bf2e1bc0624a65949e4965d5a17117cf567151134c12e13de"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+]
+
+[[package]]
 name = "sg-std"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1163,6 +1185,7 @@ dependencies = [
  "serde",
  "sg-multi-test",
  "sg-name",
+ "sg-name-minter 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sg-std",
  "sg-whitelist-basic 0.9.0",
  "sg721-name",
