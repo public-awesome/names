@@ -10,6 +10,8 @@ The code is this repository is under two licenses. Please make a note of them be
 
 [SG721 Name](./contracts/sg721-name/LICENSE) -- Apache 2.0 license
 
+[Whitelist Updatable](./contracts/whitelist-updatable/LICENSE) -- Apache 2.0 license
+
 ## Architecture
 
 Names are stored without the TLD so they can be mapped to _any_ Cosmos address. All names can be resolved to an address that is derived via the same Cosmos key derivation path (118).
@@ -82,6 +84,10 @@ Name minter is responsible for minting, validating, and updating names and their
 ### [Name Marketplace](./contracts/marketplace/README.md)
 
 The secondary marketplace for names. Names are automatically listed here once they are minted.
+
+### [Whitelist Updatable](./contracts/whitelist-updatable/README.md)
+
+Whitelist allows for flexible updating to add / remove addresses at any point in minting. Also adds helper to account for whitelist minting limits.
 
 ## DISCLAIMER
 
