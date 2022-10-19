@@ -144,22 +144,27 @@ mod tests {
 
         // process_address to increase mint count and check mint count incremented
         // execute_process_address
-        // TODO fix process address
-        // let msg = ExecuteMsg::ProcessAddress {
-        //     address: addrs[0].clone(),
-        // };
-        // let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
-        // assert!(res.is_ok());
-        // let res: u32 = app
-        //     .wrap()
-        //     .query_wasm_smart(
-        //         &wl_addr,
-        //         &QueryMsg::MintCount {
-        //             address: addrs[0].clone(),
-        //         },
-        //     )
-        //     .unwrap();
-        // assert_eq!(res, 1);
+        // first set minter_addr in whitelist
+        let msg = ExecuteMsg::UpdateMinterContract {
+            minter_contract: minter_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let msg = ExecuteMsg::ProcessAddress {
+            address: addrs[0].clone(),
+        };
+        let res = app.execute_contract(Addr::unchecked(minter_addr), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+        let res: u32 = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::MintCount {
+                    address: addrs[0].clone(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, 1);
     }
 
     // TODO fix process address
