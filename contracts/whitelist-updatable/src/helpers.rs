@@ -1,9 +1,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg};
+use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
+use sg_std::CosmosMsg;
 
-use crate::msg::ExecuteMsg;
+use crate::msg::{ExecuteMsg, IncludesAddressResponse, QueryMsg};
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -23,5 +24,15 @@ impl WhitelistUpdatableContract {
             funds: vec![],
         }
         .into())
+    }
+
+    pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
+        let res: IncludesAddressResponse =
+            querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: self.addr().into(),
+                msg: to_binary(&QueryMsg::IncludesAddress { address })?,
+            }))?;
+
+        Ok(res.includes)
     }
 }

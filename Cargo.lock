@@ -604,6 +604,7 @@ dependencies = [
  "sg721-base",
  "sg721-name",
  "thiserror",
+ "whitelist-updatable",
 ]
 
 [[package]]
@@ -1159,6 +1160,7 @@ dependencies = [
  "cw2",
  "schemars",
  "serde",
+ "sg-std",
  "sg-whitelist-basic 0.9.0",
  "thiserror",
 ]

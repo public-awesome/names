@@ -13,7 +13,9 @@ use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
-use sg_whitelist_basic::{IncludesAddressResponse, SgWhitelistExecuteMsg, SgWhitelistQueryMsg};
+// use sg_whitelist_basic::SgWhitelistExecuteMsg;
+use whitelist_updatable::helpers::WhitelistUpdatableContract;
+use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -123,27 +125,17 @@ pub fn execute_mint_and_list(
     // process each whitelist
     // if one of them is a success, then continue
     // if not in any list, then return error
-
     let mut count = whitelists.len();
     for whitelist in whitelists.iter() {
+        let list = WhitelistUpdatableContract(whitelist.clone());
         count -= 1;
-        let qres: IncludesAddressResponse = deps.querier.query_wasm_smart(
-            whitelist,
-            &SgWhitelistQueryMsg::IncludesAddress {
+        if list.includes(&deps.querier, sender.to_string())? {
+            let msg = list.call(WhitelistExecuteMsg::ProcessAddress {
                 address: sender.to_string(),
-            },
-        )?;
-        if qres.included {
-            let msg = WasmMsg::Execute {
-                contract_addr: whitelist.to_string(),
-                funds: vec![],
-                msg: to_binary(&SgWhitelistExecuteMsg::ProcessAddress {
-                    address: sender.to_string(),
-                })?,
-            };
+            })?;
             res = res.add_message(msg);
             break;
-        }
+        };
     }
     if !whitelists.is_empty() && count == 0 {
         return Err(ContractError::NotWhitelisted {});
