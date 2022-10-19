@@ -4,8 +4,8 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, ContractInfoResponse, Deps, DepsMut, Env, MessageInfo, StdError, StdResult,
-    WasmMsg,
+    to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
+    StdError, StdResult, WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
@@ -248,9 +248,69 @@ pub fn execute_transfer_nft(
         recipient: recipient.to_string(),
         token_id: token_id.to_string(),
     };
-    Sg721NameContract::default().execute(deps, env, info, msg)?;
+    Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
 
-    Ok(Response::new().add_message(update_ask_msg))
+    let event = Event::new("transfer")
+        .add_attribute("sender", info.sender)
+        .add_attribute("recipient", recipient)
+        .add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_message(update_ask_msg).add_event(event))
+}
+
+pub fn execute_send_nft(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    contract: String,
+    token_id: String,
+    msg: Binary,
+) -> Result<Response, ContractError> {
+    let contract_addr = deps.api.addr_validate(&contract)?;
+    // Update the ask on the marketplace
+    let update_msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
+        token_id: token_id.to_string(),
+        seller: contract_addr.to_string(),
+    };
+    let update_ask_msg = WasmMsg::Execute {
+        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+        funds: vec![],
+        msg: to_binary(&update_msg)?,
+    };
+
+    let mut token = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &token_id)?;
+
+    // Reset bio, profile, records
+    token.extension = Metadata::default();
+    Sg721NameContract::default()
+        .tokens
+        .save(deps.storage, &token_id, &token)?;
+
+    // remove reverse mapping and reset token_uri if exists
+    if let Some(token_uri) = token.clone().token_uri {
+        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
+        token.token_uri = None;
+    }
+
+    Sg721NameContract::default()
+        .tokens
+        .save(deps.storage, &token_id, &token)?;
+
+    let msg = Sg721ExecuteMsg::SendNft {
+        contract: contract_addr.to_string(),
+        token_id: token_id.to_string(),
+        msg,
+    };
+    Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
+
+    let event = Event::new("send")
+        .add_attribute("sender", info.sender)
+        .add_attribute("contract", contract_addr.to_string())
+        .add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_message(update_ask_msg).add_event(event))
 }
 
 pub fn execute_update_bio(

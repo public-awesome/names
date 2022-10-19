@@ -21,16 +21,13 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
-    use crate::contract::{
-        execute_associate_address, execute_burn, execute_mint, execute_set_name_marketplace,
-        execute_update_metadata, query_name, query_name_marketplace,
-    };
-
     use super::*;
 
     use contract::{
-        execute_add_text_record, execute_remove_text_record, execute_transfer_nft,
-        execute_update_bio, execute_update_profile_nft, execute_update_text_record,
+        execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
+        execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
+        execute_transfer_nft, execute_update_bio, execute_update_metadata,
+        execute_update_profile_nft, execute_update_text_record, query_name, query_name_marketplace,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::ContractError as Sg721ContractError;
@@ -86,6 +83,11 @@ pub mod entry {
                 recipient,
                 token_id,
             } => execute_transfer_nft(deps, env, info, recipient, token_id),
+            ExecuteMsg::SendNft {
+                contract,
+                token_id,
+                msg,
+            } => execute_send_nft(deps, env, info, contract, token_id, msg),
             ExecuteMsg::Mint(msg) => execute_mint(deps, info, msg),
             ExecuteMsg::Burn { token_id } => execute_burn(deps, env, info, token_id),
             _ => Sg721NameContract::default()
