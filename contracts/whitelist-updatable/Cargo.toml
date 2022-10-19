@@ -50,7 +50,7 @@ schemars = "0.8.11"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 sg-whitelist-basic = { path = "../../packages/sg-whitelist-basic" }
-name-minter = { path = "../name-minter"}
+name-minter = { path = "../name-minter", features = ["library"] }
 
 [dev-dependencies]
 cw-multi-test = "0.15.1"
