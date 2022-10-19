@@ -4,10 +4,11 @@ mod tests {
 
     use cosmwasm_std::Addr;
     use cosmwasm_std::Coin;
+    use name_minter::msg::InstantiateMsg as NameMinterInstantiateMsg;
     use sg_name::Metadata;
     use sg_std::StargazeMsgWrapper;
 
-    use cw_multi_test::{AppBuilder, Contract, ContractWrapper, Executor};
+    use cw_multi_test::{Contract, ContractWrapper, Executor};
 
     use sg_multi_test::StargazeApp;
 
@@ -27,6 +28,15 @@ mod tests {
         Box::new(contract)
     }
 
+    pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
+        let contract = ContractWrapper::new(
+            sg721_name::entry::execute,
+            sg721_name::entry::instantiate,
+            sg721_name::entry::query,
+        );
+        Box::new(contract)
+    }
+
     pub fn name_minter_contract() -> Box<dyn Contract<StargazeMsgWrapper>> {
         let contract = ContractWrapper::new(
             name_minter::contract::execute,
@@ -37,6 +47,8 @@ mod tests {
         .with_sudo(name_minter::sudo::sudo);
         Box::new(contract)
     }
+
+    // pub fn mock_params() ->
 
     #[test]
     pub fn init() {
@@ -55,6 +67,8 @@ mod tests {
 
         let mut app = custom_mock_app();
         let wl_id = app.store_code(wl_contract());
+        let sg721_id = app.store_code(contract_collection());
+        let minter_id = app.store_code(name_minter_contract());
 
         let wl_addr = app
             .instantiate_contract(
@@ -63,6 +77,27 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
+                None,
+            )
+            .unwrap();
+
+        let msg = NameMinterInstantiateMsg {
+            admin: Some(CREATOR.to_string()),
+            collection_code_id: sg721_id,
+            marketplace_addr: "marketplace".to_string(),
+            base_price: 100u128.into(),
+            min_name_length: 3,
+            max_name_length: 63,
+            whitelists: vec![],
+        };
+
+        let minter_addr = app
+            .instantiate_contract(
+                minter_id,
+                Addr::unchecked(CREATOR),
+                &msg,
+                &[],
+                "name-minter-contract".to_string(),
                 None,
             )
             .unwrap();

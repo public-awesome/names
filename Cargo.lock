@@ -1177,6 +1177,7 @@ dependencies = [
  "sg-name 0.9.0",
  "sg-std",
  "sg-whitelist-basic 0.9.0",
+ "sg721-name",
  "thiserror",
 ]
 

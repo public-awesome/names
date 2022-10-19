@@ -39,6 +39,15 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
     Box::new(contract)
 }
 
+pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new_with_empty(
+        whitelist_updatable::contract::execute,
+        whitelist_updatable::contract::instantiate,
+        whitelist_updatable::contract::query,
+    );
+    Box::new(contract)
+}
+
 const USER: &str = "user";
 const USER2: &str = "user2";
 const BIDDER: &str = "bidder";
@@ -67,11 +76,14 @@ pub fn custom_mock_app() -> StargazeApp {
 // 2. Instantiate Name Minter (which instantiates Name Collection)
 // 3. Update Name Marketplace with Name Minter address
 // 4. Update Name Marketplace with Name Collection address
+// 5. Instantiate Whitelist
+// 6. Update Whitelist with Name Minter address
 fn instantiate_contracts(creator: Option<&str>, admin: Option<String>) -> StargazeApp {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
     let minter_id = app.store_code(contract_minter());
     let sg721_id = app.store_code(contract_collection());
+    let wl_id = app.store_code(contract_whitelist());
 
     // 1. Instantiate Name Marketplace
     let msg = name_marketplace::msg::InstantiateMsg {
