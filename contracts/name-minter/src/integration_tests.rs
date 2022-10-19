@@ -558,6 +558,20 @@ mod execute {
         );
         assert!(res.is_err());
     }
+
+    #[test]
+    fn test_pause() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        mint_and_list(&mut app, NAME, USER);
+
+        let msg = ExecuteMsg::Pause { pause: true };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        println!("{:?}", res);
+        assert!(res.is_ok());
+
+        mint_and_list(&mut app, "name2", USER);
+    }
 }
 
 mod admin {
