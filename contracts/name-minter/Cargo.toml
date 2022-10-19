@@ -44,4 +44,7 @@ whitelist-updatable = { path = "../whitelist-updatable" }
 cw-multi-test = "0.15.1"
 sg-multi-test = "0.19.0"
 sg721-base = "0.19.0"
-whitelist-updatable = { path = "../whitelist-updatable", features = ["library"]}
+whitelist-updatable = { path = "../whitelist-updatable", features = [
+  "library",
+] }
+anyhow = "1"

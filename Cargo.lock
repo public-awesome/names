@@ -583,6 +583,7 @@ dependencies = [
 name = "name-minter"
 version = "0.10.0"
 dependencies = [
+ "anyhow",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
