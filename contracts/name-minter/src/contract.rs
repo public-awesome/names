@@ -10,7 +10,7 @@ use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
 use sg721::CollectionInfo;
 use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg_name::{Metadata, SgNameExecuteMsg};
-use sg_std::{create_fund_community_pool_msg, Response, NATIVE_DENOM};
+use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
