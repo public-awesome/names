@@ -40,3 +40,4 @@ cw721 = "0.15.0"
 cw721-base = { version = "0.15.0", features = ["library"] }
 sg-name-market = "0.6.0"
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
+name-marketplace = { path = "../marketplace", features = ["library"] }
