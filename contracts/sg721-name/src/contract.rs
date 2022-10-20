@@ -191,7 +191,10 @@ pub fn execute_burn(
         msg: to_binary(&msg)?,
     };
 
-    // TODO: what to do with bids? refund bids?
+    // TODO: find highest bidder and transfer to them
+    // https://github.com/public-awesome/names/issues/90
+    // update the ask
+    // if no bids, then burn
 
     Sg721NameContract::default()
         .tokens
@@ -235,9 +238,6 @@ pub fn execute_transfer_nft(
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, &token_id, &token)?;
-
-    // TODO: reset token_uri
-    // TODO: update approval?
 
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {

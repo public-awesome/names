@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Timestamp, Uint128};
 use cw_storage_macro::index_list;
 use cw_storage_plus::{IndexedMap, Item, Map, MultiIndex, UniqueIndex};
 use sg_controllers::Hooks;
@@ -56,7 +56,7 @@ pub struct Ask {
     pub token_id: TokenId,
     pub id: u64,
     pub seller: Addr,
-    pub height: u64,
+    pub renewal_time: Timestamp,
     pub renewal_fund: Uint128,
 }
 

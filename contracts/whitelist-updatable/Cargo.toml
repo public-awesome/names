@@ -59,4 +59,4 @@ sg-std = "0.19.0"
 sg-name = { path = "../../packages/sg-name" }
 sg-multi-test = "0.19.0"
 sg721-name = { path = "../sg721-name" }
-name-minter = { path = "../name-minter" }
+name-minter = { path = "../name-minter", features = ["library"] }

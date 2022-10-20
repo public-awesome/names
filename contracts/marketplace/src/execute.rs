@@ -25,6 +25,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
+const SECONDS_PER_YEAR: u64 = 31536000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -131,14 +132,12 @@ pub fn execute_set_ask(
         token_id: token_id.to_string(),
         id: increment_asks(deps.storage)?,
         seller: seller.clone(),
-        height: env.block.height,
+        renewal_time: env.block.time,
         renewal_fund: funds,
     };
     store_ask(deps.storage, &ask)?;
 
-    // store reference to ask in renewal queue for future processing
-    let seconds_per_year = 31536000;
-    let renewal_time = env.block.time.plus_seconds(seconds_per_year);
+    let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
     RENEWAL_QUEUE.save(
         deps.storage,
         (renewal_time.seconds(), ask.id),
@@ -180,6 +179,8 @@ pub fn execute_remove_ask(
     let key = ask_key(token_id);
     let ask = asks().load(deps.storage, key.clone())?;
     asks().remove(deps.storage, key)?;
+
+    RENEWAL_QUEUE.remove(deps.storage, (ask.renewal_time.seconds(), ask.id));
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
 
@@ -318,7 +319,7 @@ pub fn execute_accept_bid(
     let ask = asks().load(deps.storage, ask_key)?;
     let bid = bids().load(deps.storage, bid_key.clone())?;
 
-    // check if token is approved for transfer
+    // Check if token is approved for transfer
     Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).approval(
         &deps.querier,
         token_id,
@@ -329,7 +330,13 @@ pub fn execute_accept_bid(
     // Remove accepted bid
     bids().remove(deps.storage, bid_key)?;
 
-    // TODO: update renewal queue
+    // Update renewal queue
+    let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (renewal_time.seconds(), ask.id),
+        &token_id.to_string(),
+    )?;
 
     let mut res = Response::new();
 
@@ -356,7 +363,7 @@ pub fn execute_accept_bid(
         token_id: token_id.to_string(),
         id: ask.id,
         seller: bidder.clone(),
-        height: env.block.height,
+        renewal_time: env.block.time,
         renewal_fund: Uint128::zero(),
     };
     store_ask(deps.storage, &ask)?;

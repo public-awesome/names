@@ -20,11 +20,13 @@ fn ask_indexed_map() {
     let mut deps = mock_dependencies();
     let seller = Addr::unchecked("seller");
 
+    let env = mock_env();
+
     let ask = Ask {
         token_id: TOKEN_ID.to_string(),
         id: 1,
         seller: seller.clone(),
-        height: 5,
+        renewal_time: env.block.time,
         renewal_fund: Uint128::zero(),
     };
     let key = ask_key(TOKEN_ID);
@@ -35,7 +37,7 @@ fn ask_indexed_map() {
         token_id: TOKEN_ID_NEXT.to_string(),
         id: 2,
         seller: seller.clone(),
-        height: 5,
+        renewal_time: env.block.time,
         renewal_fund: Uint128::zero(),
     };
     let key2 = ask_key(TOKEN_ID_NEXT);
