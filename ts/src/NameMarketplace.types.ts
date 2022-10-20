@@ -130,9 +130,9 @@ export interface AskResponse {
   ask?: Ask | null;
 }
 export interface Ask {
-  height: number;
   id: number;
   renewal_fund: Uint128;
+  renewal_time: Timestamp;
   seller: Addr;
   token_id: string;
 }
