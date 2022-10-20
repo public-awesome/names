@@ -725,6 +725,23 @@ mod query {
     }
 
     #[test]
+    fn query_highest_bid() {
+        let mut app = instantiate_contracts(None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
+
+        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+
+        let msg = MarketplaceQueryMsg::HighestBid {
+            token_id: NAME.to_string(),
+        };
+        let res: BidResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.bid.unwrap().amount.u128(), BID_AMOUNT * 5);
+    }
+
+    #[test]
     fn query_renewal_queue() {
         let mut app = instantiate_contracts(None, None);
 

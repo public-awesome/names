@@ -11,6 +11,7 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
+// use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -182,6 +183,31 @@ pub fn execute_burn(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
+    // if bids exist..
+    // transfer to highest bidder
+    // remove bid
+    // update ask
+    // let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
+    // let highest_bid = marketplace.highest_bid(&deps.querier, &token_id)?;
+    // if let Some(highest_bid) = highest_bid {
+    //     let highest_bidder = highest_bid.bidder;
+    //     let highest_bid_amount = highest_bid.amount;
+    //     marketplace
+    //         .transfer_bid(
+    //             &deps.querier,
+    //             &env,
+    //             &info,
+    //             &token_id,
+    //             &highest_bidder,
+    //             &highest_bid_amount,
+    //         )
+    //         .map_err(|_| ContractError::Base(Unauthorized {}))?;
+    // }
+
+    // if no bids exist
+    // burn
+    // remove ask
+
     let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
         token_id: token_id.to_string(),
     };
@@ -190,11 +216,6 @@ pub fn execute_burn(
         funds: vec![],
         msg: to_binary(&msg)?,
     };
-
-    // TODO: find highest bidder and transfer to them
-    // https://github.com/public-awesome/names/issues/90
-    // update the ask
-    // if no bids, then burn
 
     Sg721NameContract::default()
         .tokens

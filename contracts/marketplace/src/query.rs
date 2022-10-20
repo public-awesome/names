@@ -66,6 +66,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_before,
             limit,
         )?),
+        QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
         QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
         QueryMsg::BidHooks {} => to_binary(&BID_HOOKS.query_hooks(deps)?),
@@ -232,6 +233,27 @@ pub fn query_bids(
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(BidsResponse { bids })
+}
+
+pub fn query_highest_bid(deps: Deps, token_id: TokenId) -> StdResult<BidResponse> {
+    let bid = bids()
+        .idx
+        .price
+        .range(deps.storage, None, None, Order::Descending)
+        .filter_map(|item| {
+            let (key, bid) = item.unwrap();
+            if key.0 == token_id {
+                Some(bid)
+            } else {
+                None
+            }
+        })
+        .take(1)
+        .collect::<Vec<_>>()
+        .first()
+        .cloned();
+
+    Ok(BidResponse { bid })
 }
 
 pub fn query_bids_sorted_by_price(
