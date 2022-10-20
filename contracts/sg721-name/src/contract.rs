@@ -239,10 +239,6 @@ pub fn execute_transfer_nft(
         .tokens
         .save(deps.storage, &token_id, &token)?;
 
-    // TODO: reset token_uri
-    // TODO: update approval?
-    // https://github.com/public-awesome/names/issues/91
-
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
