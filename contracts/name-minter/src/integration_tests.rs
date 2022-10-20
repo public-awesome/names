@@ -859,7 +859,9 @@ mod collection {
     fn send_nft() {
         let mut app = instantiate_contracts(None, None);
 
-        mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
+
         send(&mut app, USER, USER2);
     }
 
