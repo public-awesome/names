@@ -12,7 +12,6 @@ use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721Instantia
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
-use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -133,10 +132,7 @@ pub fn execute_mint_and_list(
         let list = WhitelistUpdatableContract(whitelist.clone());
         count -= 1;
         if list.includes(&deps.querier, sender.to_string())? {
-            let msg = list.call(WhitelistExecuteMsg::ProcessAddress {
-                address: sender.to_string(),
-            })?;
-            res = res.add_message(msg);
+            res = res.add_message(list.process_address(sender)?);
             break;
         };
     }

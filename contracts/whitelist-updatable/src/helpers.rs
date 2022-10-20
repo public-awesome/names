@@ -26,6 +26,12 @@ impl WhitelistUpdatableContract {
         .into())
     }
 
+    pub fn process_address(&self, address: &str) -> StdResult<CosmosMsg> {
+        self.call(ExecuteMsg::ProcessAddress {
+            address: address.to_string(),
+        })
+    }
+
     pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
         let res: IncludesAddressResponse =
             querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
