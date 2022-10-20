@@ -17,6 +17,12 @@ pub enum ContractError {
     #[error("Name Minter: Unauthorized")]
     Unauthorized {},
 
+    #[error("MintingPaused")]
+    MintingPaused {},
+
+    #[error("NotWhitelisted")]
+    NotWhitelisted {},
+
     #[error("Invalid reply ID")]
     InvalidReplyID {},
 

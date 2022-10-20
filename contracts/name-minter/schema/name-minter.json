@@ -107,6 +107,28 @@
         "additionalProperties": false
       },
       {
+        "description": "Admin can pause minting during whitelist switching",
+        "type": "object",
+        "required": [
+          "pause"
+        ],
+        "properties": {
+          "pause": {
+            "type": "object",
+            "required": [
+              "pause"
+            ],
+            "properties": {
+              "pause": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Add a whiltelist address",
         "type": "object",
         "required": [

@@ -61,6 +61,11 @@ export interface NameMinterInterface extends NameMinterReadOnlyInterface {
   }: {
     admin?: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  pause: ({
+    pause
+  }: {
+    pause: boolean;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addWhitelist: ({
     address
   }: {
@@ -84,6 +89,7 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     this.contractAddress = contractAddress;
     this.mintAndList = this.mintAndList.bind(this);
     this.updateAdmin = this.updateAdmin.bind(this);
+    this.pause = this.pause.bind(this);
     this.addWhitelist = this.addWhitelist.bind(this);
     this.removeWhitelist = this.removeWhitelist.bind(this);
   }
@@ -107,6 +113,17 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     return await this.client.execute(this.sender, this.contractAddress, {
       update_admin: {
         admin
+      }
+    }, fee, memo, funds);
+  };
+  pause = async ({
+    pause
+  }: {
+    pause: boolean;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      pause: {
+        pause
       }
     }, fee, memo, funds);
   };

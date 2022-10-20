@@ -32,7 +32,12 @@ export type ExecuteMsg = {
   };
 } | {
   associate_address: {
-    address: string;
+    address?: string | null;
+    name: string;
+  };
+} | {
+  update_metadata: {
+    metadata?: Metadata | null;
     name: string;
   };
 } | {
@@ -115,6 +120,11 @@ export type Expiration = {
 } | {
   never: {};
 };
+export interface Metadata {
+  bio?: string | null;
+  profile_nft?: NFT | null;
+  records: TextRecord[];
+}
 export interface NFT {
   collection: Addr;
   token_id: string;
@@ -128,11 +138,6 @@ export interface MintMsgForMetadata {
   owner: string;
   token_id: string;
   token_uri?: string | null;
-}
-export interface Metadata {
-  bio?: string | null;
-  profile_nft?: NFT | null;
-  records: TextRecord[];
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;

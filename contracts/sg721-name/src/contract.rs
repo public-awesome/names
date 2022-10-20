@@ -191,6 +191,8 @@ pub fn execute_burn(
         msg: to_binary(&msg)?,
     };
 
+    // TODO: what to do with bids? refund bids?
+
     Sg721NameContract::default()
         .tokens
         .remove(deps.storage, &token_id)?;
@@ -234,8 +236,11 @@ pub fn execute_transfer_nft(
         .tokens
         .save(deps.storage, &token_id, &token)?;
 
-    // remove reverse mapping and reset token_uri if exists
-    if let Some(token_uri) = token.clone().token_uri {
+    // TODO: reset token_uri
+    // TODO: update approval?
+
+    // remove reverse mapping if exists
+    if let Some(token_uri) = token.token_uri {
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
         token.token_uri = None;
     }
