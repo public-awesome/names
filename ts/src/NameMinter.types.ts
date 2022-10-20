@@ -23,6 +23,10 @@ export type ExecuteMsg = {
     admin?: string | null;
   };
 } | {
+  pause: {
+    pause: boolean;
+  };
+} | {
   add_whitelist: {
     address: string;
   };

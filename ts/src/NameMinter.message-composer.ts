@@ -22,6 +22,11 @@ export interface NameMinterMessage {
   }: {
     admin?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  pause: ({
+    pause
+  }: {
+    pause: boolean;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   addWhitelist: ({
     address
   }: {
@@ -42,6 +47,7 @@ export class NameMinterMessageComposer implements NameMinterMessage {
     this.contractAddress = contractAddress;
     this.mintAndList = this.mintAndList.bind(this);
     this.updateAdmin = this.updateAdmin.bind(this);
+    this.pause = this.pause.bind(this);
     this.addWhitelist = this.addWhitelist.bind(this);
     this.removeWhitelist = this.removeWhitelist.bind(this);
   }
@@ -78,6 +84,25 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         msg: toUtf8(JSON.stringify({
           update_admin: {
             admin
+          }
+        })),
+        funds
+      })
+    };
+  };
+  pause = ({
+    pause
+  }: {
+    pause: boolean;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          pause: {
+            pause
           }
         })),
         funds
