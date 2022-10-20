@@ -21,6 +21,8 @@ use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 
+const MAX_RECORD_LENGTH: u64 = 10;
+
 pub fn execute_update_metadata(
     deps: DepsMut,
     _env: Env,
@@ -61,12 +63,19 @@ pub fn execute_update_metadata(
             // update records. If empty, do nothing.
             if !metadata.records.is_empty() {
                 for record in metadata.records.iter() {
+                    validate_and_sanitize_record(record)?;
                     // update same record name
                     token_info
                         .extension
                         .records
                         .retain(|r| r.name != record.name);
                     token_info.extension.records.push(record.clone());
+                }
+                // check record length
+                if token_info.extension.records.len() > MAX_RECORD_LENGTH as usize {
+                    return Err(ContractError::TooManyRecords {
+                        max: MAX_RECORD_LENGTH,
+                    });
                 }
             };
         }
@@ -388,6 +397,12 @@ pub fn execute_add_text_record(
                     }
                 }
                 token_info.extension.records.push(record);
+                // check record length
+                if token_info.extension.records.len() > MAX_RECORD_LENGTH as usize {
+                    return Err(ContractError::TooManyRecords {
+                        max: MAX_RECORD_LENGTH,
+                    });
+                }
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
