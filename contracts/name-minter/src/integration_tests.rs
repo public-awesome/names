@@ -1001,13 +1001,14 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_err());
+        assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_some());
+        let ask = res.ask.unwrap();
+        assert_eq!(ask.seller.to_string(), BIDDER.to_string());
     }
 
     #[test]

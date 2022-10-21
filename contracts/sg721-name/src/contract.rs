@@ -159,11 +159,13 @@ pub fn execute_mint(
 }
 
 pub fn execute_burn(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     token_id: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
     let token = Sg721NameContract::default()
         .tokens
         .load(deps.storage, &token_id)?;
@@ -182,16 +184,10 @@ pub fn execute_burn(
 
     // If bids exist, transfer name to the highest bidder.
     // If not, then burn the name.
-
     if let Some(highest_bid) = highest_bid {
         let recipient = highest_bid.bidder;
-        execute_transfer_nft(
-            deps.branch(),
-            env,
-            info.clone(),
-            recipient.to_string(),
-            token_id.clone(),
-        )?;
+        let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+        res = res.add_message(update_ask_msg);
     } else {
         res = res.add_message(marketplace.remove_ask(&token_id)?);
         Sg721NameContract::default()
@@ -216,6 +212,23 @@ pub fn execute_transfer_nft(
     nonpayable(&info)?;
     let recipient = deps.api.addr_validate(&recipient)?;
 
+    let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+
+    let event = Event::new("transfer")
+        .add_attribute("sender", info.sender)
+        .add_attribute("recipient", recipient)
+        .add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_message(update_ask_msg).add_event(event))
+}
+
+fn _transfer_nft(
+    deps: DepsMut,
+    env: Env,
+    info: &MessageInfo,
+    recipient: &Addr,
+    token_id: &str,
+) -> Result<WasmMsg, ContractError> {
     // Update the ask on the marketplace
     let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
         token_id: token_id.to_string(),
@@ -229,13 +242,13 @@ pub fn execute_transfer_nft(
 
     let mut token = Sg721NameContract::default()
         .tokens
-        .load(deps.storage, &token_id)?;
+        .load(deps.storage, token_id)?;
 
     // Reset bio, profile, records
     token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens
-        .save(deps.storage, &token_id, &token)?;
+        .save(deps.storage, token_id, &token)?;
 
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
@@ -245,7 +258,7 @@ pub fn execute_transfer_nft(
 
     Sg721NameContract::default()
         .tokens
-        .save(deps.storage, &token_id, &token)?;
+        .save(deps.storage, token_id, &token)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient: recipient.to_string(),
@@ -253,12 +266,7 @@ pub fn execute_transfer_nft(
     };
     Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
 
-    let event = Event::new("transfer")
-        .add_attribute("sender", info.sender)
-        .add_attribute("recipient", recipient)
-        .add_attribute("token_id", token_id);
-
-    Ok(Response::new().add_message(update_ask_msg).add_event(event))
+    Ok(update_ask_msg)
 }
 
 pub fn execute_send_nft(
