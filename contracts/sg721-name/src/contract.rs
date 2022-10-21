@@ -11,7 +11,8 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
-// use name_marketplace::NameMarketplaceContract;
+use name_marketplace::state::Bid;
+use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -158,7 +159,7 @@ pub fn execute_mint(
 }
 
 pub fn execute_burn(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     token_id: String,
@@ -175,50 +176,34 @@ pub fn execute_burn(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
-    // if bids exist..
-    // transfer to highest bidder
-    // remove bid
-    // update ask
-    // let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
-    // let highest_bid = marketplace.highest_bid(&deps.querier, &token_id)?;
-    // if let Some(highest_bid) = highest_bid {
-    //     let highest_bidder = highest_bid.bidder;
-    //     let highest_bid_amount = highest_bid.amount;
-    //     marketplace
-    //         .transfer_bid(
-    //             &deps.querier,
-    //             &env,
-    //             &info,
-    //             &token_id,
-    //             &highest_bidder,
-    //             &highest_bid_amount,
-    //         )
-    //         .map_err(|_| ContractError::Base(Unauthorized {}))?;
-    // }
+    let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
+    let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
+    let mut res = Response::new();
 
-    // if no bids exist
-    // burn
-    // remove ask
+    // If bids exist, transfer name to the highest bidder.
+    // If not, then burn the name.
 
-    let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
-        token_id: token_id.to_string(),
-    };
-    let remove_ask_msg = WasmMsg::Execute {
-        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-        funds: vec![],
-        msg: to_binary(&msg)?,
-    };
+    if let Some(highest_bid) = highest_bid {
+        let recipient = highest_bid.bidder;
+        execute_transfer_nft(
+            deps.branch(),
+            env,
+            info.clone(),
+            recipient.to_string(),
+            token_id.clone(),
+        )?;
+    } else {
+        res = res.add_message(marketplace.remove_ask(&token_id)?);
+        Sg721NameContract::default()
+            .tokens
+            .remove(deps.storage, &token_id)?;
+        Sg721NameContract::default().decrement_tokens(deps.storage)?;
+    }
 
-    Sg721NameContract::default()
-        .tokens
-        .remove(deps.storage, &token_id)?;
-    Sg721NameContract::default().decrement_tokens(deps.storage)?;
-
-    Ok(Response::new()
+    Ok(res
         .add_attribute("action", "burn")
         .add_attribute("sender", info.sender)
-        .add_attribute("token_id", token_id)
-        .add_message(remove_ask_msg))
+        .add_attribute("token_id", token_id))
 }
 
 pub fn execute_transfer_nft(
