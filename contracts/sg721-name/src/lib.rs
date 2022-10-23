@@ -26,7 +26,7 @@ pub mod entry {
     use contract::{
         execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
         execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
-        execute_transfer_nft, execute_update_metadata, execute_update_profile_nft,
+        execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
         execute_update_text_record, query_name, query_name_marketplace,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
@@ -63,8 +63,8 @@ pub mod entry {
             ExecuteMsg::AssociateAddress { name, address } => {
                 execute_associate_address(deps, info, name, address)
             }
-            ExecuteMsg::UpdateProfileNft { name, nft } => {
-                execute_update_profile_nft(deps, info, name, nft)
+            ExecuteMsg::UpdateImageNft { name, nft } => {
+                execute_update_image_nft(deps, info, name, nft)
             }
             ExecuteMsg::AddTextRecord { name, record } => {
                 execute_add_text_record(deps, info, name, record)

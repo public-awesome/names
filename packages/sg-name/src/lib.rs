@@ -20,6 +20,7 @@ pub struct TextRecord {
 #[derive(Default)]
 pub struct Metadata {
     pub image_nft: Option<NFT>,
+    pub profile_nft: Option<Addr>,
     pub records: Vec<TextRecord>,
 }
 

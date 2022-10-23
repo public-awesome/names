@@ -331,7 +331,7 @@ pub fn execute_send_nft(
     Ok(Response::new().add_message(update_ask_msg).add_event(event))
 }
 
-pub fn execute_update_profile_nft(
+pub fn execute_update_image_nft(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
