@@ -6,3 +6,6 @@ lint:
 types:
 	cd contracts/marketplace && cargo schema && cd ../..
 	cd contracts/name-minter && cargo schema && cd ../..
+	cd contracts/sg721-name && cargo schema && cd ../..
+	cd contracts/whitelist-updatable && cargo schema && cd ../..
+	cd ts && yarn codegen && cd ..

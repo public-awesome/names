@@ -31,19 +31,19 @@ export interface Sg721NameMessage {
     metadata?: Metadata;
     name: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateBio: ({
-    bio,
-    name
-  }: {
-    bio?: string;
-    name: string;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateProfileNft: ({
+  updateImageNft: ({
     name,
     nft
   }: {
     name: string;
     nft?: NFT;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  updateProfileNft: ({
+    name,
+    tokenId
+  }: {
+    name: string;
+    tokenId?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   addTextRecord: ({
     name,
@@ -144,7 +144,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
     this.associateAddress = this.associateAddress.bind(this);
     this.updateMetadata = this.updateMetadata.bind(this);
-    this.updateBio = this.updateBio.bind(this);
+    this.updateImageNft = this.updateImageNft.bind(this);
     this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
@@ -225,29 +225,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
       })
     };
   };
-  updateBio = ({
-    bio,
-    name
-  }: {
-    bio?: string;
-    name: string;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          update_bio: {
-            bio,
-            name
-          }
-        })),
-        funds
-      })
-    };
-  };
-  updateProfileNft = ({
+  updateImageNft = ({
     name,
     nft
   }: {
@@ -260,9 +238,31 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          update_profile_nft: {
+          update_image_nft: {
             name,
             nft
+          }
+        })),
+        funds
+      })
+    };
+  };
+  updateProfileNft = ({
+    name,
+    tokenId
+  }: {
+    name: string;
+    tokenId?: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          update_profile_nft: {
+            name,
+            token_id: tokenId
           }
         })),
         funds
