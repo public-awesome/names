@@ -234,13 +234,11 @@ fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
     name.find(invalid_char)
         .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))?;
 
-    name.starts_with('-')
-        .then(|| Err(ContractError::InvalidName {}))
-        .unwrap_or(Ok(()))?;
-
-    name.ends_with('-')
-        .then(|| Err(ContractError::InvalidName {}))
-        .unwrap_or(Ok(()))?;
+    if name.starts_with('-') || name.ends_with('-') {
+        Err(ContractError::InvalidName {})
+    } else {
+        Ok(())
+    }?;
 
     if len > 4 && name[2..4].contains("--") {
         return Err(ContractError::InvalidName {});
