@@ -1,11 +1,14 @@
 [package]
 name = "sg721-name"
-version = "0.9.0"
 authors = [
   "Shane Vitarana <s@noreply.publicawesome.com>",
   "John Y <j@noreply.publicawesome.com>",
 ]
-edition = "2021"
+version     = { workspace = true }
+edition     = { workspace = true }
+homepage    = { workspace = true }
+repository  = { workspace = true }
+license     = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -24,20 +27,20 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-schema = "1.1.4"
-cosmwasm-std = { version = "1.1.4" }
-cw-storage-plus = "0.15.1"
-cw-utils = "0.15.1"
-cw2 = "0.15.1"
-schemars = "0.8.11"
-serde = { version = "1.0.145", default-features = false, features = ["derive"] }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
+cw2 = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
 sg-name = { path = "../../packages/sg-name" }
-sg-std = "0.19.0"
-sg721 = "0.19.0"
-sg721-base = { version = "0.19.0", features = ["library"] }
-thiserror = { version = "1.0.31" }
-cw721 = "0.15.0"
-cw721-base = { version = "0.15.0", features = ["library"] }
+sg-std = { workspace = true }
+sg721 = { workspace = true }
+sg721-base = {  workspace = true, features = ["library"] }
+thiserror = { workspace = true }
+cw721 = { workspace = true }
+cw721-base = { workspace = true, features = ["library"] }
 sg-name-market = "0.6.0"
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
 name-marketplace = { path = "../marketplace", features = ["library"] }

@@ -68,8 +68,8 @@ pub fn instantiate(
             description: "Stargaze Names".to_string(),
             image: "ipfs://example.com".to_string(),
             external_link: None,
-            explicit_content: false,
-            trading_start_time: None,
+            explicit_content: None,
+            start_trading_time: None,
             royalty_info: None,
         },
     };

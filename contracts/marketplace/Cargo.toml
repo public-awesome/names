@@ -1,11 +1,12 @@
 [package]
 name = "name-marketplace"
-version = "0.9.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-edition = "2021"
-repository = "https://github.com/public-awesome/names"
 description = "Stargaze Name Marketplace Smart Contract"
 license = "BUSL-1.1"
+version     = { workspace = true }
+edition     = { workspace = true }
+homepage    = { workspace = true }
+repository  = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -25,26 +26,24 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-schema = { version = "1.1.4" }
-cosmwasm-std = { version = "1.1.4" }
-cosmwasm-storage = { version = "1.1.4" }
-cw-storage-plus = "0.15.1"
-cw-storage-macro = "0.15.1"
-cw2 = "0.15.1"
-cw20 = "0.15.1"
-cw721 = "0.15.0"
-cw721-base = { version = "0.15.0", features = ["library"] }
-schemars = "0.8.11"
-serde = { version = "1.0.145", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.30" }
-cw-utils = "0.15.1"
-semver = "1"
-sg-std = "0.19.0"
-sg1 = "0.19.0"
-sg-controllers = "0.19.1"
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+cw-storage-plus = { workspace = true }
+cw-storage-macro = { workspace = true }
+cw-utils = { workspace = true }
+cw2 = { workspace = true }
+cw721 = { workspace = true }
+cw721-base = { workspace = true, features = ["library"] }
+schemars = { workspace = true }
+semver = { workspace = true }
+serde = { workspace = true }
+sg-controllers = { workspace = true }
+sg-std = { workspace = true }
+sg1 = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = "0.15.1"
-sg-multi-test = "0.19.0"
+cw-multi-test = { workspace = true }
+sg-multi-test = { workspace = true }
 sg721-name = { path = "../sg721-name", features = ["library"] }
-sg721 = "0.19.0"
+sg721 = { workspace = true }

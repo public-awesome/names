@@ -74,8 +74,8 @@ fn init() {
         description: "bobo name da best".to_string(),
         image: "ipfs://something".to_string(),
         external_link: None,
-        explicit_content: false,
-        trading_start_time: None,
+        explicit_content: None,
+        start_trading_time: None,
         royalty_info: None,
     };
     let init_msg = InstantiateMsg {
@@ -99,8 +99,8 @@ fn mint_and_update() {
         description: "bobo name da best".to_string(),
         image: "ipfs://something".to_string(),
         external_link: None,
-        explicit_content: false,
-        trading_start_time: None,
+        explicit_content: None,
+        start_trading_time: None,
         royalty_info: None,
     };
     let init_msg = InstantiateMsg {
