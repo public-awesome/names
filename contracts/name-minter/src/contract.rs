@@ -269,7 +269,7 @@ fn validate_payment(
 }
 
 fn invalid_char(c: char) -> bool {
-    let is_valid = c.is_digit(10) || c.is_ascii_lowercase() || (c == '-');
+    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || (c == '-');
     !is_valid
 }
 
