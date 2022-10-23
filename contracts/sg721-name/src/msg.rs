@@ -26,8 +26,6 @@ pub enum ExecuteMsg<T> {
         name: String,
         metadata: Option<Metadata>,
     },
-    /// Update bio
-    UpdateBio { name: String, bio: Option<String> },
     /// Update profile
     UpdateProfileNft { name: String, nft: Option<NFT> },
     /// Add text record ex: twitter handle, discord name, etc

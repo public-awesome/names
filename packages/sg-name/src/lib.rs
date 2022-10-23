@@ -19,8 +19,7 @@ pub struct TextRecord {
 #[cw_serde]
 #[derive(Default)]
 pub struct Metadata {
-    pub bio: Option<String>,
-    pub profile_nft: Option<NFT>,
+    pub image_nft: Option<NFT>,
     pub records: Vec<TextRecord>,
 }
 
@@ -31,8 +30,6 @@ pub enum SgNameExecuteMsg {
     /// Set an address for name reverse lookup
     /// Can be an EOA or a contract address
     AssociateAddress { name: String, address: String },
-    /// Update bio
-    UpdateBio { name: String, bio: Option<String> },
     /// Update profile
     UpdateProfileNft { name: String, nft: Option<NFT> },
     /// Add text record ex: twitter handle, discord name, etc

@@ -26,8 +26,8 @@ pub mod entry {
     use contract::{
         execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
         execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
-        execute_transfer_nft, execute_update_bio, execute_update_metadata,
-        execute_update_profile_nft, execute_update_text_record, query_name, query_name_marketplace,
+        execute_transfer_nft, execute_update_metadata, execute_update_profile_nft,
+        execute_update_text_record, query_name, query_name_marketplace,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::ContractError as Sg721ContractError;
@@ -63,7 +63,6 @@ pub mod entry {
             ExecuteMsg::AssociateAddress { name, address } => {
                 execute_associate_address(deps, info, name, address)
             }
-            ExecuteMsg::UpdateBio { name, bio } => execute_update_bio(deps, info, name, bio),
             ExecuteMsg::UpdateProfileNft { name, nft } => {
                 execute_update_profile_nft(deps, info, name, nft)
             }

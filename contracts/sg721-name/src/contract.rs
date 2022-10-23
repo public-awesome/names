@@ -48,15 +48,9 @@ pub fn execute_update_metadata(
                 .save(deps.storage, &token_id, &token_info)?;
         }
         Some(metadata) => {
-            // update metadata
-            token_info.extension.bio = match metadata.bio {
-                None => token_info.extension.bio,
-                Some(bio) => Some(bio),
-            };
-
             // update nft profile
-            token_info.extension.profile_nft = match metadata.profile_nft {
-                None => token_info.extension.profile_nft,
+            token_info.extension.image_nft = match metadata.image_nft {
+                None => token_info.extension.image_nft,
                 Some(profile_nft) => Some(profile_nft),
             };
             // update records. If empty, do nothing.
@@ -72,8 +66,6 @@ pub fn execute_update_metadata(
             };
         }
     };
-
-    validate_bio(token_info.clone().extension.bio)?;
 
     Sg721NameContract::default()
         .tokens
@@ -339,30 +331,6 @@ pub fn execute_send_nft(
     Ok(Response::new().add_message(update_ask_msg).add_event(event))
 }
 
-pub fn execute_update_bio(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    bio: Option<String>,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), &info.sender, &token_id)?;
-    validate_bio(bio.clone())?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info.extension.bio = bio;
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
 pub fn execute_update_profile_nft(
     deps: DepsMut,
     info: MessageInfo,
@@ -378,7 +346,7 @@ pub fn execute_update_profile_nft(
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.profile_nft = nft;
+                token_info.extension.image_nft = nft;
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
@@ -498,15 +466,6 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
     }
 
     Ok(owner)
-}
-
-fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
-    if let Some(bio) = bio {
-        if bio.len() > MAX_TEXT_LENGTH as usize {
-            return Err(ContractError::BioTooLong {});
-        }
-    }
-    Ok(())
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
