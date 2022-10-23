@@ -131,7 +131,7 @@ export interface Sg721NameMessage {
   }: {
     collectionInfo: UpdateCollectionInfoMsgForRoyaltyInfoResponse;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateTradingStartTime: (funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  updateStartTradingTime: (funds?: Coin[]) => MsgExecuteContractEncodeObject;
   freezeCollectionInfo: (funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class Sg721NameMessageComposer implements Sg721NameMessage {
@@ -158,7 +158,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.mint = this.mint.bind(this);
     this.burn = this.burn.bind(this);
     this.updateCollectionInfo = this.updateCollectionInfo.bind(this);
-    this.updateTradingStartTime = this.updateTradingStartTime.bind(this);
+    this.updateStartTradingTime = this.updateStartTradingTime.bind(this);
     this.freezeCollectionInfo = this.freezeCollectionInfo.bind(this);
   }
 
@@ -536,14 +536,14 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
       })
     };
   };
-  updateTradingStartTime = (funds?: Coin[]): MsgExecuteContractEncodeObject => {
+  updateStartTradingTime = (funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
       value: MsgExecuteContract.fromPartial({
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          update_trading_start_time: {}
+          update_start_trading_time: {}
         })),
         funds
       })

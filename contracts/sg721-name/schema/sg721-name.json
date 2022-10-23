@@ -1,6 +1,6 @@
 {
   "contract_name": "sg721-name",
-  "contract_version": "0.9.0",
+  "contract_version": "0.10.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -33,7 +33,6 @@
         "required": [
           "creator",
           "description",
-          "explicit_content",
           "image"
         ],
         "properties": {
@@ -44,7 +43,10 @@
             "type": "string"
           },
           "explicit_content": {
-            "type": "boolean"
+            "type": [
+              "boolean",
+              "null"
+            ]
           },
           "external_link": {
             "type": [
@@ -65,7 +67,7 @@
               }
             ]
           },
-          "trading_start_time": {
+          "start_trading_time": {
             "anyOf": [
               {
                 "$ref": "#/definitions/Timestamp"
@@ -569,10 +571,10 @@
         "description": "Called by the minter to update trading start time",
         "type": "object",
         "required": [
-          "update_trading_start_time"
+          "update_start_trading_time"
         ],
         "properties": {
-          "update_trading_start_time": {
+          "update_start_trading_time": {
             "anyOf": [
               {
                 "$ref": "#/definitions/Timestamp"
@@ -1716,7 +1718,6 @@
       "required": [
         "creator",
         "description",
-        "explicit_content",
         "image"
       ],
       "properties": {
@@ -1727,7 +1728,10 @@
           "type": "string"
         },
         "explicit_content": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "external_link": {
           "type": [
@@ -1748,7 +1752,7 @@
             }
           ]
         },
-        "trading_start_time": {
+        "start_trading_time": {
           "anyOf": [
             {
               "$ref": "#/definitions/Timestamp"
