@@ -385,7 +385,7 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
   }: {
     collectionInfo: UpdateCollectionInfoMsgForRoyaltyInfoResponse;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateTradingStartTime: (fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  updateStartTradingTime: (fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   freezeCollectionInfo: (fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameInterface {
@@ -415,7 +415,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.mint = this.mint.bind(this);
     this.burn = this.burn.bind(this);
     this.updateCollectionInfo = this.updateCollectionInfo.bind(this);
-    this.updateTradingStartTime = this.updateTradingStartTime.bind(this);
+    this.updateStartTradingTime = this.updateStartTradingTime.bind(this);
     this.freezeCollectionInfo = this.freezeCollectionInfo.bind(this);
   }
 
@@ -657,9 +657,9 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       }
     }, fee, memo, funds);
   };
-  updateTradingStartTime = async (fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+  updateStartTradingTime = async (fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      update_trading_start_time: {}
+      update_start_trading_time: {}
     }, fee, memo, funds);
   };
   freezeCollectionInfo = async (fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {

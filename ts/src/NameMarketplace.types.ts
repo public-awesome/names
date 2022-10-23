@@ -145,7 +145,6 @@ export interface AskCountResponse {
 }
 export interface HooksResponse {
   hooks: string[];
-  [k: string]: unknown;
 }
 export interface AsksResponse {
   asks: Ask[];

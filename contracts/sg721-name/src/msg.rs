@@ -74,7 +74,7 @@ pub enum ExecuteMsg<T> {
         collection_info: UpdateCollectionInfoMsg<RoyaltyInfoResponse>,
     },
     /// Called by the minter to update trading start time
-    UpdateTradingStartTime(Option<Timestamp>),
+    UpdateStartTradingTime(Option<Timestamp>),
     /// Freeze collection info from further updates
     FreezeCollectionInfo {},
 }
@@ -118,8 +118,8 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
             ExecuteMsg::UpdateCollectionInfo { collection_info } => {
                 Sg721ExecuteMsg::UpdateCollectionInfo { collection_info }
             }
-            ExecuteMsg::UpdateTradingStartTime(start_time) => {
-                Sg721ExecuteMsg::UpdateTradingStartTime(start_time)
+            ExecuteMsg::UpdateStartTradingTime(start_time) => {
+                Sg721ExecuteMsg::UpdateStartTradingTime(start_time)
             }
             ExecuteMsg::FreezeCollectionInfo {} => Sg721ExecuteMsg::FreezeCollectionInfo {},
             ExecuteMsg::Mint(MintMsg {
