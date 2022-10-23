@@ -199,26 +199,30 @@
         "additionalProperties": false
       },
       {
-        "description": "Update bio",
+        "description": "Update image NFT",
         "type": "object",
         "required": [
-          "update_bio"
+          "update_image_nft"
         ],
         "properties": {
-          "update_bio": {
+          "update_image_nft": {
             "type": "object",
             "required": [
               "name"
             ],
             "properties": {
-              "bio": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
               "name": {
                 "type": "string"
+              },
+              "nft": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/NFT"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "additionalProperties": false
@@ -242,14 +246,10 @@
               "name": {
                 "type": "string"
               },
-              "nft": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/NFT"
-                  },
-                  {
-                    "type": "null"
-                  }
+              "token_id": {
+                "type": [
+                  "string",
+                  "null"
                 ]
               }
             },
@@ -667,13 +667,7 @@
           "records"
         ],
         "properties": {
-          "bio": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "profile_nft": {
+          "image_nft": {
             "anyOf": [
               {
                 "$ref": "#/definitions/NFT"
@@ -681,6 +675,12 @@
               {
                 "type": "null"
               }
+            ]
+          },
+          "profile_nft": {
+            "type": [
+              "string",
+              "null"
             ]
           },
           "records": {
@@ -1278,13 +1278,7 @@
             "records"
           ],
           "properties": {
-            "bio": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "profile_nft": {
+            "image_nft": {
               "anyOf": [
                 {
                   "$ref": "#/definitions/NFT"
@@ -1292,6 +1286,12 @@
                 {
                   "type": "null"
                 }
+              ]
+            },
+            "profile_nft": {
+              "type": [
+                "string",
+                "null"
               ]
             },
             "records": {
@@ -1894,13 +1894,7 @@
             "records"
           ],
           "properties": {
-            "bio": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "profile_nft": {
+            "image_nft": {
               "anyOf": [
                 {
                   "$ref": "#/definitions/NFT"
@@ -1908,6 +1902,12 @@
                 {
                   "type": "null"
                 }
+              ]
+            },
+            "profile_nft": {
+              "type": [
+                "string",
+                "null"
               ]
             },
             "records": {

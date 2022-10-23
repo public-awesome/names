@@ -285,19 +285,19 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     metadata?: Metadata;
     name: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateBio: ({
-    bio,
-    name
-  }: {
-    bio?: string;
-    name: string;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateProfileNft: ({
+  updateImageNft: ({
     name,
     nft
   }: {
     name: string;
     nft?: NFT;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  updateProfileNft: ({
+    name,
+    tokenId
+  }: {
+    name: string;
+    tokenId?: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addTextRecord: ({
     name,
@@ -401,7 +401,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
     this.associateAddress = this.associateAddress.bind(this);
     this.updateMetadata = this.updateMetadata.bind(this);
-    this.updateBio = this.updateBio.bind(this);
+    this.updateImageNft = this.updateImageNft.bind(this);
     this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
@@ -458,21 +458,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       }
     }, fee, memo, funds);
   };
-  updateBio = async ({
-    bio,
-    name
-  }: {
-    bio?: string;
-    name: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      update_bio: {
-        bio,
-        name
-      }
-    }, fee, memo, funds);
-  };
-  updateProfileNft = async ({
+  updateImageNft = async ({
     name,
     nft
   }: {
@@ -480,9 +466,23 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     nft?: NFT;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      update_profile_nft: {
+      update_image_nft: {
         name,
         nft
+      }
+    }, fee, memo, funds);
+  };
+  updateProfileNft = async ({
+    name,
+    tokenId
+  }: {
+    name: string;
+    tokenId?: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      update_profile_nft: {
+        name,
+        token_id: tokenId
       }
     }, fee, memo, funds);
   };

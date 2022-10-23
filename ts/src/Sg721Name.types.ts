@@ -41,14 +41,14 @@ export type ExecuteMsg = {
     name: string;
   };
 } | {
-  update_bio: {
-    bio?: string | null;
+  update_image_nft: {
     name: string;
+    nft?: NFT | null;
   };
 } | {
   update_profile_nft: {
     name: string;
-    nft?: NFT | null;
+    token_id?: string | null;
   };
 } | {
   add_text_record: {
@@ -121,8 +121,8 @@ export type Expiration = {
   never: {};
 };
 export interface Metadata {
-  bio?: string | null;
-  profile_nft?: NFT | null;
+  image_nft?: NFT | null;
+  profile_nft?: string | null;
   records: TextRecord[];
 }
 export interface NFT {
