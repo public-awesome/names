@@ -28,6 +28,11 @@ pub enum ExecuteMsg<T> {
     },
     /// Update image NFT
     UpdateImageNft { name: String, nft: Option<NFT> },
+    /// Update profile
+    UpdateProfileNft {
+        name: String,
+        token_id: Option<String>,
+    },
     /// Add text record ex: twitter handle, discord name, etc
     AddTextRecord { name: String, record: TextRecord },
     /// Remove text record ex: twitter handle, discord name, etc

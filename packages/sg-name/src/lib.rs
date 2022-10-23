@@ -3,10 +3,12 @@ use cosmwasm_std::Addr;
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
 
+pub type TokenId = String;
+
 #[cw_serde]
 pub struct NFT {
     pub collection: Addr,
-    pub token_id: String,
+    pub token_id: TokenId,
 }
 
 #[cw_serde]
@@ -20,7 +22,7 @@ pub struct TextRecord {
 #[derive(Default)]
 pub struct Metadata {
     pub image_nft: Option<NFT>,
-    pub profile_nft: Option<Addr>,
+    pub profile_nft: Option<TokenId>,
     pub records: Vec<TextRecord>,
 }
 
@@ -31,8 +33,13 @@ pub enum SgNameExecuteMsg {
     /// Set an address for name reverse lookup
     /// Can be an EOA or a contract address
     AssociateAddress { name: String, address: String },
+    /// Update image
+    UpdateImageNft { name: String, nft: Option<NFT> },
     /// Update profile
-    UpdateProfileNft { name: String, nft: Option<NFT> },
+    UpdateProfileNft {
+        name: String,
+        token_id: Option<String>,
+    },
     /// Add text record ex: twitter handle, discord name, etc
     AddTextRecord { name: String, record: TextRecord },
     /// Remove text record ex: twitter handle, discord name, etc

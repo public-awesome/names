@@ -21,6 +21,8 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
+    use crate::contract::execute_update_profile_nft;
+
     use super::*;
 
     use contract::{
@@ -65,6 +67,9 @@ pub mod entry {
             }
             ExecuteMsg::UpdateImageNft { name, nft } => {
                 execute_update_image_nft(deps, info, name, nft)
+            }
+            ExecuteMsg::UpdateProfileNft { name, token_id } => {
+                execute_update_profile_nft(deps, info, name, token_id)
             }
             ExecuteMsg::AddTextRecord { name, record } => {
                 execute_add_text_record(deps, info, name, record)
