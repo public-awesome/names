@@ -25,6 +25,12 @@ impl NameMarketplaceContract {
         .into())
     }
 
+    pub fn remove_ask(&self, token_id: &str) -> StdResult<CosmosMsg> {
+        self.call(ExecuteMsg::RemoveAsk {
+            token_id: token_id.to_string(),
+        })
+    }
+
     pub fn highest_bid(&self, querier: &QuerierWrapper, token_id: &str) -> StdResult<Option<Bid>> {
         let res: BidResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
