@@ -261,17 +261,15 @@ fn validate_payment(
     discount: Option<Decimal>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount = match name_len {
+    let amount: Uint128 = match name_len {
         0..=2 => return Err(ContractError::NameTooShort {}),
         3 => base_price * 100,
         4 => base_price * 10,
         _ => base_price,
-    };
-    let amount = if let Some(discount) = discount {
-        Uint128::from(amount) * discount
-    } else {
-        Uint128::from(amount)
-    };
+    }
+    .into();
+
+    let amount = discount.map(|d| amount * d).unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
