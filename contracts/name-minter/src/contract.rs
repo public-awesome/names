@@ -118,29 +118,30 @@ pub fn execute_mint_and_list(
         return Err(ContractError::MintingPaused {});
     }
 
+    let whitelists = WHITELISTS.load(deps.storage)?;
     let sender = &info.sender.to_string();
     let mut res = Response::new();
 
     let params = SUDO_PARAMS.load(deps.storage)?;
-    let whitelists = WHITELISTS.load(deps.storage)?;
+    validate_name(name, params.min_name_length, params.max_name_length)?;
 
-    // process each whitelist
-    // if one of them is a success, then continue
-    // if not in any list, then return error
-    let mut count = whitelists.len();
-    for whitelist in whitelists.iter() {
+    let list = whitelists.iter().find_map(|whitelist| {
         let list = WhitelistUpdatableContract(whitelist.clone());
-        count -= 1;
-        if list.includes(&deps.querier, sender.to_string())? {
-            res = res.add_message(list.process_address(sender)?);
-            break;
-        };
-    }
-    if !whitelists.is_empty() && count == 0 {
+        if list
+            .includes(&deps.querier, sender.to_string())
+            .unwrap_or(false)
+        {
+            Some(list)
+        } else {
+            None
+        }
+    });
+    if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
     }
-
-    validate_name(name, params.min_name_length, params.max_name_length)?;
+    if let Some(list) = list {
+        res = res.add_message(list.process_address(sender)?);
+    }
 
     let price = validate_payment(name.len(), &info, params.base_price)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
