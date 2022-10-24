@@ -106,9 +106,6 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         )
         .unwrap();
 
-    println!("creator: {:?}", creator);
-    println!("admin: {:?}", admin);
-
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin,
@@ -217,8 +214,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) -> AnyResult<App
     }))
     .map_err(|err| println!("{:?}", err))
     .ok();
-
-    println!("sender: {}", user);
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
@@ -542,7 +537,6 @@ mod execute {
 
         let msg = ExecuteMsg::Pause { pause: true };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        println!("{:?}", res);
         assert!(res.is_ok());
 
         let err = mint_and_list(&mut app, "name2", USER);
@@ -828,7 +822,6 @@ mod collection {
             &msg,
             &[],
         );
-        // println!("{:?}", res);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
@@ -852,7 +845,6 @@ mod collection {
             &send_msg,
             &[],
         );
-        // println!("{:?}", res);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
