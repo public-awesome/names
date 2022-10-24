@@ -45,6 +45,7 @@ pub fn instantiate(
         .whitelists
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
+        .map(WhitelistUpdatableContract)
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -127,17 +128,12 @@ pub fn execute_mint_and_list(
     let params = SUDO_PARAMS.load(deps.storage)?;
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
-    let list = whitelists.iter().find_map(|whitelist| {
-        let list = WhitelistUpdatableContract(whitelist.clone());
-        if list
+    let list = whitelists.iter().find(|whitelist| {
+        whitelist
             .includes(&deps.querier, sender.to_string())
             .unwrap_or(false)
-        {
-            Some(list)
-        } else {
-            None
-        }
     });
+
     if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
     }
@@ -204,7 +200,10 @@ pub fn execute_add_whitelist(
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps.api.addr_validate(&address)?;
+    let whitelist = deps
+        .api
+        .addr_validate(&address)
+        .map(WhitelistUpdatableContract)?;
     let mut lists = WHITELISTS.load(deps.storage)?;
     lists.push(whitelist);
 
@@ -222,7 +221,7 @@ pub fn execute_remove_whitelist(
 
     let whitelist = deps.api.addr_validate(&address)?;
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.retain(|addr| addr != &whitelist);
+    lists.retain(|addr| addr.addr() != whitelist);
 
     WHITELISTS.save(deps.storage, &lists)?;
 

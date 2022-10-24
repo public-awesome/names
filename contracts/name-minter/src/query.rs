@@ -19,7 +19,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_whitelists(deps: Deps) -> StdResult<WhitelistsResponse> {
     let whitelists = WHITELISTS.load(deps.storage)?;
-    Ok(WhitelistsResponse { whitelists })
+    Ok(WhitelistsResponse {
+        whitelists: whitelists.iter().map(|w| w.addr()).collect(),
+    })
 }
 
 fn query_collection(deps: Deps) -> StdResult<CollectionResponse> {
