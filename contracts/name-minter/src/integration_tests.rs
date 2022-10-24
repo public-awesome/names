@@ -151,6 +151,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
         addresses: vec!["addr0001".to_string(), "addr0002".to_string()],
+        mint_discount_bps: None,
     };
     let wl = app
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
