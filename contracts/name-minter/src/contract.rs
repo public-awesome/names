@@ -2,7 +2,9 @@ use std::vec;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, WasmMsg};
+use cosmwasm_std::{
+    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, Reply, Uint128, WasmMsg,
+};
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
@@ -43,6 +45,7 @@ pub fn instantiate(
         .whitelists
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
+        .map(WhitelistUpdatableContract)
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -118,31 +121,31 @@ pub fn execute_mint_and_list(
         return Err(ContractError::MintingPaused {});
     }
 
+    let whitelists = WHITELISTS.load(deps.storage)?;
     let sender = &info.sender.to_string();
     let mut res = Response::new();
 
     let params = SUDO_PARAMS.load(deps.storage)?;
-    let whitelists = WHITELISTS.load(deps.storage)?;
+    validate_name(name, params.min_name_length, params.max_name_length)?;
 
-    // process each whitelist
-    // if one of them is a success, then continue
-    // if not in any list, then return error
-    let mut count = whitelists.len();
-    for whitelist in whitelists.iter() {
-        let list = WhitelistUpdatableContract(whitelist.clone());
-        count -= 1;
-        if list.includes(&deps.querier, sender.to_string())? {
-            res = res.add_message(list.process_address(sender)?);
-            break;
-        };
-    }
-    if !whitelists.is_empty() && count == 0 {
+    let list = whitelists.iter().find(|whitelist| {
+        whitelist
+            .includes(&deps.querier, sender.to_string())
+            .unwrap_or(false)
+    });
+
+    if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
     }
 
-    validate_name(name, params.min_name_length, params.max_name_length)?;
+    let discount = if let Some(list) = list {
+        res = res.add_message(list.process_address(sender)?);
+        list.config(&deps.querier).map(|c| c.mint_discount())?
+    } else {
+        None
+    };
 
-    let price = validate_payment(name.len(), &info, params.base_price)?;
+    let price = validate_payment(name.len(), &info, params.base_price, discount)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
@@ -197,7 +200,10 @@ pub fn execute_add_whitelist(
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps.api.addr_validate(&address)?;
+    let whitelist = deps
+        .api
+        .addr_validate(&address)
+        .map(WhitelistUpdatableContract)?;
     let mut lists = WHITELISTS.load(deps.storage)?;
     lists.push(whitelist);
 
@@ -215,7 +221,7 @@ pub fn execute_remove_whitelist(
 
     let whitelist = deps.api.addr_validate(&address)?;
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.retain(|addr| addr != &whitelist);
+    lists.retain(|addr| addr.addr() != whitelist);
 
     WHITELISTS.save(deps.storage, &lists)?;
 
@@ -251,21 +257,25 @@ fn validate_payment(
     name_len: usize,
     info: &MessageInfo,
     base_price: u128,
+    discount: Option<Decimal>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount = match name_len {
+    let amount: Uint128 = match name_len {
         0..=2 => return Err(ContractError::NameTooShort {}),
         3 => base_price * 100,
         4 => base_price * 10,
         _ => base_price,
-    };
+    }
+    .into();
+
+    let amount = discount.map(|d| amount * d).unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
-    if payment.u128() != amount {
+    if payment != amount {
         return Err(ContractError::IncorrectPayment {});
     }
 
-    Ok(coin(amount, NATIVE_DENOM))
+    Ok(coin(amount.u128(), NATIVE_DENOM))
 }
 
 fn invalid_char(c: char) -> bool {
@@ -304,7 +314,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coin, Addr, MessageInfo};
+    use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
 
     use crate::contract::validate_name;
 
@@ -351,7 +361,7 @@ mod tests {
             funds: vec![coin(base_price, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price)
+            validate_payment(5, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -363,7 +373,7 @@ mod tests {
             funds: vec![coin(base_price * 10, "ustars")],
         };
         assert_eq!(
-            validate_payment(4, &info, base_price)
+            validate_payment(4, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -375,11 +385,28 @@ mod tests {
             funds: vec![coin(base_price * 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(3, &info, base_price)
+            validate_payment(3, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
             base_price * 100
+        );
+    }
+
+    #[test]
+    fn check_validate_payment_with_discount() {
+        let base_price = 100_000_000;
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(base_price / 2, "ustars")],
+        };
+        assert_eq!(
+            validate_payment(5, &info, base_price, Some(Decimal::percent(50)))
+                .unwrap()
+                .amount
+                .u128(),
+            base_price / 2
         );
     }
 }
