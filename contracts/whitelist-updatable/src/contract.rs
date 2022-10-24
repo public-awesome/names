@@ -26,6 +26,7 @@ pub fn instantiate(
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
         minter_contract: None,
+        mint_discount_bps: None,
     };
 
     // remove duplicate addresses

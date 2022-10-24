@@ -2,7 +2,9 @@ use std::vec;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{coin, to_binary, Addr, Coin, DepsMut, Env, MessageInfo, Reply, WasmMsg};
+use cosmwasm_std::{
+    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, Reply, Uint128, WasmMsg,
+};
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
@@ -139,11 +141,15 @@ pub fn execute_mint_and_list(
     if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
     }
-    if let Some(list) = list {
-        res = res.add_message(list.process_address(sender)?);
-    }
 
-    let price = validate_payment(name.len(), &info, params.base_price)?;
+    let discount = if let Some(list) = list {
+        res = res.add_message(list.process_address(sender)?);
+        list.config(&deps.querier).map(|c| c.mint_discount())?
+    } else {
+        None
+    };
+
+    let price = validate_payment(name.len(), &info, params.base_price, discount)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price]);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
@@ -252,6 +258,7 @@ fn validate_payment(
     name_len: usize,
     info: &MessageInfo,
     base_price: u128,
+    discount: Option<Decimal>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
     let amount = match name_len {
@@ -260,13 +267,18 @@ fn validate_payment(
         4 => base_price * 10,
         _ => base_price,
     };
+    let amount = if let Some(discount) = discount {
+        Uint128::from(amount) * discount
+    } else {
+        Uint128::from(amount)
+    };
 
     let payment = must_pay(info, NATIVE_DENOM)?;
-    if payment.u128() != amount {
+    if payment != amount {
         return Err(ContractError::IncorrectPayment {});
     }
 
-    Ok(coin(amount, NATIVE_DENOM))
+    Ok(coin(amount.u128(), NATIVE_DENOM))
 }
 
 fn invalid_char(c: char) -> bool {
@@ -305,7 +317,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coin, Addr, MessageInfo};
+    use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
 
     use crate::contract::validate_name;
 
@@ -352,7 +364,7 @@ mod tests {
             funds: vec![coin(base_price, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price)
+            validate_payment(5, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -364,7 +376,7 @@ mod tests {
             funds: vec![coin(base_price * 10, "ustars")],
         };
         assert_eq!(
-            validate_payment(4, &info, base_price)
+            validate_payment(4, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -376,11 +388,28 @@ mod tests {
             funds: vec![coin(base_price * 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(3, &info, base_price)
+            validate_payment(3, &info, base_price, None)
                 .unwrap()
                 .amount
                 .u128(),
             base_price * 100
+        );
+    }
+
+    #[test]
+    fn check_validate_payment_with_discount() {
+        let base_price = 100_000_000;
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(base_price / 2, "ustars")],
+        };
+        assert_eq!(
+            validate_payment(5, &info, base_price, Some(Decimal::percent(50)))
+                .unwrap()
+                .amount
+                .u128(),
+            base_price / 2
         );
     }
 }
