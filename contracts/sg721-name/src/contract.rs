@@ -11,6 +11,8 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
+use name_marketplace::state::Bid;
+use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -49,15 +51,9 @@ pub fn execute_update_metadata(
                 .save(deps.storage, &token_id, &token_info)?;
         }
         Some(metadata) => {
-            // update metadata
-            token_info.extension.bio = match metadata.bio {
-                None => token_info.extension.bio,
-                Some(bio) => Some(bio),
-            };
-
             // update nft profile
-            token_info.extension.profile_nft = match metadata.profile_nft {
-                None => token_info.extension.profile_nft,
+            token_info.extension.image_nft = match metadata.image_nft {
+                None => token_info.extension.image_nft,
                 Some(profile_nft) => Some(profile_nft),
             };
             // update records. If empty, do nothing.
@@ -80,8 +76,6 @@ pub fn execute_update_metadata(
             };
         }
     };
-
-    validate_bio(token_info.clone().extension.bio)?;
 
     Sg721NameContract::default()
         .tokens
@@ -179,6 +173,8 @@ pub fn execute_burn(
     info: MessageInfo,
     token_id: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
     let token = Sg721NameContract::default()
         .tokens
         .load(deps.storage, &token_id)?;
@@ -191,30 +187,28 @@ pub fn execute_burn(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
-    let msg = SgNameMarketplaceExecuteMsg::RemoveAsk {
-        token_id: token_id.to_string(),
-    };
-    let remove_ask_msg = WasmMsg::Execute {
-        contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-        funds: vec![],
-        msg: to_binary(&msg)?,
-    };
+    let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
+    let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
+    let mut res = Response::new();
 
-    // TODO: find highest bidder and transfer to them
-    // https://github.com/public-awesome/names/issues/90
-    // update the ask
-    // if no bids, then burn
+    // If bids exist, transfer name to the highest bidder.
+    // If not, then burn the name.
+    if let Some(highest_bid) = highest_bid {
+        let recipient = highest_bid.bidder;
+        let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+        res = res.add_message(update_ask_msg);
+    } else {
+        res = res.add_message(marketplace.remove_ask(&token_id)?);
+        Sg721NameContract::default()
+            .tokens
+            .remove(deps.storage, &token_id)?;
+        Sg721NameContract::default().decrement_tokens(deps.storage)?;
+    }
 
-    Sg721NameContract::default()
-        .tokens
-        .remove(deps.storage, &token_id)?;
-    Sg721NameContract::default().decrement_tokens(deps.storage)?;
-
-    Ok(Response::new()
+    Ok(res
         .add_attribute("action", "burn")
         .add_attribute("sender", info.sender)
-        .add_attribute("token_id", token_id)
-        .add_message(remove_ask_msg))
+        .add_attribute("token_id", token_id))
 }
 
 pub fn execute_transfer_nft(
@@ -227,6 +221,23 @@ pub fn execute_transfer_nft(
     nonpayable(&info)?;
     let recipient = deps.api.addr_validate(&recipient)?;
 
+    let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+
+    let event = Event::new("transfer")
+        .add_attribute("sender", info.sender)
+        .add_attribute("recipient", recipient)
+        .add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_message(update_ask_msg).add_event(event))
+}
+
+fn _transfer_nft(
+    deps: DepsMut,
+    env: Env,
+    info: &MessageInfo,
+    recipient: &Addr,
+    token_id: &str,
+) -> Result<WasmMsg, ContractError> {
     // Update the ask on the marketplace
     let msg = SgNameMarketplaceExecuteMsg::UpdateAsk {
         token_id: token_id.to_string(),
@@ -240,13 +251,13 @@ pub fn execute_transfer_nft(
 
     let mut token = Sg721NameContract::default()
         .tokens
-        .load(deps.storage, &token_id)?;
+        .load(deps.storage, token_id)?;
 
     // Reset bio, profile, records
     token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens
-        .save(deps.storage, &token_id, &token)?;
+        .save(deps.storage, token_id, &token)?;
 
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
@@ -256,7 +267,7 @@ pub fn execute_transfer_nft(
 
     Sg721NameContract::default()
         .tokens
-        .save(deps.storage, &token_id, &token)?;
+        .save(deps.storage, token_id, &token)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient: recipient.to_string(),
@@ -264,12 +275,7 @@ pub fn execute_transfer_nft(
     };
     Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
 
-    let event = Event::new("transfer")
-        .add_attribute("sender", info.sender)
-        .add_attribute("recipient", recipient)
-        .add_attribute("token_id", token_id);
-
-    Ok(Response::new().add_message(update_ask_msg).add_event(event))
+    Ok(update_ask_msg)
 }
 
 pub fn execute_send_nft(
@@ -327,23 +333,22 @@ pub fn execute_send_nft(
     Ok(Response::new().add_message(update_ask_msg).add_event(event))
 }
 
-pub fn execute_update_bio(
+pub fn execute_update_image_nft(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    bio: Option<String>,
+    nft: Option<NFT>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
-    validate_bio(bio.clone())?;
 
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.bio = bio;
+                token_info.extension.image_nft = nft;
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
@@ -355,7 +360,7 @@ pub fn execute_update_profile_nft(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    nft: Option<NFT>,
+    nft: Option<String>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
 
@@ -492,15 +497,6 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
     }
 
     Ok(owner)
-}
-
-fn validate_bio(bio: Option<String>) -> Result<(), ContractError> {
-    if let Some(bio) = bio {
-        if bio.len() > MAX_TEXT_LENGTH as usize {
-            return Err(ContractError::BioTooLong {});
-        }
-    }
-    Ok(())
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {

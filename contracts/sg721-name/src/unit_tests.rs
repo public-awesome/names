@@ -74,8 +74,8 @@ fn init() {
         description: "bobo name da best".to_string(),
         image: "ipfs://something".to_string(),
         external_link: None,
-        explicit_content: false,
-        trading_start_time: None,
+        explicit_content: None,
+        start_trading_time: None,
         royalty_info: None,
     };
     let init_msg = InstantiateMsg {
@@ -99,8 +99,8 @@ fn mint_and_update() {
         description: "bobo name da best".to_string(),
         image: "ipfs://something".to_string(),
         external_link: None,
-        explicit_content: false,
-        trading_start_time: None,
+        explicit_content: None,
+        start_trading_time: None,
         royalty_info: None,
     };
     let init_msg = InstantiateMsg {
@@ -137,11 +137,11 @@ fn mint_and_update() {
     // update metadata
     // update bio, profile, records
     let new_metadata = Metadata {
-        bio: Some("I am a bio".to_string()),
-        profile_nft: Some(NFT {
+        image_nft: Some(NFT {
             collection: Addr::unchecked("contract"),
             token_id: "token_id".to_string(),
         }),
+        profile_nft: None,
         records: vec![TextRecord {
             name: "key".to_string(),
             value: "value".to_string(),
@@ -169,28 +169,6 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension, Metadata::default());
-
-    // update bio
-    // too long
-    let long_bio = Some("a".repeat(600));
-    let update_bio_msg = ExecuteMsg::UpdateBio {
-        name: token_id.to_string(),
-        bio: long_bio,
-    };
-    let err = execute(deps.as_mut(), mock_env(), info.clone(), update_bio_msg).unwrap_err();
-    assert_eq!(err.to_string(), ContractError::BioTooLong {}.to_string());
-    // passes
-    let bio = Some("I am a test".to_string());
-    let update_bio_msg = ExecuteMsg::UpdateBio {
-        name: token_id.to_string(),
-        bio: bio.clone(),
-    };
-    execute(deps.as_mut(), mock_env(), info.clone(), update_bio_msg).unwrap();
-    let res = contract
-        .parent
-        .nft_info(deps.as_ref(), token_id.into())
-        .unwrap();
-    assert_eq!(res.extension.bio, bio);
 
     // add txt record
     let record = TextRecord {

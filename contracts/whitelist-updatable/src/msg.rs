@@ -6,6 +6,7 @@ use crate::state::Config;
 pub struct InstantiateMsg {
     pub addresses: Vec<String>,
     pub per_address_limit: u32,
+    pub mint_discount_bps: Option<u64>,
 }
 
 #[cw_serde]

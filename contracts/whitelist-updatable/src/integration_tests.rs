@@ -62,6 +62,7 @@ mod tests {
         let msg = InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: addrs.clone(),
+            mint_discount_bps: None,
         };
 
         let mut app = custom_mock_app();
@@ -179,6 +180,7 @@ mod tests {
         let msg = InstantiateMsg {
             per_address_limit: 10,
             addresses: addrs,
+            mint_discount_bps: None,
         };
 
         let mut app = custom_mock_app();

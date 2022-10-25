@@ -77,6 +77,11 @@ export interface NameMarketplaceReadOnlyInterface {
     limit?: number;
     startBefore?: BidOffset;
   }) => Promise<BidsResponse>;
+  highestBid: ({
+    tokenId
+  }: {
+    tokenId: string;
+  }) => Promise<BidResponse>;
   askHooks: () => Promise<HooksResponse>;
   bidHooks: () => Promise<HooksResponse>;
   saleHooks: () => Promise<HooksResponse>;
@@ -105,6 +110,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.bids = this.bids.bind(this);
     this.bidsSortedByPrice = this.bidsSortedByPrice.bind(this);
     this.reverseBidsSortedByPrice = this.reverseBidsSortedByPrice.bind(this);
+    this.highestBid = this.highestBid.bind(this);
     this.askHooks = this.askHooks.bind(this);
     this.bidHooks = this.bidHooks.bind(this);
     this.saleHooks = this.saleHooks.bind(this);
@@ -247,6 +253,17 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       reverse_bids_sorted_by_price: {
         limit,
         start_before: startBefore
+      }
+    });
+  };
+  highestBid = async ({
+    tokenId
+  }: {
+    tokenId: string;
+  }): Promise<BidResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      highest_bid: {
+        token_id: tokenId
       }
     });
   };

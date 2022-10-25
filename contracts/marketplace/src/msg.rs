@@ -159,6 +159,9 @@ pub enum QueryMsg {
         start_before: Option<BidOffset>,
         limit: Option<u32>,
     },
+    /// Get the highest bid for a name
+    #[returns(BidResponse)]
+    HighestBid { token_id: TokenId },
     /// Show all registered ask hooks
     #[returns(HooksResponse)]
     AskHooks {},

@@ -16,11 +16,11 @@ export interface InstantiateMsg {
 export interface CollectionInfoForRoyaltyInfoResponse {
   creator: string;
   description: string;
-  explicit_content: boolean;
+  explicit_content?: boolean | null;
   external_link?: string | null;
   image: string;
   royalty_info?: RoyaltyInfoResponse | null;
-  trading_start_time?: Timestamp | null;
+  start_trading_time?: Timestamp | null;
 }
 export interface RoyaltyInfoResponse {
   payment_address: string;
@@ -41,14 +41,14 @@ export type ExecuteMsg = {
     name: string;
   };
 } | {
-  update_bio: {
-    bio?: string | null;
+  update_image_nft: {
     name: string;
+    nft?: NFT | null;
   };
 } | {
   update_profile_nft: {
     name: string;
-    nft?: NFT | null;
+    token_id?: string | null;
   };
 } | {
   add_text_record: {
@@ -107,7 +107,7 @@ export type ExecuteMsg = {
     collection_info: UpdateCollectionInfoMsgForRoyaltyInfoResponse;
   };
 } | {
-  update_trading_start_time: Timestamp | null;
+  update_start_trading_time: Timestamp | null;
 } | {
   freeze_collection_info: {};
 };
@@ -121,8 +121,8 @@ export type Expiration = {
   never: {};
 };
 export interface Metadata {
-  bio?: string | null;
-  profile_nft?: NFT | null;
+  image_nft?: NFT | null;
+  profile_nft?: string | null;
   records: TextRecord[];
 }
 export interface NFT {
@@ -235,11 +235,11 @@ export interface ApprovalsResponse {
 export interface CollectionInfoResponse {
   creator: string;
   description: string;
-  explicit_content: boolean;
+  explicit_content?: boolean | null;
   external_link?: string | null;
   image: string;
   royalty_info?: RoyaltyInfoResponse | null;
-  trading_start_time?: Timestamp | null;
+  start_trading_time?: Timestamp | null;
 }
 export interface ContractInfoResponse {
   name: string;

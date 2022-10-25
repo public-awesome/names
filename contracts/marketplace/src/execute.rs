@@ -323,7 +323,7 @@ pub fn execute_accept_bid(
     Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).approval(
         &deps.querier,
         token_id,
-        &info.sender.to_string(),
+        info.sender.as_ref(),
         None,
     )?;
 

@@ -106,9 +106,6 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         )
         .unwrap();
 
-    println!("creator: {:?}", creator);
-    println!("admin: {:?}", admin);
-
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin,
@@ -154,6 +151,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
         addresses: vec!["addr0001".to_string(), "addr0002".to_string()],
+        mint_discount_bps: None,
     };
     let wl = app
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
@@ -217,8 +215,6 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) -> AnyResult<App
     }))
     .map_err(|err| println!("{:?}", err))
     .ok();
-
-    println!("sender: {}", user);
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
@@ -542,7 +538,6 @@ mod execute {
 
         let msg = ExecuteMsg::Pause { pause: true };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        println!("{:?}", res);
         assert!(res.is_ok());
 
         let err = mint_and_list(&mut app, "name2", USER);
@@ -725,6 +720,23 @@ mod query {
     }
 
     #[test]
+    fn query_highest_bid() {
+        let mut app = instantiate_contracts(None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
+
+        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+
+        let msg = MarketplaceQueryMsg::HighestBid {
+            token_id: NAME.to_string(),
+        };
+        let res: BidResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.bid.unwrap().amount.u128(), BID_AMOUNT * 5);
+    }
+
+    #[test]
     fn query_renewal_queue() {
         let mut app = instantiate_contracts(None, None);
 
@@ -811,7 +823,6 @@ mod collection {
             &msg,
             &[],
         );
-        // println!("{:?}", res);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
@@ -835,7 +846,6 @@ mod collection {
             &send_msg,
             &[],
         );
-        // println!("{:?}", res);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
@@ -984,13 +994,14 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_err());
+        assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_some());
+        let ask = res.ask.unwrap();
+        assert_eq!(ask.seller.to_string(), BIDDER.to_string());
     }
 
     #[test]

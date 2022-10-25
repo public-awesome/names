@@ -106,6 +106,10 @@ export type QueryMsg = {
     start_before?: BidOffset | null;
   };
 } | {
+  highest_bid: {
+    token_id: string;
+  };
+} | {
   ask_hooks: {};
 } | {
   bid_hooks: {};
@@ -141,7 +145,6 @@ export interface AskCountResponse {
 }
 export interface HooksResponse {
   hooks: string[];
-  [k: string]: unknown;
 }
 export interface AsksResponse {
   asks: Ask[];

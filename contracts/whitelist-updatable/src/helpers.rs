@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
 use sg_std::CosmosMsg;
 
-use crate::msg::{ExecuteMsg, IncludesAddressResponse, QueryMsg};
+use crate::{
+    msg::{ConfigResponse, ExecuteMsg, IncludesAddressResponse, QueryMsg},
+    state::Config,
+};
 
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -26,6 +29,12 @@ impl WhitelistUpdatableContract {
         .into())
     }
 
+    pub fn process_address(&self, address: &str) -> StdResult<CosmosMsg> {
+        self.call(ExecuteMsg::ProcessAddress {
+            address: address.to_string(),
+        })
+    }
+
     pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
         let res: IncludesAddressResponse =
             querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -34,5 +43,14 @@ impl WhitelistUpdatableContract {
             }))?;
 
         Ok(res.includes)
+    }
+
+    pub fn config(&self, querier: &QuerierWrapper) -> StdResult<Config> {
+        let res: ConfigResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&QueryMsg::Config {})?,
+        }))?;
+
+        Ok(res.config)
     }
 }
