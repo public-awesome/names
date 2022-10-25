@@ -15,15 +15,16 @@ use name_marketplace::state::Bid;
 use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name::{
+    Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_RECORD_COUNT, MAX_TEXT_LENGTH,
+    NFT,
+};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
 use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
-
-const MAX_RECORD_LENGTH: u64 = 10;
 
 pub fn execute_update_metadata(
     deps: DepsMut,
@@ -68,9 +69,9 @@ pub fn execute_update_metadata(
                     token_info.extension.records.push(record.clone());
                 }
                 // check record length
-                if token_info.extension.records.len() > MAX_RECORD_LENGTH as usize {
+                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
                     return Err(ContractError::TooManyRecords {
-                        max: MAX_RECORD_LENGTH,
+                        max: MAX_RECORD_COUNT,
                     });
                 }
             };
@@ -403,9 +404,9 @@ pub fn execute_add_text_record(
                 }
                 token_info.extension.records.push(record);
                 // check record length
-                if token_info.extension.records.len() > MAX_RECORD_LENGTH as usize {
+                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
                     return Err(ContractError::TooManyRecords {
-                        max: MAX_RECORD_LENGTH,
+                        max: MAX_RECORD_COUNT,
                     });
                 }
                 Ok(token_info)

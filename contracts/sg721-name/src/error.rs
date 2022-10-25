@@ -41,5 +41,5 @@ pub enum ContractError {
     UnauthorizedCreatorOrAdmin {},
 
     #[error("TooManyRecords max: {max}")]
-    TooManyRecords { max: u64 },
+    TooManyRecords { max: u32 },
 }
