@@ -1,12 +1,12 @@
 [package]
 name = "sg-name"
-version = "0.9.0"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-edition = "2021"
 description = "Rust definition of name service metadata, used by Stargaze Names"
-license = "Apache-2.0"
-repository = "https://github.com/public-awesome/names"
-homepage = "https://stargaze.zone"
+version     = { workspace = true }
+edition     = { workspace = true }
+homepage    = { workspace = true }
+repository  = { workspace = true }
+license     = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -20,7 +20,7 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-cosmwasm-schema = "1.1.4"
-schemars = "0.8.11"
-serde = { version = "1.0.145", default-features = false, features = ["derive"] }
-cosmwasm-std = "1.1.4"
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
