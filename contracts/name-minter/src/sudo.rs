@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Addr, DepsMut, Env};
+use cosmwasm_std::{Addr, DepsMut, Env, Event};
 use sg_std::Response;
 
 use crate::{
@@ -43,7 +43,11 @@ pub fn sudo_update_params(
         },
     )?;
 
-    Ok(Response::new().add_attribute("action", "sudo_update_params"))
+    let event = Event::new("update_params")
+        .add_attribute("min_name_length", min_name_length.to_string())
+        .add_attribute("max_name_length", max_name_length.to_string())
+        .add_attribute("base_price", base_price.to_string());
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_update_name_collection(
@@ -52,7 +56,8 @@ pub fn sudo_update_name_collection(
 ) -> Result<Response, ContractError> {
     NAME_COLLECTION.save(deps.storage, &collection)?;
 
-    Ok(Response::new().add_attribute("action", "sudo_update_name_collection"))
+    let event = Event::new("update_name_collection").add_attribute("collection", collection);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_update_name_marketplace(
@@ -61,5 +66,6 @@ pub fn sudo_update_name_marketplace(
 ) -> Result<Response, ContractError> {
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
-    Ok(Response::new().add_attribute("action", "sudo_update_name_marketplace"))
+    let event = Event::new("update_name_marketplace").add_attribute("marketplace", marketplace);
+    Ok(Response::new().add_event(event))
 }
