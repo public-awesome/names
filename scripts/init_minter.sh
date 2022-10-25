@@ -4,7 +4,8 @@ MSG=$(cat <<EOF
   "marketplace_addr": "$MKT",
   "min_name_length": 3,
   "max_name_length": 63,
-  "base_price": "100000000"
+  "base_price": "100000000",
+  "whitelists": []
 }
 EOF
 )
