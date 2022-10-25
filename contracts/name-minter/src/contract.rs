@@ -130,6 +130,8 @@ pub fn execute_mint_and_list(
     let params = SUDO_PARAMS.load(deps.storage)?;
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
+    // Assumes no duplicate addresses between whitelists
+    // Otherwise there will be edge cases with per addr limit between the whitelists
     let list = whitelists.iter().find(|whitelist| {
         whitelist
             .includes(&deps.querier, sender.to_string())
@@ -153,7 +155,7 @@ pub fn execute_mint_and_list(
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
-    let msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
+    let mint_msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
         token_id: name.to_string(),
         owner: sender.to_string(),
         token_uri: None,
@@ -161,17 +163,17 @@ pub fn execute_mint_and_list(
     });
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_binary(&msg)?,
+        msg: to_binary(&mint_msg)?,
         funds: vec![],
     };
 
-    let msg = MarketplaceExecuteMsg::SetAsk {
+    let ask_msg = MarketplaceExecuteMsg::SetAsk {
         token_id: name.to_string(),
         seller: sender.to_string(),
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),
-        msg: to_binary(&msg)?,
+        msg: to_binary(&ask_msg)?,
         funds: vec![],
     };
 
