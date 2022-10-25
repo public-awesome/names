@@ -214,7 +214,7 @@ fn mint_and_update() {
     };
     let update_metadata_msg = ExecuteMsg::UpdateMetadata {
         name: token_id.to_string(),
-        metadata: Some(new_metadata.clone()),
+        metadata: Some(new_metadata),
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg);
     assert_eq!(
