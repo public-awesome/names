@@ -1,4 +1,6 @@
+use crate::contract::{execute, instantiate, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::query::query;
 use anyhow::Result as AnyResult;
 use cosmwasm_std::{coins, Addr, Uint128};
 use cw721::{NumTokensResponse, OwnerOfResponse};
@@ -14,12 +16,7 @@ use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
-    let contract = ContractWrapper::new(
-        crate::contract::execute,
-        crate::contract::instantiate,
-        crate::query::query,
-    )
-    .with_reply(crate::contract::reply);
+    let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
     Box::new(contract)
 }
 
