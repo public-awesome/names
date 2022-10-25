@@ -3,7 +3,7 @@ use std::vec;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, Reply, Uint128, WasmMsg,
+    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, Event, MessageInfo, Reply, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
@@ -148,7 +148,7 @@ pub fn execute_mint_and_list(
     };
 
     let price = validate_payment(name.len(), &info, params.base_price, discount)?;
-    let community_pool_msg = create_fund_community_pool_msg(vec![price]);
+    let community_pool_msg = create_fund_community_pool_msg(vec![price.clone()]);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
@@ -175,8 +175,12 @@ pub fn execute_mint_and_list(
         funds: vec![],
     };
 
+    let event = Event::new("mint_and_list")
+        .add_attribute("name", name)
+        .add_attribute("owner", sender)
+        .add_attribute("price", price.amount.to_string());
     Ok(res
-        .add_attribute("action", "mint_and_list")
+        .add_event(event)
         .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
@@ -192,7 +196,8 @@ pub fn execute_pause(
 
     PAUSED.save(deps.storage, &pause)?;
 
-    Ok(Response::new())
+    let event = Event::new("pause").add_attribute("pause", pause.to_string());
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_add_whitelist(
@@ -211,7 +216,8 @@ pub fn execute_add_whitelist(
 
     WHITELISTS.save(deps.storage, &lists)?;
 
-    Ok(Response::new())
+    let event = Event::new("add_whitelist").add_attribute("address", address);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_remove_whitelist(
@@ -227,7 +233,8 @@ pub fn execute_remove_whitelist(
 
     WHITELISTS.save(deps.storage, &lists)?;
 
-    Ok(Response::new())
+    let event = Event::new("remove_whitelist").add_attribute("address", address);
+    Ok(Response::new().add_event(event))
 }
 
 // This follows the same rules as Internet domain names
