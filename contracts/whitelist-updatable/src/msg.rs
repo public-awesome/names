@@ -42,7 +42,7 @@ pub enum QueryMsg {
     IncludesAddress { address: String },
     #[returns(CountResponse)]
     MintCount { address: String },
-    /// for front end query to avoid processing addresses that will fail. includes address and under per address limit
+    /// Avoid processing addresses that will fail. Includes address and under per address limit
     #[returns(IsProcessableResponse)]
     IsProcessable { address: String },
     #[returns(cw_controllers::AdminResponse)]

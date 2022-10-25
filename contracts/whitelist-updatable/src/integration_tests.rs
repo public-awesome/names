@@ -340,6 +340,16 @@ mod tests {
         assert!(res.is_ok());
 
         // surpass limit
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IsProcessable {
+                    address: "addr0007".to_string(),
+                },
+            )
+            .unwrap();
+        assert!(res);
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
@@ -350,6 +360,16 @@ mod tests {
             &[],
         );
         assert!(res.is_ok());
+        let res: bool = app
+            .wrap()
+            .query_wasm_smart(
+                &wl_addr,
+                &QueryMsg::IsProcessable {
+                    address: "addr0007".to_string(),
+                },
+            )
+            .unwrap();
+        assert!(!res);
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
