@@ -11,13 +11,25 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    UpdateAdmin { new_admin: String },
-    AddAddresses { addresses: Vec<String> },
-    RemoveAddresses { addresses: Vec<String> },
-    // Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
-    ProcessAddress { address: String },
-    UpdatePerAddressLimit { limit: u32 },
-    UpdateMinterContract { minter_contract: String },
+    UpdateAdmin {
+        new_admin: String,
+    },
+    AddAddresses {
+        addresses: Vec<String>,
+    },
+    RemoveAddresses {
+        addresses: Vec<String>,
+    },
+    /// Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
+    ProcessAddress {
+        address: String,
+    },
+    UpdatePerAddressLimit {
+        limit: u32,
+    },
+    UpdateMinterContract {
+        minter_contract: String,
+    },
     Purge {},
 }
 
@@ -30,6 +42,9 @@ pub enum QueryMsg {
     IncludesAddress { address: String },
     #[returns(CountResponse)]
     MintCount { address: String },
+    /// Avoid processing addresses that will fail. Includes address and under per address limit
+    #[returns(IsProcessableResponse)]
+    IsProcessable { address: String },
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
     #[returns(CountResponse)]
@@ -55,4 +70,9 @@ pub struct CountResponse {
 #[cw_serde]
 pub struct PerAddressLimitResponse {
     pub limit: u64,
+}
+
+#[cw_serde]
+pub struct IsProcessableResponse {
+    pub processable: bool,
 }

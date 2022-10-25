@@ -265,6 +265,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
         QueryMsg::Count {} => to_binary(&query_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
+        QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
     }
 }
 
@@ -295,4 +296,16 @@ pub fn query_count(deps: Deps) -> StdResult<u64> {
 pub fn query_per_address_limit(deps: Deps) -> StdResult<u32> {
     let config = CONFIG.load(deps.storage)?;
     Ok(config.per_address_limit)
+}
+
+pub fn query_is_processable(deps: Deps, address: String) -> StdResult<bool> {
+    let addr = deps.api.addr_validate(&address)?;
+    // address not in whitelist, it's not processable
+    if !WHITELIST.has(deps.storage, addr.clone()) {
+        return Ok(false);
+    }
+    // compare addr mint count to per address limit
+    let count = WHITELIST.load(deps.storage, addr)?;
+    let config = CONFIG.load(deps.storage)?;
+    Ok(count < config.per_address_limit)
 }

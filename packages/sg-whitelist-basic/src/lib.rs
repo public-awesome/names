@@ -4,15 +4,15 @@ use cosmwasm_schema::cw_serde;
 pub enum SgWhitelistExecuteMsg {
     /// Update admin of the list
     UpdateAdmin { admin: String },
-    /// Add an address to the list
-    AddAddress { address: String },
+    /// Add addresses to the list
+    AddAddresses { addresses: Vec<String> },
     /// Remove an address from the list
-    RemoveAddress { address: String },
+    RemoveAddresses { addresses: Vec<String> },
     /// Called by another contract to process an address
     /// Returns true if the address is whitelisted and processed
     ProcessAddress { address: String },
-    /// Updatet the per address limit
-    UpdatePerAddressLimit { limit: u64 },
+    /// Update per address limit
+    UpdatePerAddressLimit { limit: u32 },
 }
 
 #[cw_serde]
@@ -25,8 +25,8 @@ pub enum SgWhitelistQueryMsg {
     PerAddressLimit { limit: u64 },
     /// Query if address is included
     IncludesAddress { address: String },
-    /// Query if address has been processed
-    IsProcessed { address: String },
+    /// Query if address is included and under per address limit
+    IsProcessable { address: String },
 }
 
 #[cw_serde]
@@ -46,6 +46,6 @@ pub struct IncludesAddressResponse {
 }
 
 #[cw_serde]
-pub struct IsProcessedResponse {
-    pub processed: bool,
+pub struct IsProcessableResponse {
+    pub processable: bool,
 }
