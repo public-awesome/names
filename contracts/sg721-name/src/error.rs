@@ -39,4 +39,7 @@ pub enum ContractError {
 
     #[error("Unauthorized: Not contract creator or admin")]
     UnauthorizedCreatorOrAdmin {},
+
+    #[error("TooManyRecords max: {max}")]
+    TooManyRecords { max: u32 },
 }

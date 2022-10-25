@@ -117,7 +117,7 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
     (token_id.to_string(), bidder.clone())
 }
 
-/// Defines incides for accessing bids
+/// Defines indices for accessing bids
 #[index_list(Bid)]
 pub struct BidIndicies<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,

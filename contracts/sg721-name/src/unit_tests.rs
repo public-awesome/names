@@ -7,7 +7,7 @@ use cw721::Cw721Query;
 use cw721_base::MintMsg;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
-use sg_name::{Metadata, TextRecord, NFT};
+use sg_name::{Metadata, TextRecord, MAX_RECORD_COUNT, NFT};
 use std::marker::PhantomData;
 
 use crate::contract::transcode;
@@ -157,6 +157,73 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension, new_metadata);
+
+    // trigger too many records error
+    let new_metadata = Metadata {
+        image_nft: Some(NFT {
+            collection: Addr::unchecked("contract"),
+            token_id: "token_id".to_string(),
+        }),
+        profile_nft: None,
+        records: vec![
+            TextRecord {
+                name: "key1".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key2".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key3".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key4".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key5".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key6".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key7".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key8".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key9".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key10".to_string(),
+                value: "value".to_string(),
+            },
+            TextRecord {
+                name: "key11".to_string(),
+                value: "value".to_string(),
+            },
+        ],
+    };
+    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
+        name: token_id.to_string(),
+        metadata: Some(new_metadata),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg);
+    assert_eq!(
+        res.unwrap_err().to_string(),
+        ContractError::TooManyRecords {
+            max: MAX_RECORD_COUNT
+        }
+        .to_string()
+    );
 
     // reset metadata
     let update_metadata_msg = ExecuteMsg::UpdateMetadata {

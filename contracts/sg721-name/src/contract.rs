@@ -15,7 +15,10 @@ use name_marketplace::state::Bid;
 use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name::{
+    Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_RECORD_COUNT, MAX_TEXT_LENGTH,
+    NFT,
+};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -57,12 +60,19 @@ pub fn execute_update_metadata(
             // update records. If empty, do nothing.
             if !metadata.records.is_empty() {
                 for record in metadata.records.iter() {
+                    validate_and_sanitize_record(record)?;
                     // update same record name
                     token_info
                         .extension
                         .records
                         .retain(|r| r.name != record.name);
                     token_info.extension.records.push(record.clone());
+                }
+                // check record length
+                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
+                    return Err(ContractError::TooManyRecords {
+                        max: MAX_RECORD_COUNT,
+                    });
                 }
             };
         }
@@ -393,6 +403,12 @@ pub fn execute_add_text_record(
                     }
                 }
                 token_info.extension.records.push(record);
+                // check record length
+                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
+                    return Err(ContractError::TooManyRecords {
+                        max: MAX_RECORD_COUNT,
+                    });
+                }
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
