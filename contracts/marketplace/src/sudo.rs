@@ -3,7 +3,7 @@ use crate::msg::SudoMsg;
 use crate::state::{ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, SALE_HOOKS, SUDO_PARAMS};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Uint128};
+use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event, Uint128};
 use sg_std::Response;
 
 // bps fee can not exceed 100%
@@ -48,7 +48,8 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
 pub fn sudo_update_name_minter(deps: DepsMut, collection: Addr) -> Result<Response, ContractError> {
     NAME_MINTER.save(deps.storage, &collection)?;
 
-    Ok(Response::new().add_attribute("action", "sudo_update_name_minter"))
+    let event = Event::new("update_name_minter").add_attribute("minter", collection);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_update_name_collection(
@@ -57,7 +58,8 @@ pub fn sudo_update_name_collection(
 ) -> Result<Response, ContractError> {
     NAME_COLLECTION.save(deps.storage, &collection)?;
 
-    Ok(Response::new().add_attribute("action", "sudo_update_name_collection"))
+    let event = Event::new("update_name_collection").add_attribute("collection", collection);
+    Ok(Response::new().add_event(event))
 }
 
 /// Only governance can update contract params
@@ -86,59 +88,53 @@ pub fn sudo_update_params(
 
     SUDO_PARAMS.save(deps.storage, &params)?;
 
-    Ok(Response::new().add_attribute("action", "update_params"))
+    let event = Event::new("update_params")
+        .add_attribute(
+            "trading_fee_percent",
+            params.trading_fee_percent.to_string(),
+        )
+        .add_attribute("min_price", params.min_price);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_add_sale_hook(deps: DepsMut, hook: Addr) -> Result<Response, ContractError> {
     SALE_HOOKS.add_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "add_sale_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("add_sale_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_add_ask_hook(deps: DepsMut, _env: Env, hook: Addr) -> Result<Response, ContractError> {
     ASK_HOOKS.add_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "add_ask_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("add_ask_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_add_bid_hook(deps: DepsMut, _env: Env, hook: Addr) -> Result<Response, ContractError> {
     BID_HOOKS.add_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "add_bid_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("add_bid_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_remove_sale_hook(deps: DepsMut, hook: Addr) -> Result<Response, ContractError> {
     SALE_HOOKS.remove_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "remove_sale_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("remove_sale_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_remove_ask_hook(deps: DepsMut, hook: Addr) -> Result<Response, ContractError> {
     ASK_HOOKS.remove_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "remove_ask_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("remove_ask_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn sudo_remove_bid_hook(deps: DepsMut, hook: Addr) -> Result<Response, ContractError> {
     BID_HOOKS.remove_hook(deps.storage, hook.clone())?;
 
-    let res = Response::new()
-        .add_attribute("action", "remove_bid_hook")
-        .add_attribute("hook", hook);
-    Ok(res)
+    let event = Event::new("remove_bid_hook").add_attribute("hook", hook);
+    Ok(Response::new().add_event(event))
 }
