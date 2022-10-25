@@ -47,7 +47,10 @@ pub fn instantiate(
 
     IS_SETUP.save(deps.storage, &false)?;
 
-    Ok(Response::new())
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute("contract_name", CONTRACT_NAME)
+        .add_attribute("contract_version", CONTRACT_VERSION))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -96,7 +99,10 @@ pub fn execute_setup(
     NAME_COLLECTION.save(deps.storage, &collection)?;
     IS_SETUP.save(deps.storage, &true)?;
 
-    Ok(Response::new())
+    let event = Event::new("setup")
+        .add_attribute("minter", minter)
+        .add_attribute("collection", collection);
+    Ok(Response::new().add_event(event))
 }
 
 /// A seller may set an Ask on their NFT to list it on Marketplace
@@ -387,7 +393,8 @@ pub fn execute_fund_renewal(
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    Ok(Response::new().add_event(Event::new("fund-renewal").add_attribute("token_id", token_id)))
+    let event = Event::new("fund-renewal").add_attribute("token_id", token_id);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_refund_renewal(
@@ -414,9 +421,8 @@ pub fn execute_refund_renewal(
     ask.renewal_fund = Uint128::zero();
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    Ok(Response::new()
-        .add_event(Event::new("refund-renewal").add_attribute("token_id", token_id))
-        .add_message(msg))
+    let event = Event::new("refund-renewal").add_attribute("token_id", token_id);
+    Ok(Response::new().add_event(event).add_message(msg))
 }
 
 /// Anyone can call this to process renewals for a block and earn a reward
@@ -457,8 +463,8 @@ pub fn execute_process_renewal(
     //     store_ask(deps.storage, &ask)?;
     // }
 
-    Ok(Response::new()
-        .add_event(Event::new("process-renewal").add_attribute("time", time.to_string())))
+    let event = Event::new("process-renewal").add_attribute("time", time.to_string());
+    Ok(Response::new().add_event(event))
 }
 
 /// Transfers funds and NFT, updates bid

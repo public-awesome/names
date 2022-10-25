@@ -47,6 +47,7 @@ pub mod entry {
         let res = Sg721NameContract::default().instantiate(deps, env, info, msg)?;
 
         Ok(res
+            .add_attribute("action", "instantiate")
             .add_attribute("contract_name", CONTRACT_NAME)
             .add_attribute("contract_version", CONTRACT_VERSION))
     }

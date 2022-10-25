@@ -43,7 +43,10 @@ pub fn instantiate(
     TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
     CONFIG.save(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_attribute("action", "instantiate")
+        .add_attribute("contract_name", CONTRACT_NAME)
+        .add_attribute("contract_version", CONTRACT_VERSION))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
