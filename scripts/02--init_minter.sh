@@ -1,6 +1,7 @@
 MSG=$(cat <<EOF
 {
   "collection_code_id": $COLLECTION_CODE_ID,
+  "admin": "$ADMIN",
   "marketplace_addr": "$MKT",
   "min_name_length": 3,
   "max_name_length": 63,
