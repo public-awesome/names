@@ -44,10 +44,11 @@ pub mod entry {
     ) -> Result<Response, Sg721ContractError> {
         cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-        let res = Sg721NameContract::default().instantiate(deps, env, info, msg)?;
+        let res = Sg721NameContract::default().instantiate(deps, env.clone(), info, msg)?;
 
         Ok(res
             .add_attribute("action", "instantiate")
+            .add_attribute("sg721_names_addr", env.contract.address.to_string())
             .add_attribute("contract_name", CONTRACT_NAME)
             .add_attribute("contract_version", CONTRACT_VERSION))
     }
