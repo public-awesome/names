@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
     RemoveAddresses {
         addresses: Vec<String>,
     },
-    /// Add message to increment mint count on whitelist map. if mint succeeds, map increment will also succeed.
+    /// Only callable by minter contract. Increment mint count on whitelist map.
     ProcessAddress {
         address: String,
     },
