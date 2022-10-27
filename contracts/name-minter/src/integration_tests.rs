@@ -1072,6 +1072,7 @@ mod collection {
 
 mod whitelist {
     use crate::msg::{QueryMsg, WhitelistsResponse};
+    use whitelist_updatable::msg::QueryMsg as WhitelistQueryMsg;
 
     use super::*;
 
@@ -1160,8 +1161,50 @@ mod whitelist {
         // mint from user on first whitelist
         let res = mint_and_list(&mut app, NAME, USER);
         assert!(res.is_ok());
+
+        // check user mint count on both lists
+        // whitelist 1
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(
+                WHITELIST,
+                &WhitelistQueryMsg::MintCount {
+                    address: USER.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, 1);
+
+        // whitelist 2
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(
+                WHITELIST2,
+                &WhitelistQueryMsg::MintCount {
+                    address: USER.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, 0);
+
         // mint from user on second whitelist
         let res = mint_and_list(&mut app, "none", USER2);
         assert!(res.is_ok());
+        // user not on lists
+        let res = mint_and_list(&mut app, "nbne", BIDDER);
+        assert!(res.is_err());
+
+        // mint over per address limit
+        let res = mint_and_list(&mut app, "some", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "zome", USER);
+        assert!(res.is_err());
     }
+
+    #[test]
+    fn discount() {}
+
+    /// test large mint counts
+    #[test]
+    fn gas_usage() {}
 }
