@@ -8,6 +8,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use cw_utils::nonpayable;
 use sg_name_minter::{ParamsResponse as NameMinterParamsResponse, SgNameMinterQueryMsg};
 
 // version info for migration info
@@ -21,6 +22,7 @@ pub fn instantiate(
     info: MessageInfo,
     mut msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let config = Config {
         admin: info.sender,
@@ -103,6 +105,7 @@ pub fn execute_update_admin(
     info: MessageInfo,
     new_admin: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -156,6 +159,7 @@ pub fn execute_remove_addresses(
     info: MessageInfo,
     mut addresses: Vec<String>,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
     if config.admin != info.sender {
@@ -190,6 +194,7 @@ pub fn execute_process_address(
     info: MessageInfo,
     address: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     if let Some(minter_contract) = config.minter_contract {
         if minter_contract != info.sender {
@@ -225,6 +230,7 @@ pub fn execute_update_per_address_limit(
     info: MessageInfo,
     limit: u32,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -240,6 +246,7 @@ pub fn execute_update_per_address_limit(
 }
 
 pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
