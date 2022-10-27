@@ -47,8 +47,6 @@ mod tests {
         Box::new(contract)
     }
 
-    // pub fn mock_params() ->
-
     #[test]
     pub fn init() {
         let addrs: Vec<String> = vec![
