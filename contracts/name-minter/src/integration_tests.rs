@@ -59,14 +59,14 @@ const NAME: &str = "bobo";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
-const PER_ADDRESS_LIMIT: u32 = 10;
+const PER_ADDRESS_LIMIT: u32 = 2;
 
 const SECONDS_PER_YEAR: u64 = 31536000;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
-// const WHITELIST: &str = "contract3";
+const WHITELIST: &str = "contract3";
 
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
@@ -105,7 +105,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
 
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
-        admin,
+        admin: admin.clone(),
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -147,7 +147,12 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 5. Instantiate Whitelist
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
-        addresses: vec!["addr0001".to_string(), "addr0002".to_string()],
+        addresses: vec![
+            "addr0001".to_string(),
+            "addr0002".to_string(),
+            USER.to_string(),
+            ADMIN2.to_string(),
+        ],
         mint_discount_bps: None,
     };
     let wl = app
@@ -158,8 +163,22 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
         minter_contract: MINTER.to_string(),
     };
-    let res = app.execute_contract(Addr::unchecked(ADMIN2), Addr::unchecked(wl), &msg, &[]);
+    let res = app.execute_contract(
+        Addr::unchecked(ADMIN2),
+        Addr::unchecked(wl.clone()),
+        &msg,
+        &[],
+    );
     assert!(res.is_ok());
+
+    // 7. Add Whitelist to Name Minter
+    if let Some(admin) = admin {
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
+        assert!(res.is_ok());
+    }
 
     app
 }
@@ -569,32 +588,6 @@ mod admin {
         let msg = ExecuteMsg::UpdateAdmin { admin: None };
         let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_err());
-    }
-
-    #[test]
-    fn add_remove_whitelist() {
-        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
-
-        let msg = ExecuteMsg::AddWhitelist {
-            address: "whitelist".to_string(),
-        };
-
-        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        assert!(res.is_ok());
-
-        let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 1);
-
-        let msg = ExecuteMsg::RemoveWhitelist {
-            address: "whitelist".to_string(),
-        };
-        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        assert!(res.is_ok());
-
-        let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 0);
     }
 }
 
@@ -1050,5 +1043,52 @@ mod collection {
         };
         let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(err.is_err());
+    }
+}
+
+mod whitelist {
+    use crate::msg::{QueryMsg, WhitelistsResponse};
+
+    use super::*;
+
+    #[test]
+    fn init() {
+        let _ = instantiate_contracts(None, Some(ADMIN.to_string()));
+    }
+
+    #[test]
+    fn multiple_wl() {
+        // TODO
+    }
+
+    #[test]
+    fn add_remove_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        let res: WhitelistsResponse = app
+            .wrap()
+            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .unwrap();
+        let wl_count = res.whitelists.len();
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "whitelist".to_string(),
+        };
+
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), wl_count + 1);
+
+        let msg = ExecuteMsg::RemoveWhitelist {
+            address: "whitelist".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), wl_count);
     }
 }
