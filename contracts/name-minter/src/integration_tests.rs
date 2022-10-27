@@ -283,6 +283,9 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::OperatorsResponse;
+    use whitelist_updatable::msg::QueryMsg::IncludesAddress;
+
+    use crate::msg::{QueryMsg, WhitelistsResponse};
 
     use super::*;
 
@@ -549,6 +552,28 @@ mod execute {
     fn test_pause() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
 
+        // verify addr in wl
+        let res: WhitelistsResponse = app
+            .wrap()
+            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .unwrap();
+
+        assert_eq!(res.whitelists.len(), 1);
+
+        res.whitelists.iter().find(|whitelist| {
+            let included: bool = app
+                .wrap()
+                .query_wasm_smart(
+                    whitelist.clone(),
+                    &IncludesAddress {
+                        address: USER.to_string(),
+                    },
+                )
+                .unwrap();
+            dbg!(included, whitelist);
+            included
+        });
+
         let res = mint_and_list(&mut app, NAME, USER);
         assert!(res.is_ok());
 
@@ -562,8 +587,6 @@ mod execute {
 }
 
 mod admin {
-    use crate::msg::{QueryMsg, WhitelistsResponse};
-
     use super::*;
 
     #[test]
