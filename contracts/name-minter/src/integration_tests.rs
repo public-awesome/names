@@ -80,6 +80,7 @@ pub fn custom_mock_app() -> StargazeApp {
 // 4. Update Name Marketplace with Name Collection address
 // 5. Instantiate Whitelist
 // 6. Update Whitelist with Name Minter
+// 7. Add Whitelist to Name Minter
 fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> StargazeApp {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
@@ -1074,14 +1075,11 @@ mod whitelist {
 
     use super::*;
 
+    const WHITELIST2: &str = "contract4";
+
     #[test]
     fn init() {
         let _ = instantiate_contracts(None, Some(ADMIN.to_string()));
-    }
-
-    #[test]
-    fn multiple_wl() {
-        // TODO
     }
 
     #[test]
@@ -1113,5 +1111,57 @@ mod whitelist {
         let msg = QueryMsg::Whitelists {};
         let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
         assert_eq!(res.whitelists.len(), wl_count);
+    }
+
+    #[test]
+    fn multiple_wl() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+        let wl_id = app.store_code(contract_whitelist());
+
+        // instantiate wl2
+        let msg = whitelist_updatable::msg::InstantiateMsg {
+            per_address_limit: PER_ADDRESS_LIMIT,
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                USER.to_string(),
+                USER2.to_string(),
+                ADMIN2.to_string(),
+            ],
+            mint_discount_bps: None,
+        };
+        let wl = app
+            .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
+            .unwrap();
+        // add minter to wl2
+        let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
+            minter_contract: MINTER.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(wl.clone()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // add wl2 to minter
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN.to_string()),
+            Addr::unchecked(MINTER.to_string()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // mint from user on first whitelist
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
+        // mint from user on second whitelist
+        let res = mint_and_list(&mut app, "none", USER2);
+        assert!(res.is_ok());
     }
 }

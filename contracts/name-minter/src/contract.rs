@@ -135,7 +135,7 @@ pub fn execute_mint_and_list(
     let params = SUDO_PARAMS.load(deps.storage)?;
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
-    // TODO clean up. this is ugly
+    // TODO figure out why helper is broken
     // let list = whitelists.iter().find(|whitelist| {
     //     whitelist
     //         .includes(&deps.querier, sender.to_string())
