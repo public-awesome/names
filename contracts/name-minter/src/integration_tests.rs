@@ -51,6 +51,7 @@ pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
 
 const USER: &str = "user";
 const USER2: &str = "user2";
+const USER3: &str = "user3";
 const BIDDER: &str = "bidder";
 const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
@@ -1281,17 +1282,17 @@ mod whitelist {
 
         let msg = QueryMsg::Whitelists {};
         let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 1);
+        assert_eq!(res.whitelists.len(), 2);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(wl_addr_count, 2);
+        assert_eq!(wl_addr_count, 4);
 
-        let res = mint_and_list(&mut app, NAME, USER, None);
+        let res = mint_and_list(&mut app, NAME, USER3, None);
         assert!(res.is_err());
 
         let msg = WhitelistExecuteMsg::AddAddresses {
-            addresses: vec![USER.to_string()],
+            addresses: vec![USER3.to_string()],
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN2),
@@ -1310,12 +1311,12 @@ mod whitelist {
         assert_eq!(res, wl_addr_count + 1);
 
         let msg = WhitelistQueryMsg::IncludesAddress {
-            address: USER.to_string(),
+            address: USER3.to_string(),
         };
         let res: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         assert!(res);
 
-        let res = mint_and_list(&mut app, NAME, USER, None);
+        let res = mint_and_list(&mut app, NAME, USER3, None);
         assert!(res.is_ok());
     }
     /// test large mint counts
