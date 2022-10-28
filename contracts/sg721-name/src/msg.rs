@@ -141,6 +141,9 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
+    /// Returns max record count
+    #[returns(u32)]
+    MaxRecordCount {},
     /// Reverse lookup of name for address
     #[returns(NameResponse)]
     Name { address: String },

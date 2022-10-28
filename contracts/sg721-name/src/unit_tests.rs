@@ -1,18 +1,18 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
-    QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
+    from_binary, from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty,
+    OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
 use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
-use sg_name::{Metadata, TextRecord, MAX_RECORD_COUNT, NFT};
+use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
 use crate::contract::transcode;
-use crate::entry::{execute, instantiate};
-use crate::{ContractError, ExecuteMsg};
+use crate::entry::{execute, instantiate, query};
+use crate::{ContractError, ExecuteMsg, QueryMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 const CREATOR: &str = "creator";
 const IMPOSTER: &str = "imposter";
@@ -111,6 +111,11 @@ fn mint_and_update() {
     };
 
     instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
+
+    // retrieve max record count
+    let max_record_count: u32 =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::MaxRecordCount {}).unwrap())
+            .unwrap();
 
     // mint token
     let token_id = "Enterprise";
@@ -220,7 +225,7 @@ fn mint_and_update() {
     assert_eq!(
         res.unwrap_err().to_string(),
         ContractError::TooManyRecords {
-            max: MAX_RECORD_COUNT
+            max: max_record_count
         }
         .to_string()
     );

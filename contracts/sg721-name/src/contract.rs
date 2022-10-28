@@ -1,6 +1,6 @@
 use crate::{
     error::ContractError,
-    state::{NAME_MARKETPLACE, REVERSE_MAP},
+    state::{MAX_RECORD_COUNT, NAME_MARKETPLACE, REVERSE_MAP},
 };
 
 use cosmwasm_std::{
@@ -15,10 +15,7 @@ use name_marketplace::state::Bid;
 use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{
-    Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_RECORD_COUNT, MAX_TEXT_LENGTH,
-    NFT,
-};
+use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -34,6 +31,7 @@ pub fn execute_update_metadata(
     metadata: Option<Metadata>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
+    let max_record_count = MAX_RECORD_COUNT.load(deps.storage)?;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -69,9 +67,9 @@ pub fn execute_update_metadata(
                     token_info.extension.records.push(record.clone());
                 }
                 // check record length
-                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
+                if token_info.extension.records.len() > max_record_count as usize {
                     return Err(ContractError::TooManyRecords {
-                        max: MAX_RECORD_COUNT,
+                        max: max_record_count,
                     });
                 }
             };
@@ -387,6 +385,7 @@ pub fn execute_add_text_record(
     record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
+    let max_record_count = MAX_RECORD_COUNT.load(deps.storage)?;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -404,9 +403,9 @@ pub fn execute_add_text_record(
                 }
                 token_info.extension.records.push(record);
                 // check record length
-                if token_info.extension.records.len() > MAX_RECORD_COUNT as usize {
+                if token_info.extension.records.len() > max_record_count as usize {
                     return Err(ContractError::TooManyRecords {
-                        max: MAX_RECORD_COUNT,
+                        max: max_record_count,
                     });
                 }
                 Ok(token_info)

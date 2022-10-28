@@ -21,7 +21,7 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
-    use crate::contract::execute_update_profile_nft;
+    use crate::{contract::execute_update_profile_nft, state::MAX_RECORD_COUNT};
 
     use super::*;
 
@@ -44,6 +44,8 @@ pub mod entry {
     ) -> Result<Response, Sg721ContractError> {
         cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+        // Initialize max record count to 10, can be changed by sudo params
+        MAX_RECORD_COUNT.save(deps.storage, &10)?;
         let res = Sg721NameContract::default().instantiate(deps, env.clone(), info, msg)?;
 
         Ok(res
