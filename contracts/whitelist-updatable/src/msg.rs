@@ -48,7 +48,7 @@ pub enum QueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
     #[returns(CountResponse)]
-    Count {},
+    AddressCount {},
     #[returns(PerAddressLimitResponse)]
     PerAddressLimit {},
 }

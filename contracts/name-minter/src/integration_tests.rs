@@ -14,7 +14,7 @@ use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
-use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
+use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -544,7 +544,7 @@ mod execute {
 }
 
 mod admin {
-    use whitelist_updatable::msg::{ConfigResponse, CountResponse, IncludesAddressResponse};
+    use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
 
     use crate::msg::{QueryMsg, WhitelistsResponse};
 
@@ -614,6 +614,10 @@ mod admin {
         let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
         assert_eq!(res.whitelists.len(), 1);
 
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(wl_addr_count, 2);
+
         let res = mint_and_list(&mut app, NAME, USER);
         assert!(res.is_err());
 
@@ -632,9 +636,9 @@ mod admin {
         let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         assert_eq!(res.config.admin, ADMIN2.to_string());
 
-        let msg = WhitelistQueryMsg::Count {};
-        let res: CountResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.count, 1);
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res, wl_addr_count + 1);
 
         // let msg = WhitelistQueryMsg::IncludesAddress {
         //     address: USER.to_string(),

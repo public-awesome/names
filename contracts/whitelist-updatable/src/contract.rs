@@ -266,7 +266,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
         QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
         QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
-        QueryMsg::Count {} => to_binary(&query_count(deps)?),
+        QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
     }
@@ -291,7 +291,7 @@ pub fn query_admin(deps: Deps) -> StdResult<String> {
     Ok(config.admin.to_string())
 }
 
-pub fn query_count(deps: Deps) -> StdResult<u64> {
+pub fn query_address_count(deps: Deps) -> StdResult<u64> {
     TOTAL_ADDRESS_COUNT.load(deps.storage)
 }
 
