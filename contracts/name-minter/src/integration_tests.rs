@@ -581,7 +581,7 @@ mod execute {
             let included: bool = app
                 .wrap()
                 .query_wasm_smart(
-                    whitelist.clone(),
+                    Addr::unchecked(whitelist.to_string()),
                     &IncludesAddress {
                         address: USER.to_string(),
                     },
