@@ -233,7 +233,10 @@ fn mint_and_list(
     }
     .into();
 
-    let amount = discount.map(|d| amount * d).unwrap_or(amount);
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
+    dbg!(amount);
 
     // give user some funds
     let name_fee = coins(amount.into(), NATIVE_DENOM);
@@ -1260,6 +1263,9 @@ mod whitelist {
         assert!(res.is_ok());
 
         // mint and list with discount
+        let discount_dec = Decimal::percent(3500u64) / Uint128::from(100u128);
+        let res = mint_and_list(&mut app, NAME, USER2, Some(discount_dec));
+        assert!(res.is_ok());
     }
 
     /// test large mint counts
