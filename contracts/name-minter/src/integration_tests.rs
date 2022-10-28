@@ -628,15 +628,20 @@ mod admin {
         );
         assert!(res.is_ok());
 
-        let msg = WhitelistQueryMsg::IncludesAddress {
-            address: USER.to_string(),
-        };
+        let msg = WhitelistQueryMsg::Config {};
+        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.config.admin, ADMIN2.to_string());
+
+        let msg = WhitelistQueryMsg::Count {};
+        let res: CountResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.count, 1);
+
+        // let msg = WhitelistQueryMsg::IncludesAddress {
+        //     address: USER.to_string(),
+        // };
         // let res: IncludesAddressResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         // // assert!(res.includes);
         // println!("{:?}", res);
-
-        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        println!("{:?}", res);
 
         // let res = mint_and_list(&mut app, NAME, USER);
         // println!("{:?}", res);
