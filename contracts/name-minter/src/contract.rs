@@ -293,7 +293,9 @@ fn validate_payment(
     }
     .into();
 
-    let amount = discount.map(|d| amount * d).unwrap_or(amount);
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
