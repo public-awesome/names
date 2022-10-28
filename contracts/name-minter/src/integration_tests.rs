@@ -596,6 +596,34 @@ mod admin {
         let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
         assert_eq!(res.whitelists.len(), 0);
     }
+
+    #[test]
+    fn mint_from_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "random".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), 1);
+
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_err());
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: USER.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let res = mint_and_list(&mut app, NAME, USER);
+        println!("{:?}", res);
+        assert!(res.is_ok());
+    }
 }
 
 mod query {
