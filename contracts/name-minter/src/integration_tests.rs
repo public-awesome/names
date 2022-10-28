@@ -640,16 +640,14 @@ mod admin {
         let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         assert_eq!(res, wl_addr_count + 1);
 
-        // let msg = WhitelistQueryMsg::IncludesAddress {
-        //     address: USER.to_string(),
-        // };
-        // let res: IncludesAddressResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        // // assert!(res.includes);
-        // println!("{:?}", res);
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER.to_string(),
+        };
+        let res: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(res);
 
-        // let res = mint_and_list(&mut app, NAME, USER);
-        // println!("{:?}", res);
-        // assert!(res.is_ok());
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
     }
 }
 
