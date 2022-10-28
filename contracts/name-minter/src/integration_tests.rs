@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::query;
 use anyhow::Result as AnyResult;
-use cosmwasm_std::{coins, Addr, Uint128};
+use cosmwasm_std::{coins, Addr, Decimal, Uint128};
 use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{
     AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg,
@@ -59,14 +59,14 @@ const NAME: &str = "bobo";
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
-const PER_ADDRESS_LIMIT: u32 = 10;
+const PER_ADDRESS_LIMIT: u32 = 2;
 
 const SECONDS_PER_YEAR: u64 = 31536000;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
-// const WHITELIST: &str = "contract3";
+const WHITELIST: &str = "contract3";
 
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
@@ -80,6 +80,7 @@ pub fn custom_mock_app() -> StargazeApp {
 // 4. Update Name Marketplace with Name Collection address
 // 5. Instantiate Whitelist
 // 6. Update Whitelist with Name Minter
+// 7. Add Whitelist to Name Minter
 fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> StargazeApp {
     let mut app = custom_mock_app();
     let mkt_id = app.store_code(contract_marketplace());
@@ -105,7 +106,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
 
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
-        admin,
+        admin: admin.clone(),
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -147,7 +148,12 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 5. Instantiate Whitelist
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
-        addresses: vec!["addr0001".to_string(), "addr0002".to_string()],
+        addresses: vec![
+            "addr0001".to_string(),
+            "addr0002".to_string(),
+            USER.to_string(),
+            ADMIN2.to_string(),
+        ],
         mint_discount_bps: None,
     };
     let wl = app
@@ -158,8 +164,22 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
         minter_contract: MINTER.to_string(),
     };
-    let res = app.execute_contract(Addr::unchecked(ADMIN2), Addr::unchecked(wl), &msg, &[]);
+    let res = app.execute_contract(
+        Addr::unchecked(ADMIN2),
+        Addr::unchecked(wl.clone()),
+        &msg,
+        &[],
+    );
     assert!(res.is_ok());
+
+    // 7. Add Whitelist to Name Minter
+    if let Some(admin) = admin {
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
+        assert!(res.is_ok());
+    }
 
     app
 }
@@ -185,7 +205,12 @@ fn update_block_height(app: &mut StargazeApp, height: u64) {
     app.set_block(block);
 }
 
-fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) -> AnyResult<AppResponse> {
+fn mint_and_list(
+    app: &mut StargazeApp,
+    name: &str,
+    user: &str,
+    discount: Option<Decimal>,
+) -> AnyResult<AppResponse> {
     // set approval for user, for all tokens
     // approve_all is needed because we don't know the token_id before-hand
     let approve_all_msg = Sg721NameExecuteMsg::ApproveAll {
@@ -200,10 +225,21 @@ fn mint_and_list(app: &mut StargazeApp, name: &str, user: &str) -> AnyResult<App
     );
     assert!(res.is_ok());
 
-    let four_letter_name_cost = BASE_PRICE * 10;
+    let amount: Uint128 = match name.len() {
+        0..=2 => BASE_PRICE,
+        3 => BASE_PRICE * 100,
+        4 => BASE_PRICE * 10,
+        _ => BASE_PRICE,
+    }
+    .into();
+
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
+    dbg!(amount);
 
     // give user some funds
-    let name_fee = coins(four_letter_name_cost, NATIVE_DENOM);
+    let name_fee = coins(amount.into(), NATIVE_DENOM);
     app.sudo(CwSudoMsg::Bank({
         BankSudo::Mint {
             to_address: user.to_string(),
@@ -264,6 +300,9 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::OperatorsResponse;
+    use whitelist_updatable::msg::QueryMsg::IncludesAddress;
+
+    use crate::msg::{QueryMsg, WhitelistsResponse};
 
     use super::*;
 
@@ -271,7 +310,7 @@ mod execute {
     fn check_approvals() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         // check operators
@@ -294,7 +333,7 @@ mod execute {
     fn test_mint() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         // check if name is listed in marketplace
@@ -325,7 +364,7 @@ mod execute {
     fn test_bid() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
         bid(&mut app, BIDDER, BID_AMOUNT);
     }
@@ -334,7 +373,7 @@ mod execute {
     fn test_accept_bid() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -397,7 +436,7 @@ mod execute {
     fn test_two_sales_cycles() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -437,7 +476,7 @@ mod execute {
     fn test_reverse_map() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -470,7 +509,7 @@ mod execute {
     fn test_reverse_map_contract_address() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, ADMIN2);
+        let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -490,7 +529,7 @@ mod execute {
     fn test_reverse_map_not_contract_address_admin() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, ADMIN2);
+        let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -510,7 +549,7 @@ mod execute {
     fn test_reverse_map_not_owner() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -530,21 +569,41 @@ mod execute {
     fn test_pause() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        // verify addr in wl
+        let res: WhitelistsResponse = app
+            .wrap()
+            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .unwrap();
+
+        assert_eq!(res.whitelists.len(), 1);
+
+        res.whitelists.iter().find(|whitelist| {
+            let included: bool = app
+                .wrap()
+                .query_wasm_smart(
+                    Addr::unchecked(whitelist.to_string()),
+                    &IncludesAddress {
+                        address: USER.to_string(),
+                    },
+                )
+                .unwrap();
+            dbg!(included, whitelist);
+            included
+        });
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let msg = ExecuteMsg::Pause { pause: true };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
 
-        let err = mint_and_list(&mut app, "name2", USER);
+        let err = mint_and_list(&mut app, "name2", USER, None);
         assert!(err.is_err());
     }
 }
 
 mod admin {
-    use crate::msg::{QueryMsg, WhitelistsResponse};
-
     use super::*;
 
     #[test]
@@ -570,32 +629,6 @@ mod admin {
         let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_err());
     }
-
-    #[test]
-    fn add_remove_whitelist() {
-        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
-
-        let msg = ExecuteMsg::AddWhitelist {
-            address: "whitelist".to_string(),
-        };
-
-        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        assert!(res.is_ok());
-
-        let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 1);
-
-        let msg = ExecuteMsg::RemoveWhitelist {
-            address: "whitelist".to_string(),
-        };
-        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        assert!(res.is_ok());
-
-        let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 0);
-    }
 }
 
 mod query {
@@ -609,7 +642,7 @@ mod query {
     fn query_ask() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
@@ -623,12 +656,12 @@ mod query {
     fn query_asks() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        let res = mint_and_list(&mut app, "hack", ADMIN2);
+        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Asks {
@@ -643,12 +676,12 @@ mod query {
     fn query_reverse_asks() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        let res = mint_and_list(&mut app, "hack", ADMIN2);
+        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::ReverseAsks {
@@ -663,12 +696,12 @@ mod query {
     fn query_asks_by_seller() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        let res = mint_and_list(&mut app, "hack", "user2");
+        let res = mint_and_list(&mut app, "hack", USER2, None);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::AsksBySeller {
@@ -684,12 +717,12 @@ mod query {
     fn query_ask_count() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let height = app.block_info().height;
         update_block_height(&mut app, height + 1);
-        let res = mint_and_list(&mut app, "hack", ADMIN2);
+        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::AskCount {};
@@ -701,7 +734,7 @@ mod query {
     fn query_top_bids() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -720,7 +753,7 @@ mod query {
     fn query_highest_bid() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -738,9 +771,9 @@ mod query {
         let mut app = instantiate_contracts(None, None);
 
         // mint two names at the same time
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
-        let res = mint_and_list(&mut app, "hack", ADMIN2);
+        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
         let res: AsksResponse = app
@@ -760,7 +793,7 @@ mod query {
     fn query_name() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         // fails with "user" string, has to be a bech32 address
@@ -775,7 +808,7 @@ mod query {
         let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
         let cosmos_address = "cosmos1hsk6jryyqjfhp5dhc55tc9jtckygx0eph6dd02";
 
-        let res = mint_and_list(&mut app, "yoyo", user);
+        let res = mint_and_list(&mut app, "yoyo", user, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -856,7 +889,7 @@ mod collection {
     fn transfer_nft() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         transfer(&mut app, USER, USER2);
@@ -866,7 +899,7 @@ mod collection {
     fn send_nft() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         send(&mut app, USER, USER2);
@@ -876,7 +909,7 @@ mod collection {
     fn transfer_nft_and_bid() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         transfer(&mut app, USER, USER2);
@@ -912,7 +945,7 @@ mod collection {
 
         let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
         let user2 = "stars1wh3wjjgprxeww4cgqyaw8k75uslzh3sd3s2yfk";
-        let res = mint_and_list(&mut app, NAME, user);
+        let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -952,7 +985,7 @@ mod collection {
     fn burn_nft() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::Burn {
@@ -977,7 +1010,7 @@ mod collection {
     fn burn_with_existing_bids() {
         let mut app = instantiate_contracts(None, None);
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
         bid(&mut app, BIDDER, BID_AMOUNT);
@@ -1007,7 +1040,7 @@ mod collection {
 
         let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
 
-        let res = mint_and_list(&mut app, NAME, user);
+        let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
         let msg = Sg721NameExecuteMsg::AssociateAddress {
@@ -1051,4 +1084,191 @@ mod collection {
         let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(err.is_err());
     }
+}
+
+mod whitelist {
+    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use whitelist_updatable::msg::QueryMsg as WhitelistQueryMsg;
+
+    use super::*;
+
+    const WHITELIST2: &str = "contract4";
+
+    #[test]
+    fn init() {
+        let _ = instantiate_contracts(None, Some(ADMIN.to_string()));
+    }
+
+    #[test]
+    fn add_remove_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        let res: WhitelistsResponse = app
+            .wrap()
+            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .unwrap();
+        let wl_count = res.whitelists.len();
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "whitelist".to_string(),
+        };
+
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), wl_count + 1);
+
+        let msg = ExecuteMsg::RemoveWhitelist {
+            address: "whitelist".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), wl_count);
+    }
+
+    #[test]
+    fn multiple_wl() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+        let wl_id = app.store_code(contract_whitelist());
+
+        // instantiate wl2
+        let msg = whitelist_updatable::msg::InstantiateMsg {
+            per_address_limit: PER_ADDRESS_LIMIT,
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                USER.to_string(),
+                USER2.to_string(),
+                ADMIN2.to_string(),
+            ],
+            mint_discount_bps: None,
+        };
+        let wl2 = app
+            .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
+            .unwrap();
+        // add minter to wl2
+        let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
+            minter_contract: MINTER.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(wl2.clone()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // add wl2 to minter
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl2.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN.to_string()),
+            Addr::unchecked(MINTER.to_string()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // mint from user on first whitelist
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        // check user mint count on both lists
+        // whitelist 1
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(
+                WHITELIST,
+                &WhitelistQueryMsg::MintCount {
+                    address: USER.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, 1);
+
+        // whitelist 2
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(
+                WHITELIST2,
+                &WhitelistQueryMsg::MintCount {
+                    address: USER.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res, 0);
+
+        // mint from user on second whitelist
+        let res = mint_and_list(&mut app, "none", USER2, None);
+        assert!(res.is_ok());
+        // user not on lists
+        let res = mint_and_list(&mut app, "nbne", BIDDER, None);
+        assert!(res.is_err());
+
+        // mint over per address limit
+        let res = mint_and_list(&mut app, "some", USER, None);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "zome", USER, None);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn discount() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+        let wl_id = app.store_code(contract_whitelist());
+
+        // instantiate wl2
+        let msg = whitelist_updatable::msg::InstantiateMsg {
+            per_address_limit: PER_ADDRESS_LIMIT,
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                USER.to_string(),
+                USER2.to_string(),
+                ADMIN2.to_string(),
+            ],
+            mint_discount_bps: Some(3500),
+        };
+
+        let wl2 = app
+            .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
+            .unwrap();
+        // add minter to wl2
+        let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
+            minter_contract: MINTER.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(wl2.clone()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // add wl2 to minter
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl2.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN.to_string()),
+            Addr::unchecked(MINTER.to_string()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // mint and list with discount
+        let discount_dec = Decimal::percent(3500u64) / Uint128::from(100u128);
+        let res = mint_and_list(&mut app, NAME, USER2, Some(discount_dec));
+        assert!(res.is_ok());
+    }
+
+    /// test large mint counts
+    #[test]
+    fn gas_usage() {}
 }

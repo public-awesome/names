@@ -14,6 +14,7 @@ use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721Instantia
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
+use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -134,9 +135,20 @@ pub fn execute_mint_and_list(
     let params = SUDO_PARAMS.load(deps.storage)?;
     validate_name(name, params.min_name_length, params.max_name_length)?;
 
+    // TODO figure out why helper is broken
+    // let list = whitelists.iter().find(|whitelist| {
+    //     whitelist
+    //         .includes(&deps.querier, sender.to_string())
+    //         .unwrap_or(false)
+    // });
     let list = whitelists.iter().find(|whitelist| {
-        whitelist
-            .includes(&deps.querier, sender.to_string())
+        deps.querier
+            .query_wasm_smart(
+                whitelist.addr(),
+                &IncludesAddress {
+                    address: sender.to_string(),
+                },
+            )
             .unwrap_or(false)
     });
 
@@ -281,7 +293,9 @@ fn validate_payment(
     }
     .into();
 
-    let amount = discount.map(|d| amount * d).unwrap_or(amount);
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {

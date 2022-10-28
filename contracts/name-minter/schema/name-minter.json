@@ -129,7 +129,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Add a whiltelist address",
+        "description": "Add a whitelist address",
         "type": "object",
         "required": [
           "add_whitelist"
@@ -151,7 +151,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Remove a whiltelist address",
+        "description": "Remove a whitelist address",
         "type": "object",
         "required": [
           "remove_whitelist"
