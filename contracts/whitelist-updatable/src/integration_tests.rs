@@ -108,7 +108,7 @@ mod tests {
 
         let res: u64 = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
         assert_eq!(res, addrs.len() as u64);
 
@@ -253,7 +253,7 @@ mod tests {
         assert!(!res);
         let res: u64 = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
         assert_eq!(res, 5);
         let msg = ExecuteMsg::AddAddresses {
@@ -273,7 +273,7 @@ mod tests {
         assert!(res);
         let res: u64 = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
         assert_eq!(res, 7);
 
@@ -313,7 +313,7 @@ mod tests {
         assert!(!res);
         let res: u64 = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
         assert_eq!(res, 2);
 
@@ -385,7 +385,7 @@ mod tests {
         assert!(res.is_ok());
         let res: u32 = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Count {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
         assert_eq!(res, 0);
         // does not include addr0007

@@ -14,6 +14,7 @@ use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
+use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -1088,7 +1089,7 @@ mod collection {
 
 mod whitelist {
     use crate::msg::{QueryMsg, WhitelistsResponse};
-    use whitelist_updatable::msg::QueryMsg as WhitelistQueryMsg;
+    use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
 
     use super::*;
 
@@ -1268,6 +1269,55 @@ mod whitelist {
         assert!(res.is_ok());
     }
 
+    #[test]
+    fn mint_from_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: WHITELIST.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), 1);
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(wl_addr_count, 2);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_err());
+
+        let msg = WhitelistExecuteMsg::AddAddresses {
+            addresses: vec![USER.to_string()],
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(WHITELIST),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = WhitelistQueryMsg::Config {};
+        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.config.admin, ADMIN2.to_string());
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res, wl_addr_count + 1);
+
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER.to_string(),
+        };
+        let res: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(res);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+    }
     /// test large mint counts
     #[test]
     fn gas_usage() {}

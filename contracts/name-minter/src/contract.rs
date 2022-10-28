@@ -14,7 +14,6 @@ use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721Instantia
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
-use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -138,13 +137,8 @@ pub fn execute_mint_and_list(
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
     let list = whitelists.iter().find(|whitelist| {
-        deps.querier
-            .query_wasm_smart(
-                whitelist.addr(),
-                &IncludesAddress {
-                    address: sender.to_string(),
-                },
-            )
+        whitelist
+            .includes(&deps.querier, sender.to_string())
             .unwrap_or(false)
     });
 

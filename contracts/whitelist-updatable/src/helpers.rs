@@ -5,7 +5,7 @@ use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, Was
 use sg_std::CosmosMsg;
 
 use crate::{
-    msg::{ConfigResponse, ExecuteMsg, IncludesAddressResponse, QueryMsg},
+    msg::{ConfigResponse, ExecuteMsg, QueryMsg},
     state::Config,
 };
 
@@ -36,13 +36,11 @@ impl WhitelistUpdatableContract {
     }
 
     pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
-        let res: IncludesAddressResponse =
-            querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: self.addr().into(),
-                msg: to_binary(&QueryMsg::IncludesAddress { address })?,
-            }))?;
-
-        Ok(res.includes)
+        let res: bool = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&QueryMsg::IncludesAddress { address })?,
+        }))?;
+        Ok(res)
     }
 
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<Config> {

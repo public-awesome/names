@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -274,7 +274,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
         QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
         QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
-        QueryMsg::Count {} => to_binary(&query_count(deps)?),
+        QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
     }
@@ -286,8 +286,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {
-    let addr = deps.api.addr_validate(&address)?;
-    Ok(WHITELIST.has(deps.storage, addr))
+    Ok(WHITELIST.has(deps.storage, Addr::unchecked(address)))
 }
 
 pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
@@ -300,7 +299,7 @@ pub fn query_admin(deps: Deps) -> StdResult<String> {
     Ok(config.admin.to_string())
 }
 
-pub fn query_count(deps: Deps) -> StdResult<u64> {
+pub fn query_address_count(deps: Deps) -> StdResult<u64> {
     TOTAL_ADDRESS_COUNT.load(deps.storage)
 }
 
