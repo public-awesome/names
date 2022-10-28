@@ -133,7 +133,6 @@ pub fn execute_mint_and_list(
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
     let list = whitelists.iter().find(|whitelist| {
-        println!("Checking whitelist {:?}", whitelist);
         whitelist
             .includes(&deps.querier, sender.to_string())
             .unwrap_or(false)

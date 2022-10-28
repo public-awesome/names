@@ -38,7 +38,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
     Config {},
-    #[returns(IncludesAddressResponse)]
+    #[returns(bool)]
     IncludesAddress { address: String },
     #[returns(CountResponse)]
     MintCount { address: String },
@@ -47,7 +47,7 @@ pub enum QueryMsg {
     IsProcessable { address: String },
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(CountResponse)]
+    #[returns(u64)]
     Count {},
     #[returns(PerAddressLimitResponse)]
     PerAddressLimit {},
@@ -56,10 +56,6 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct ConfigResponse {
     pub config: Config,
-}
-#[cw_serde]
-pub struct IncludesAddressResponse {
-    pub includes: bool,
 }
 
 #[cw_serde]

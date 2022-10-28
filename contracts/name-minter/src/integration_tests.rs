@@ -544,7 +544,7 @@ mod execute {
 }
 
 mod admin {
-    use whitelist_updatable::msg::{ConfigResponse, CountResponse, IncludesAddressResponse};
+    use whitelist_updatable::msg::ConfigResponse;
 
     use crate::msg::{QueryMsg, WhitelistsResponse};
 
@@ -633,21 +633,38 @@ mod admin {
         assert_eq!(res.config.admin, ADMIN2.to_string());
 
         let msg = WhitelistQueryMsg::Count {};
-        // let res: CountResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        // assert_eq!(res.count, 1);
         let count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         assert_eq!(count, 3);
 
-        // let msg = WhitelistQueryMsg::IncludesAddress {
-        //     address: USER.to_string(),
-        // };
-        // let res: IncludesAddressResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        // // assert!(res.includes);
-        // println!("{:?}", res);
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER.to_string(),
+        };
+        let includes: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(includes);
 
-        // let res = mint_and_list(&mut app, NAME, USER);
-        // println!("{:?}", res);
-        // assert!(res.is_ok());
+        let res = mint_and_list(&mut app, NAME, USER);
+        assert!(res.is_ok());
+
+        let res = mint_and_list(&mut app, "ser1", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser2", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser3", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser4", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser5", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser6", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser7", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser8", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser9", USER);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser0", USER);
+        assert!(res.is_err());
     }
 }
 
