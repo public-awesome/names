@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -278,8 +278,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {
-    let addr = deps.api.addr_validate(&address)?;
-    Ok(WHITELIST.has(deps.storage, addr))
+    Ok(WHITELIST.has(deps.storage, Addr::unchecked(address)))
 }
 
 pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {

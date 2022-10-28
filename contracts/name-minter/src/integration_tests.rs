@@ -14,6 +14,7 @@ use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
+use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -66,7 +67,7 @@ const SECONDS_PER_YEAR: u64 = 31536000;
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
 const COLLECTION: &str = "contract2";
-// const WHITELIST: &str = "contract3";
+const WHITELIST: &str = "contract3";
 
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
@@ -543,6 +544,8 @@ mod execute {
 }
 
 mod admin {
+    use whitelist_updatable::msg::{ConfigResponse, CountResponse, IncludesAddressResponse};
+
     use crate::msg::{QueryMsg, WhitelistsResponse};
 
     use super::*;
@@ -602,7 +605,7 @@ mod admin {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
 
         let msg = ExecuteMsg::AddWhitelist {
-            address: "random".to_string(),
+            address: WHITELIST.to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -614,15 +617,30 @@ mod admin {
         let res = mint_and_list(&mut app, NAME, USER);
         assert!(res.is_err());
 
-        let msg = ExecuteMsg::AddWhitelist {
-            address: USER.to_string(),
+        let msg = WhitelistExecuteMsg::AddAddresses {
+            addresses: vec![USER.to_string()],
         };
-        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(WHITELIST),
+            &msg,
+            &[],
+        );
         assert!(res.is_ok());
 
-        let res = mint_and_list(&mut app, NAME, USER);
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER.to_string(),
+        };
+        // let res: IncludesAddressResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        // // assert!(res.includes);
+        // println!("{:?}", res);
+
+        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         println!("{:?}", res);
-        assert!(res.is_ok());
+
+        // let res = mint_and_list(&mut app, NAME, USER);
+        // println!("{:?}", res);
+        // assert!(res.is_ok());
     }
 }
 
