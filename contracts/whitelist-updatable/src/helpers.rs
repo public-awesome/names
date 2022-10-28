@@ -42,6 +42,8 @@ impl WhitelistUpdatableContract {
                 msg: to_binary(&QueryMsg::IncludesAddress { address })?,
             }))?;
 
+        println!("IncludesAddressResponse: {:?}", res);
+
         Ok(res.includes)
     }
 
