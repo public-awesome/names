@@ -36,7 +36,8 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
         sg721_name::entry::execute,
         sg721_name::entry::instantiate,
         sg721_name::entry::query,
-    );
+    )
+    .with_sudo(sg721_name::sudo::sudo);
     Box::new(contract)
 }
 
@@ -840,6 +841,7 @@ mod query {
 
 mod collection {
     use cosmwasm_std::{to_binary, StdResult};
+    use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
     use sg_name::NameResponse;
 
     use super::*;
@@ -1085,6 +1087,27 @@ mod collection {
         };
         let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(err.is_err());
+    }
+
+    #[test]
+    fn sudo_update() {
+        let mut app = instantiate_contracts(None, None);
+        let params: ParamsResponse = app
+            .wrap()
+            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .unwrap();
+        let max_record_count = params.max_record_count;
+
+        let msg = sg721_name::msg::SudoMsg::UpdateParams {
+            max_record_count: max_record_count + 1,
+        };
+        let res = app.wasm_sudo(Addr::unchecked(COLLECTION), &msg);
+        assert!(res.is_ok());
+        let params: ParamsResponse = app
+            .wrap()
+            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .unwrap();
+        assert_eq!(params.max_record_count, max_record_count + 1);
     }
 }
 
