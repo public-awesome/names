@@ -1,8 +1,13 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 
+#[cw_serde]
+pub struct SudoParams {
+    pub max_record_count: u32,
+}
+pub const SUDO_PARAMS: Item<SudoParams> = Item::new("params");
 pub const NAME_MARKETPLACE: Item<Addr> = Item::new("name-marketplace");
-pub const MAX_RECORD_COUNT: Item<u32> = Item::new("max_record_count");
 
 pub type TokenUri = Addr;
 pub type TokenId = String;

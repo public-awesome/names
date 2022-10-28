@@ -139,11 +139,16 @@ impl<T, E> From<ExecuteMsg<T>> for Sg721ExecuteMsg<T, E> {
 }
 
 #[cw_serde]
+pub enum SudoMsg {
+    UpdateParams { max_record_count: u32 },
+}
+
+#[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    /// Returns max record count
-    #[returns(u32)]
-    MaxRecordCount {},
+    /// Returns sudo params
+    #[returns(ParamsResponse)]
+    Params {},
     /// Reverse lookup of name for address
     #[returns(NameResponse)]
     Name { address: String },
@@ -264,4 +269,9 @@ impl From<QueryMsg> for Sg721QueryMsg {
             _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }
+}
+
+#[cw_serde]
+pub struct ParamsResponse {
+    pub max_record_count: u32,
 }

@@ -12,6 +12,7 @@ use std::marker::PhantomData;
 
 use crate::contract::transcode;
 use crate::entry::{execute, instantiate, query};
+use crate::msg::ParamsResponse;
 use crate::{ContractError, ExecuteMsg, QueryMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 const CREATOR: &str = "creator";
@@ -113,9 +114,9 @@ fn mint_and_update() {
     instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
 
     // retrieve max record count
-    let max_record_count: u32 =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::MaxRecordCount {}).unwrap())
-            .unwrap();
+    let params: ParamsResponse =
+        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
+    let max_record_count = params.max_record_count;
 
     // mint token
     let token_id = "Enterprise";

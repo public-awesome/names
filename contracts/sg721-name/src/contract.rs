@@ -1,6 +1,7 @@
 use crate::{
     error::ContractError,
-    state::{MAX_RECORD_COUNT, NAME_MARKETPLACE, REVERSE_MAP},
+    msg::ParamsResponse,
+    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS},
 };
 
 use cosmwasm_std::{
@@ -31,7 +32,8 @@ pub fn execute_update_metadata(
     metadata: Option<Metadata>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
-    let max_record_count = MAX_RECORD_COUNT.load(deps.storage)?;
+    let params = SUDO_PARAMS.load(deps.storage)?;
+    let max_record_count = params.max_record_count;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -385,7 +387,8 @@ pub fn execute_add_text_record(
     record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
-    let max_record_count = MAX_RECORD_COUNT.load(deps.storage)?;
+    let params = SUDO_PARAMS.load(deps.storage)?;
+    let max_record_count = params.max_record_count;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -529,6 +532,13 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<NameResponse> {
     let name = REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
 
     Ok(NameResponse { name })
+}
+
+pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
+    let params = SUDO_PARAMS.load(deps.storage)?;
+    Ok(ParamsResponse {
+        max_record_count: params.max_record_count,
+    })
 }
 
 pub fn transcode(address: &str) -> StdResult<String> {
