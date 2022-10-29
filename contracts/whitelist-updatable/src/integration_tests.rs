@@ -100,19 +100,19 @@ mod tests {
             )
             .unwrap();
 
-        let res: String = app
+        let admin: String = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
             .unwrap();
-        assert_eq!(res, CREATOR.to_string());
+        assert_eq!(admin, CREATOR.to_string());
 
-        let res: u64 = app
+        let count: u64 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::AddressCount {})
             .unwrap();
-        assert_eq!(res, addrs.len() as u64);
+        assert_eq!(count, addrs.len() as u64);
 
-        let res: bool = app
+        let includes: bool = app
             .wrap()
             .query_wasm_smart(
                 &wl_addr,
@@ -121,9 +121,9 @@ mod tests {
                 },
             )
             .unwrap();
-        assert!(res);
+        assert!(includes);
 
-        let res: u32 = app
+        let count: u32 = app
             .wrap()
             .query_wasm_smart(
                 &wl_addr,
@@ -132,13 +132,13 @@ mod tests {
                 },
             )
             .unwrap();
-        assert_eq!(res, 0);
+        assert_eq!(count, 0);
 
-        let res: u32 = app
+        let limit: u32 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::PerAddressLimit {})
             .unwrap();
-        assert_eq!(res, 10);
+        assert_eq!(limit, 10);
 
         // set minter_addr in whitelist
         let msg = ExecuteMsg::UpdateMinterContract {
