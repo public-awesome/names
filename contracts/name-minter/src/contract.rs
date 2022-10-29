@@ -80,7 +80,7 @@ pub fn instantiate(
         code_id: msg.collection_code_id,
         msg: to_binary(&collection_init_msg)?,
         funds: info.funds,
-        admin: None,
+        admin: Some(info.sender.to_string()),
         label: "Name Collection".to_string(),
     };
     let submsg = SubMsg::reply_on_success(wasm_msg, INIT_COLLECTION_REPLY_ID);
