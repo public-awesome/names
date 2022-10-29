@@ -5,7 +5,7 @@ MSG=$(cat <<EOF
 EOF
 )
 
-starsd q wasm contract-state smart $WL2 "$MSG"
+starsd q wasm contract-state smart $WL "$MSG"
  
 
 MSG=$(cat <<EOF
@@ -15,7 +15,7 @@ MSG=$(cat <<EOF
 EOF
 )
 
-starsd q wasm contract-state smart $WL2 "$MSG"
+starsd q wasm contract-state smart $WL "$MSG"
 
 
 MSG=$(cat <<EOF
@@ -27,4 +27,4 @@ MSG=$(cat <<EOF
 EOF
 )
 
-starsd q wasm contract-state smart $WL2 "$MSG"
+starsd q wasm contract-state smart $WL "$MSG"
