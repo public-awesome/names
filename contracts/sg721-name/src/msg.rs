@@ -5,15 +5,17 @@ use cw721::{
     NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
 };
 use cw721_base::{MintMsg, MinterResponse};
-use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
+use sg721::{
+    ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg, RoyaltyInfoResponse,
+    UpdateCollectionInfoMsg,
+};
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub name: String,
-    pub symbol: String,
-    pub minter: String,
+    pub oracle: Option<String>,
+    pub base_init_msg: Sg721InstantiateMsg,
 }
 
 // Add execute msgs related to bio, profile, text records

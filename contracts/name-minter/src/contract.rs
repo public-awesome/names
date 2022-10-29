@@ -9,8 +9,10 @@ use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
-use sg721::CollectionInfo;
-use sg721_name::{ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
+use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
+use sg721_name::msg::{
+    ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
+};
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
@@ -76,9 +78,13 @@ pub fn instantiate(
             royalty_info: None,
         },
     };
+    let name_collection_init_msg = NameCollectionInstantiateMsg {
+        oracle: msg.oracle,
+        base_init_msg: collection_init_msg,
+    };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_binary(&collection_init_msg)?,
+        msg: to_binary(&name_collection_init_msg)?,
         funds: info.funds,
         admin: Some(info.sender.to_string()),
         label: "Name Collection".to_string(),
@@ -152,7 +158,7 @@ pub fn execute_mint_and_list(
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
 
-    let mint_msg = Sg721ExecuteMsg::Mint(MintMsg::<Metadata> {
+    let mint_msg = NameCollectionExecuteMsg::Mint(MintMsg::<Metadata> {
         token_id: name.to_string(),
         owner: sender.to_string(),
         token_uri: None,
