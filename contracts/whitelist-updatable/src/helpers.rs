@@ -40,7 +40,7 @@ impl WhitelistUpdatableContract {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::IncludesAddress { address })?,
         }))?;
-        Ok(res)
+        Ok(includes)
     }
 
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<Config> {
