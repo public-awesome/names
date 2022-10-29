@@ -36,7 +36,7 @@ impl WhitelistUpdatableContract {
     }
 
     pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
-        let res: bool = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        let includes: bool = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::IncludesAddress { address })?,
         }))?;
