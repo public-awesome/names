@@ -77,6 +77,8 @@ pub mod entry {
         info: MessageInfo,
         msg: ExecuteMsg,
     ) -> Result<Response, ContractError> {
+        let api = deps.api;
+
         match msg {
             ExecuteMsg::UpdateMetadata { name, metadata } => {
                 execute_update_metadata(deps, env, info, name, metadata)
@@ -98,6 +100,9 @@ pub mod entry {
             }
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
+            }
+            ExecuteMsg::UpdateVerificationOracle { oracle } => {
+                Ok(ORACLE.execute_update_admin(deps, info, maybe_addr(api, oracle)?)?)
             }
             ExecuteMsg::SetNameMarketplace { address } => {
                 execute_set_name_marketplace(deps, info, address)
@@ -125,6 +130,7 @@ pub mod entry {
             QueryMsg::Params {} => to_binary(&query_params(deps)?),
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
+            QueryMsg::VerificationOracle {} => to_binary(&ORACLE.query_admin(deps)?),
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }

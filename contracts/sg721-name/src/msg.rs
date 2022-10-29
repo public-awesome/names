@@ -48,6 +48,8 @@ pub enum ExecuteMsg<T> {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+    /// Update the reset the verification oracle
+    UpdateVerificationOracle { oracle: Option<String> },
     /// Transfer is a base message to move a token to another account without triggering actions
     TransferNft { recipient: String, token_id: String },
     /// Send is a base message to transfer a token to a contract and trigger an action
@@ -164,6 +166,10 @@ pub enum QueryMsg {
     /// Returns the marketplace contract address
     #[returns(NameMarketplaceResponse)]
     NameMarketplace {},
+    /// Returns the verification oracle address
+    #[returns(Option<String>)]
+    VerificationOracle {},
+    /// Everything below is inherited from sg721
     #[returns(OwnerOfResponse)]
     OwnerOf {
         token_id: String,
