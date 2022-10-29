@@ -503,6 +503,9 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
+    if record.verified.is_some() {
+        return Err(ContractError::UnauthorizedVerification {});
+    }
     let name_len = record.name.len();
     if name_len > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordNameTooLong {});

@@ -13,8 +13,9 @@ pub struct NFT {
 
 #[cw_serde]
 pub struct TextRecord {
-    pub name: String,  // "twitter"
-    pub value: String, // "shan3v"
+    pub name: String,           // "twitter"
+    pub value: String,          // "shan3v"
+    pub verified: Option<bool>, // can only be set by oracle
 }
 
 /// Note that the address mapped to the name is stored in `token_uri`.

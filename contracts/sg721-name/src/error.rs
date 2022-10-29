@@ -34,6 +34,9 @@ pub enum ContractError {
     #[error("RecordValueTooLong")]
     RecordValueTooLong {},
 
+    #[error("UnauthorizedVerification")]
+    UnauthorizedVerification {},
+
     #[error("Invalid Metadata")]
     InvalidMetadata {},
 

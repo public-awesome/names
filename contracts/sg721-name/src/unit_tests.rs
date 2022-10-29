@@ -151,6 +151,7 @@ fn mint_and_update() {
         records: vec![TextRecord {
             name: "key".to_string(),
             value: "value".to_string(),
+            verified: None,
         }],
     };
     let update_metadata_msg = ExecuteMsg::UpdateMetadata {
@@ -175,46 +176,57 @@ fn mint_and_update() {
             TextRecord {
                 name: "key1".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key2".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key3".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key4".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key5".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key6".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key7".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key8".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key9".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key10".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key11".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
         ],
     };
@@ -247,6 +259,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "test".to_string(),
         value: "test".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -276,6 +289,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "twitter".to_string(),
         value: "jackdorsey".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -292,6 +306,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "test".to_string(),
         value: "testtesttest".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
