@@ -289,7 +289,10 @@ fn validate_payment(
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
-        return Err(ContractError::IncorrectPayment {});
+        return Err(ContractError::IncorrectPayment {
+            got: amount.u128(),
+            expected: payment.u128(),
+        });
     }
 
     Ok(coin(amount.u128(), NATIVE_DENOM))

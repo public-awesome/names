@@ -35,8 +35,8 @@ pub enum ContractError {
     #[error("Name too long")]
     NameTooLong {},
 
-    #[error("Incorrect payment amount")]
-    IncorrectPayment {},
+    #[error("Incorrect payment, got: {got}, expected {expected}")]
+    IncorrectPayment { got: u128, expected: u128 },
 
     #[error("Reply error")]
     ReplyOnSuccess {},
