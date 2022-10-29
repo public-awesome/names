@@ -2,7 +2,6 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
-pub const MAX_RECORD_COUNT: u32 = 10;
 
 pub type TokenId = String;
 

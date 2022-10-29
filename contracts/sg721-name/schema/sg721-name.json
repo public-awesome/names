@@ -842,6 +842,20 @@
     "title": "QueryMsg",
     "oneOf": [
       {
+        "description": "Returns sudo params",
+        "type": "object",
+        "required": [
+          "params"
+        ],
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Reverse lookup of name for address",
         "type": "object",
         "required": [
@@ -2078,6 +2092,22 @@
           "type": "string"
         }
       }
+    },
+    "params": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ParamsResponse",
+      "type": "object",
+      "required": [
+        "max_record_count"
+      ],
+      "properties": {
+        "max_record_count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
     },
     "tokens": {
       "$schema": "http://json-schema.org/draft-07/schema#",

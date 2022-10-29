@@ -88,6 +88,10 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_submessage(submsg)
+        .add_attribute("name_minter_addr", env.contract.address.to_string())
+        .add_attribute("min_name_length", msg.min_name_length.to_string())
+        .add_attribute("max_name_length", msg.max_name_length.to_string())
+        .add_attribute("base_price", msg.base_price.to_string())
         .add_attribute("owner", info.sender)
         .add_attribute("contract_name", CONTRACT_NAME)
         .add_attribute("contract_version", CONTRACT_VERSION))
@@ -279,11 +283,16 @@ fn validate_payment(
     }
     .into();
 
-    let amount = discount.map(|d| amount * d).unwrap_or(amount);
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
-        return Err(ContractError::IncorrectPayment {});
+        return Err(ContractError::IncorrectPayment {
+            got: amount.u128(),
+            expected: payment.u128(),
+        });
     }
 
     Ok(coin(amount.u128(), NATIVE_DENOM))

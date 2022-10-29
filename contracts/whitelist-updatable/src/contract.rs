@@ -2,12 +2,13 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, Response, StdResult,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use cw_utils::nonpayable;
 use sg_name_minter::{ParamsResponse as NameMinterParamsResponse, SgNameMinterQueryMsg};
 
 // version info for migration info
@@ -21,11 +22,13 @@ pub fn instantiate(
     info: MessageInfo,
     mut msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let config = Config {
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
         minter_contract: None,
+        /// 1% = 100, 50% = 5000
         mint_discount_bps: msg.mint_discount_bps,
     };
 
@@ -102,6 +105,7 @@ pub fn execute_update_admin(
     info: MessageInfo,
     new_admin: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -155,6 +159,7 @@ pub fn execute_remove_addresses(
     info: MessageInfo,
     mut addresses: Vec<String>,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
     if config.admin != info.sender {
@@ -189,6 +194,7 @@ pub fn execute_process_address(
     info: MessageInfo,
     address: String,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     if let Some(minter_contract) = config.minter_contract {
         if minter_contract != info.sender {
@@ -224,6 +230,7 @@ pub fn execute_update_per_address_limit(
     info: MessageInfo,
     limit: u32,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -239,6 +246,7 @@ pub fn execute_update_per_address_limit(
 }
 
 pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -266,7 +274,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
         QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
         QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
-        QueryMsg::Count {} => to_binary(&query_count(deps)?),
+        QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
     }
@@ -278,8 +286,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {
-    let addr = deps.api.addr_validate(&address)?;
-    Ok(WHITELIST.has(deps.storage, addr))
+    Ok(WHITELIST.has(deps.storage, Addr::unchecked(address)))
 }
 
 pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
@@ -292,7 +299,7 @@ pub fn query_admin(deps: Deps) -> StdResult<String> {
     Ok(config.admin.to_string())
 }
 
-pub fn query_count(deps: Deps) -> StdResult<u64> {
+pub fn query_address_count(deps: Deps) -> StdResult<u64> {
     TOTAL_ADDRESS_COUNT.load(deps.storage)
 }
 

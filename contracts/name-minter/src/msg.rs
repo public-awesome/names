@@ -22,9 +22,9 @@ pub enum ExecuteMsg {
     UpdateAdmin { admin: Option<String> },
     /// Admin can pause minting during whitelist switching
     Pause { pause: bool },
-    /// Add a whiltelist address
+    /// Add a whitelist address
     AddWhitelist { address: String },
-    /// Remove a whiltelist address
+    /// Remove a whitelist address
     RemoveWhitelist { address: String },
 }
 

@@ -20,7 +20,7 @@ pub enum SgWhitelistQueryMsg {
     /// Query the current contract admin
     Admin {},
     /// Query the number of addresses
-    Count {},
+    AddressCount {},
     /// Query the per address limit
     PerAddressLimit { limit: u64 },
     /// Query if address is included

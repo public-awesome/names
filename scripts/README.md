@@ -100,3 +100,11 @@ Query name metadata:
 ```
 ./exec_accept_bid.sh [name] [bidder] [price (in STARS)]
 ```
+
+## Deployment
+
+All the scripts are in `/scripts`. The other relevant files are `.env` and `starsd`.
+Step 0. Setup `starsd`, run `./config.sh` and set up `.env`
+Follow the other steps in order of numbers.
+
+Instantiate as many whitelists as needed. Pause minting, then add/remove whitelists as needed for the next wave. Then resume minting.

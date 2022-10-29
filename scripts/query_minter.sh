@@ -10,10 +10,19 @@ starsd q wasm contract-state smart $MINTER "$MSG"
 
 MSG=$(cat <<EOF
 {
-  "params": {}
+  "admin": {}
 }
 EOF
 )
 
 starsd q wasm contract-state smart $MINTER "$MSG"
- 
+
+
+MSG=$(cat <<EOF
+{
+  "whitelists": {}
+}
+EOF
+)
+
+starsd q wasm contract-state smart $MINTER "$MSG"

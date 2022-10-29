@@ -7,6 +7,7 @@ pub mod contract;
 mod error;
 pub mod msg;
 pub mod state;
+pub mod sudo;
 
 #[cfg(test)]
 pub mod unit_tests;
@@ -21,7 +22,10 @@ pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
-    use crate::contract::execute_update_profile_nft;
+    use crate::{
+        contract::execute_update_profile_nft,
+        state::{SudoParams, SUDO_PARAMS},
+    };
 
     use super::*;
 
@@ -29,7 +33,7 @@ pub mod entry {
         execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
         execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
         execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
-        execute_update_text_record, query_name, query_name_marketplace,
+        execute_update_text_record, query_name, query_name_marketplace, query_params,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use sg721_base::ContractError as Sg721ContractError;
@@ -44,10 +48,18 @@ pub mod entry {
     ) -> Result<Response, Sg721ContractError> {
         cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-        let res = Sg721NameContract::default().instantiate(deps, env, info, msg)?;
+        // Initialize max record count to 10, can be changed by sudo params
+        SUDO_PARAMS.save(
+            deps.storage,
+            &SudoParams {
+                max_record_count: 10,
+            },
+        )?;
+        let res = Sg721NameContract::default().instantiate(deps, env.clone(), info, msg)?;
 
         Ok(res
             .add_attribute("action", "instantiate")
+            .add_attribute("sg721_names_addr", env.contract.address.to_string())
             .add_attribute("contract_name", CONTRACT_NAME)
             .add_attribute("contract_version", CONTRACT_VERSION))
     }
@@ -104,6 +116,7 @@ pub mod entry {
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         match msg {
+            QueryMsg::Params {} => to_binary(&query_params(deps)?),
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
