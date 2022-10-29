@@ -22,7 +22,7 @@ pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::{
-        contract::execute_update_profile_nft,
+        contract::{execute_update_profile_nft, execute_verify_text_record},
         msg::InstantiateMsg,
         state::{SudoParams, ORACLE, SUDO_PARAMS},
     };
@@ -100,6 +100,9 @@ pub mod entry {
             }
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
+            }
+            ExecuteMsg::VerifyTextRecord { name, record_name } => {
+                execute_verify_text_record(deps, info, name, record_name)
             }
             ExecuteMsg::UpdateVerificationOracle { oracle } => {
                 Ok(ORACLE.execute_update_admin(deps, info, maybe_addr(api, oracle)?)?)

@@ -48,6 +48,8 @@ pub enum ExecuteMsg<T> {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+    /// Verify a text record (via oracle)
+    VerifyTextRecord { name: String, record_name: String },
     /// Update the reset the verification oracle
     UpdateVerificationOracle { oracle: Option<String> },
     /// Transfer is a base message to move a token to another account without triggering actions

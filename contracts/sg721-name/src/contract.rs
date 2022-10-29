@@ -1,7 +1,7 @@
 use crate::{
     error::ContractError,
     msg::ParamsResponse,
-    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS},
+    state::{NAME_MARKETPLACE, ORACLE, REVERSE_MAP, SUDO_PARAMS},
 };
 
 use cosmwasm_std::{
@@ -465,6 +465,36 @@ pub fn execute_update_text_record(
                     .records
                     .retain(|r| r.name != record.name);
                 token_info.extension.records.push(record);
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
+pub fn execute_verify_text_record(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    record_name: String,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+    ORACLE.assert_admin(deps.as_ref(), &info.sender)?;
+
+    let token_id = name;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                if let Some(r) = token_info
+                    .extension
+                    .records
+                    .iter_mut()
+                    .find(|r| r.name == record_name)
+                {
+                    r.verified = Some(true);
+                }
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
