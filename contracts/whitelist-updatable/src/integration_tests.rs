@@ -81,6 +81,7 @@ mod tests {
 
         let msg = NameMinterInstantiateMsg {
             admin: Some(CREATOR.to_string()),
+            oracle: None,
             collection_code_id: sg721_id,
             marketplace_addr: "marketplace".to_string(),
             base_price: 100u128.into(),
@@ -199,6 +200,7 @@ mod tests {
 
         let msg = NameMinterInstantiateMsg {
             admin: Some(CREATOR.to_string()),
+            oracle: None,
             collection_code_id: sg721_id,
             marketplace_addr: "marketplace".to_string(),
             base_price: 100u128.into(),

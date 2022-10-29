@@ -9,6 +9,13 @@ use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollection
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
 
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub name: String,
+    pub symbol: String,
+    pub minter: String,
+}
+
 // Add execute msgs related to bio, profile, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
 #[cw_serde]

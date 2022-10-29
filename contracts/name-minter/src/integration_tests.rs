@@ -110,6 +110,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin: admin.clone(),
+        oracle: None,
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),

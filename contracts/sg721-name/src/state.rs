@@ -1,5 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
+use cw_controllers::Admin;
 use cw_storage_plus::{Item, Map};
 
 #[cw_serde]
@@ -14,3 +15,5 @@ pub type TokenId = String;
 
 /// Address (bech32) -> name
 pub const REVERSE_MAP: Map<&TokenUri, TokenId> = Map::new("rm");
+
+pub const ORACLE: Admin = Admin::new("admin");
