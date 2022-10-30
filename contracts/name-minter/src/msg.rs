@@ -2,8 +2,6 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
 use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
 
-// use crate::state::SudoParams;
-
 #[cw_serde]
 pub struct InstantiateMsg {
     /// Temporary admin for managing whitelists
