@@ -3,12 +3,14 @@ use std::vec;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, Event, MessageInfo, Reply, Uint128, WasmMsg,
+    coin, coins, to_binary, Addr, Coin, Decimal, DepsMut, Env, Event, MessageInfo, Reply, Uint128,
+    WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use sg1::fair_burn;
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
@@ -153,7 +155,7 @@ pub fn execute_mint_and_list(
     };
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
-    let community_pool_msg = create_fund_community_pool_msg(vec![price.clone()]);
+    charge_fees(&mut res, params.fair_burn_percent, price.amount);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
@@ -186,9 +188,21 @@ pub fn execute_mint_and_list(
         .add_attribute("price", price.amount.to_string());
     Ok(res
         .add_event(event)
-        .add_message(community_pool_msg)
         .add_message(mint_msg_exec)
         .add_message(list_msg_exec))
+}
+
+fn charge_fees(res: &mut Response, fair_burn_percent: Decimal, price: Uint128) {
+    let fair_burn_amount = price * fair_burn_percent;
+    let community_pool_amount = price - fair_burn_amount;
+
+    fair_burn(fair_burn_amount.u128(), None, res);
+
+    res.messages
+        .push(SubMsg::new(create_fund_community_pool_msg(coins(
+            community_pool_amount.u128(),
+            NATIVE_DENOM,
+        ))));
 }
 
 /// Pause or unpause minting

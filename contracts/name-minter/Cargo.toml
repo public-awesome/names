@@ -37,6 +37,7 @@ name-marketplace = { path = "../marketplace", features = ["library"] }
 schemars = { workspace = true }
 serde = { workspace = true }
 sg-name = { path = "../../packages/sg-name" }
+sg1 = { workspace = true }
 sg721 = { workspace = true }
 sg721-name = { path = "../sg721-name", features = ["library"] }
 sg-name-minter = { path = "../../packages/sg-name-minter" }
