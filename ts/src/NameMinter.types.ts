@@ -9,6 +9,7 @@ export interface InstantiateMsg {
   admin?: string | null;
   base_price: Uint128;
   collection_code_id: number;
+  fair_burn_bps: number;
   marketplace_addr: string;
   max_name_length: number;
   min_name_length: number;
@@ -51,8 +52,13 @@ export interface AdminResponse {
 export interface CollectionResponse {
   collection: string;
 }
+export type Decimal = string;
 export interface ParamsResponse {
+  params: SudoParams;
+}
+export interface SudoParams {
   base_price: Uint128;
+  fair_burn_percent: Decimal;
   max_name_length: number;
   min_name_length: number;
 }
