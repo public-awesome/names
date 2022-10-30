@@ -6,7 +6,7 @@ use sg_controllers::Hooks;
 
 #[cw_serde]
 pub struct SudoParams {
-    /// Fair Burn fee for winning bids
+    /// Fair Burn + Community Pool fee for winning bids
     pub trading_fee_percent: Decimal,
     /// Min value for a bid
     pub min_price: Uint128,

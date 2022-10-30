@@ -38,6 +38,7 @@ schemars = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
 sg-controllers = { workspace = true }
+sg-name-common = { path = "../../packages/sg-name-common" }
 sg-std = { workspace = true }
 sg1 = { workspace = true }
 thiserror = { workspace = true }

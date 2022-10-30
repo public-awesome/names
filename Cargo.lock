@@ -557,6 +557,7 @@ dependencies = [
  "serde",
  "sg-controllers",
  "sg-multi-test",
+ "sg-name-common",
  "sg-std",
  "sg1",
  "sg721",
