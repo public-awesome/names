@@ -147,6 +147,8 @@ export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   royalty_info?: (RoyaltyInfoResponse | null) | null;
 }
 export type QueryMsg = {
+  params: {};
+} | {
   name: {
     address: string;
   };
@@ -256,4 +258,7 @@ export interface NameMarketplaceResponse {
 }
 export interface NumTokensResponse {
   count: number;
+}
+export interface ParamsResponse {
+  max_record_count: number;
 }

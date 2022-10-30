@@ -14,7 +14,7 @@ use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
-use whitelist_updatable::msg::ExecuteMsg as WhitelistExecuteMsg;
+use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -239,7 +239,6 @@ fn mint_and_list(
     let amount = discount
         .map(|d| amount * (Decimal::one() - d))
         .unwrap_or(amount);
-    dbg!(amount);
 
     // give user some funds
     let name_fee = coins(amount.into(), NATIVE_DENOM);
@@ -607,6 +606,10 @@ mod execute {
 }
 
 mod admin {
+    use whitelist_updatable::msg::ConfigResponse;
+
+    use crate::msg::{QueryMsg, WhitelistsResponse};
+
     use super::*;
 
     #[test]
@@ -630,6 +633,37 @@ mod admin {
         // cannot update admin after its been removed
         let msg = ExecuteMsg::UpdateAdmin { admin: None };
         let res = app.execute_contract(Addr::unchecked(USER2), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn mint_from_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()));
+
+        let msg = QueryMsg::Whitelists {};
+        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(res.whitelists.len(), 1);
+
+        let msg = WhitelistQueryMsg::Config {};
+        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.config.admin, ADMIN2.to_string());
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(count, 4);
+
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER.to_string(),
+        };
+        let includes: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(includes);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        let res = mint_and_list(&mut app, "ser1", USER, None);
+        assert!(res.is_ok());
+        let res = mint_and_list(&mut app, "ser2", USER, None);
         assert!(res.is_err());
     }
 }

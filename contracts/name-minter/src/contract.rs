@@ -87,14 +87,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
-        .add_submessage(submsg)
-        .add_attribute("name_minter_addr", env.contract.address.to_string())
-        .add_attribute("min_name_length", msg.min_name_length.to_string())
-        .add_attribute("max_name_length", msg.max_name_length.to_string())
-        .add_attribute("base_price", msg.base_price.to_string())
-        .add_attribute("owner", info.sender)
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+        .add_submessage(submsg))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

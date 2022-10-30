@@ -6,9 +6,10 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
+  params: () => Promise<ParamsResponse>;
   name: ({
     address
   }: {
@@ -89,6 +90,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
+    this.params = this.params.bind(this);
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
@@ -105,6 +107,11 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.collectionInfo = this.collectionInfo.bind(this);
   }
 
+  params = async (): Promise<ParamsResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      params: {}
+    });
+  };
   name = async ({
     address
   }: {
