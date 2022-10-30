@@ -884,6 +884,8 @@ mod collection {
 
     use super::*;
 
+    // TODO: add some collection query tests, i.e: `NftInfo`
+
     fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
         let msg = Sg721NameExecuteMsg::TransferNft {
             recipient: to.to_string(),
