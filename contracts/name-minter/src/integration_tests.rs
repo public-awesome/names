@@ -877,7 +877,7 @@ mod query {
 
 mod collection {
     use cosmwasm_std::{to_binary, StdResult};
-    use cw721_base::state::TokenInfo;
+    use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
     use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
     use sg_name::{Metadata, NameResponse, TextRecord};
@@ -962,20 +962,20 @@ mod collection {
         let name = "twitter";
         let value = "shan3v";
 
-        // let msg = Sg721NameExecuteMsg::AddTextRecord {
-        //     name: NAME.to_string(),
-        //     record: TextRecord::new(name, value),
-        // };
-        // let res = app.execute_contract(
-        //     Addr::unchecked(USER),
-        //     Addr::unchecked(COLLECTION),
-        //     &msg,
-        //     &[],
-        // );
-        // assert!(res.is_ok());
+        let msg = Sg721NameExecuteMsg::AddTextRecord {
+            name: NAME.to_string(),
+            record: TextRecord::new(name, value),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
 
         // query text record to see if verified is not set
-        let res: TokenInfo<Metadata> = app
+        let res: NftInfoResponse<Metadata> = app
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
@@ -1014,7 +1014,7 @@ mod collection {
         assert_eq!(oracle.admin, Some(ORACLE.to_string()));
 
         // query text record to see if verified is set
-        let res: TokenInfo<Metadata> = app
+        let res: NftInfoResponse<Metadata> = app
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
