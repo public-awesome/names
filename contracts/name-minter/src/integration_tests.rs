@@ -58,6 +58,7 @@ const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
+const ORACLE: &str = "oracle";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
@@ -110,7 +111,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin: admin.clone(),
-        oracle: None,
+        oracle: Some(ORACLE.to_string()),
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -876,10 +877,14 @@ mod query {
 
 mod collection {
     use cosmwasm_std::{to_binary, StdResult};
+    use cw721_base::state::TokenInfo;
+    use cw_controllers::AdminResponse;
     use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
-    use sg_name::NameResponse;
+    use sg_name::{Metadata, NameResponse, TextRecord};
 
     use super::*;
+
+    // TODO: add some collection query tests, i.e: `NftInfo`
 
     fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
         let msg = Sg721NameExecuteMsg::TransferNft {
@@ -922,6 +927,105 @@ mod collection {
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
+    }
+
+    #[test]
+    fn verify_twitter() {
+        let mut app = instantiate_contracts(None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        // check if name is listed in marketplace
+        let res: AskResponse = app
+            .wrap()
+            .query_wasm_smart(
+                MKT,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.ask.unwrap().token_id, NAME);
+
+        // check if token minted
+        let _res: NumTokensResponse = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &sg721_base::msg::QueryMsg::NumTokens {},
+            )
+            .unwrap();
+
+        assert_eq!(owner_of(&app, NAME.to_string()), USER.to_string());
+
+        let name = "twitter";
+        let value = "shan3v";
+
+        // let msg = Sg721NameExecuteMsg::AddTextRecord {
+        //     name: NAME.to_string(),
+        //     record: TextRecord::new(name, value),
+        // };
+        // let res = app.execute_contract(
+        //     Addr::unchecked(USER),
+        //     Addr::unchecked(COLLECTION),
+        //     &msg,
+        //     &[],
+        // );
+        // assert!(res.is_ok());
+
+        // query text record to see if verified is not set
+        let res: TokenInfo<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        println!("{:?}", res);
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, None);
+
+        let msg = Sg721NameExecuteMsg::VerifyTextRecord {
+            name: NAME.to_string(),
+            record_name: name.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        // fails cuz caller is not oracle
+        assert!(res.is_err());
+
+        let res = app.execute_contract(
+            Addr::unchecked(ORACLE),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = Sg721NameQueryMsg::VerificationOracle {};
+        let oracle: AdminResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(oracle.admin, Some(ORACLE.to_string()));
+
+        // query text record to see if verified is set
+        let res: TokenInfo<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        println!("{:?}", res);
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, Some(true));
     }
 
     #[test]

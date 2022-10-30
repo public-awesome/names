@@ -18,6 +18,16 @@ pub struct TextRecord {
     pub verified: Option<bool>, // can only be set by oracle
 }
 
+impl TextRecord {
+    pub fn new(name: impl Into<String>, value: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            value: value.into(),
+            verified: None,
+        }
+    }
+}
+
 /// Note that the address mapped to the name is stored in `token_uri`.
 #[cw_serde]
 #[derive(Default)]
