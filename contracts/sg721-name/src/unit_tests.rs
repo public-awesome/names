@@ -81,7 +81,7 @@ fn init_msg() -> InstantiateMsg {
         collection_info,
     };
     InstantiateMsg {
-        oracle: None,
+        verifier: None,
         base_init_msg,
     }
 }

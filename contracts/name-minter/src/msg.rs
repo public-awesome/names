@@ -6,7 +6,7 @@ pub struct InstantiateMsg {
     /// Temporary admin for managing whitelists
     pub admin: Option<String>,
     /// Oracle for verifying records
-    pub oracle: Option<String>,
+    pub verifier: Option<String>,
     pub collection_code_id: u64,
     pub marketplace_addr: String,
     pub min_name_length: u32,

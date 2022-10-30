@@ -58,7 +58,7 @@ const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
-const ORACLE: &str = "oracle";
+const VERIFIER: &str = "verifier";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
@@ -111,7 +111,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin: admin.clone(),
-        oracle: Some(ORACLE.to_string()),
+        verifier: Some(VERIFIER.to_string()),
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -972,20 +972,20 @@ mod collection {
             &msg,
             &[],
         );
-        // fails cuz caller is not oracle
+        // fails cuz caller is not oracle verifier
         assert!(res.is_err());
 
         let res = app.execute_contract(
-            Addr::unchecked(ORACLE),
+            Addr::unchecked(VERIFIER),
             Addr::unchecked(COLLECTION),
             &msg,
             &[],
         );
         assert!(res.is_ok());
 
-        let msg = Sg721NameQueryMsg::VerificationOracle {};
-        let oracle: AdminResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
-        assert_eq!(oracle.admin, Some(ORACLE.to_string()));
+        let msg = Sg721NameQueryMsg::Verifier {};
+        let verifier: AdminResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(verifier.admin, Some(VERIFIER.to_string()));
 
         // query text record to see if verified is set
         let res: NftInfoResponse<Metadata> = app

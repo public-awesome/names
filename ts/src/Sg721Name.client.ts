@@ -16,7 +16,7 @@ export interface Sg721NameReadOnlyInterface {
     address: string;
   }) => Promise<NameResponse>;
   nameMarketplace: () => Promise<NameMarketplaceResponse>;
-  verificationOracle: () => Promise<NullableString>;
+  verifier: () => Promise<NullableString>;
   ownerOf: ({
     includeExpired,
     tokenId
@@ -94,7 +94,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.params = this.params.bind(this);
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
-    this.verificationOracle = this.verificationOracle.bind(this);
+    this.verifier = this.verifier.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
     this.approval = this.approval.bind(this);
     this.approvals = this.approvals.bind(this);
@@ -130,9 +130,9 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
       name_marketplace: {}
     });
   };
-  verificationOracle = async (): Promise<NullableString> => {
+  verifier = async (): Promise<NullableString> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      verification_oracle: {}
+      verifier: {}
     });
   };
   ownerOf = async ({
@@ -341,10 +341,10 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     name: string;
     recordName: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateVerificationOracle: ({
-    oracle
+  updateVerifier: ({
+    verifier
   }: {
-    oracle?: string;
+    verifier?: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   transferNft: ({
     recipient,
@@ -433,7 +433,7 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
     this.verifyTextRecord = this.verifyTextRecord.bind(this);
-    this.updateVerificationOracle = this.updateVerificationOracle.bind(this);
+    this.updateVerifier = this.updateVerifier.bind(this);
     this.transferNft = this.transferNft.bind(this);
     this.sendNft = this.sendNft.bind(this);
     this.approve = this.approve.bind(this);
@@ -570,14 +570,14 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       }
     }, fee, memo, funds);
   };
-  updateVerificationOracle = async ({
-    oracle
+  updateVerifier = async ({
+    verifier
   }: {
-    oracle?: string;
+    verifier?: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
-      update_verification_oracle: {
-        oracle
+      update_verifier: {
+        verifier
       }
     }, fee, memo, funds);
   };

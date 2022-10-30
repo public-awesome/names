@@ -73,10 +73,10 @@ export interface Sg721NameMessage {
     name: string;
     recordName: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateVerificationOracle: ({
-    oracle
+  updateVerifier: ({
+    verifier
   }: {
-    oracle?: string;
+    verifier?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   transferNft: ({
     recipient,
@@ -162,7 +162,7 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
     this.verifyTextRecord = this.verifyTextRecord.bind(this);
-    this.updateVerificationOracle = this.updateVerificationOracle.bind(this);
+    this.updateVerifier = this.updateVerifier.bind(this);
     this.transferNft = this.transferNft.bind(this);
     this.sendNft = this.sendNft.bind(this);
     this.approve = this.approve.bind(this);
@@ -371,10 +371,10 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
       })
     };
   };
-  updateVerificationOracle = ({
-    oracle
+  updateVerifier = ({
+    verifier
   }: {
-    oracle?: string;
+    verifier?: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -382,8 +382,8 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
         sender: this.sender,
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
-          update_verification_oracle: {
-            oracle
+          update_verifier: {
+            verifier
           }
         })),
         funds

@@ -17,4 +17,4 @@ pub type TokenId = String;
 pub const REVERSE_MAP: Map<&TokenUri, TokenId> = Map::new("rm");
 
 /// Address of the text record verification oracle
-pub const ORACLE: Admin = Admin::new("admin");
+pub const VERIFIER: Admin = Admin::new("verifier");

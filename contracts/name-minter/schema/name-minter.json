@@ -43,7 +43,7 @@
         "format": "uint32",
         "minimum": 0.0
       },
-      "oracle": {
+      "verifier": {
         "description": "Oracle for verifying records",
         "type": [
           "string",

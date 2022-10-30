@@ -14,7 +14,7 @@ use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub oracle: Option<String>,
+    pub verifier: Option<String>,
     pub base_init_msg: Sg721InstantiateMsg,
 }
 
@@ -51,7 +51,7 @@ pub enum ExecuteMsg<T> {
     /// Verify a text record (via oracle)
     VerifyTextRecord { name: String, record_name: String },
     /// Update the reset the verification oracle
-    UpdateVerificationOracle { oracle: Option<String> },
+    UpdateVerifier { verifier: Option<String> },
     /// Transfer is a base message to move a token to another account without triggering actions
     TransferNft { recipient: String, token_id: String },
     /// Send is a base message to transfer a token to a contract and trigger an action
@@ -170,7 +170,7 @@ pub enum QueryMsg {
     NameMarketplace {},
     /// Returns the verification oracle address
     #[returns(Option<String>)]
-    VerificationOracle {},
+    Verifier {},
     /// Everything below is inherited from sg721
     #[returns(OwnerOfResponse)]
     OwnerOf {

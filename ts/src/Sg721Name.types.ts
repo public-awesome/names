@@ -71,8 +71,8 @@ export type ExecuteMsg = {
     record_name: string;
   };
 } | {
-  update_verification_oracle: {
-    oracle?: string | null;
+  update_verifier: {
+    verifier?: string | null;
   };
 } | {
   transfer_nft: {
@@ -165,7 +165,7 @@ export type QueryMsg = {
 } | {
   name_marketplace: {};
 } | {
-  verification_oracle: {};
+  verifier: {};
 } | {
   owner_of: {
     include_expired?: boolean | null;

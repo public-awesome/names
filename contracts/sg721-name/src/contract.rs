@@ -1,7 +1,7 @@
 use crate::{
     error::ContractError,
     msg::ParamsResponse,
-    state::{NAME_MARKETPLACE, ORACLE, REVERSE_MAP, SUDO_PARAMS},
+    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
 };
 
 use cosmwasm_std::{
@@ -479,7 +479,7 @@ pub fn execute_verify_text_record(
     record_name: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-    ORACLE.assert_admin(deps.as_ref(), &info.sender)?;
+    VERIFIER.assert_admin(deps.as_ref(), &info.sender)?;
 
     let token_id = name;
 

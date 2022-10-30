@@ -79,7 +79,7 @@ pub fn instantiate(
         },
     };
     let name_collection_init_msg = NameCollectionInstantiateMsg {
-        oracle: msg.oracle,
+        verifier: msg.verifier,
         base_init_msg: collection_init_msg,
     };
     let wasm_msg = WasmMsg::Instantiate {

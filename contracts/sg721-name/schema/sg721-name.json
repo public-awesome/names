@@ -368,13 +368,13 @@
         "description": "Update the reset the verification oracle",
         "type": "object",
         "required": [
-          "update_verification_oracle"
+          "update_verifier"
         ],
         "properties": {
-          "update_verification_oracle": {
+          "update_verifier": {
             "type": "object",
             "properties": {
-              "oracle": {
+              "verifier": {
                 "type": [
                   "string",
                   "null"
@@ -949,10 +949,10 @@
         "description": "Returns the verification oracle address",
         "type": "object",
         "required": [
-          "verification_oracle"
+          "verifier"
         ],
         "properties": {
-          "verification_oracle": {
+          "verifier": {
             "type": "object",
             "additionalProperties": false
           }
@@ -2208,7 +2208,7 @@
       },
       "additionalProperties": false
     },
-    "verification_oracle": {
+    "verifier": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Nullable_String",
       "type": [

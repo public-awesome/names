@@ -24,7 +24,7 @@ pub mod entry {
     use crate::{
         contract::{execute_update_profile_nft, execute_verify_text_record},
         msg::InstantiateMsg,
-        state::{SudoParams, ORACLE, SUDO_PARAMS},
+        state::{SudoParams, SUDO_PARAMS, VERIFIER},
     };
 
     use super::*;
@@ -58,7 +58,7 @@ pub mod entry {
         )?;
 
         let api = deps.api;
-        ORACLE.set(deps.branch(), maybe_addr(api, msg.oracle)?)?;
+        VERIFIER.set(deps.branch(), maybe_addr(api, msg.verifier)?)?;
 
         let res =
             Sg721NameContract::default().instantiate(deps, env.clone(), info, msg.base_init_msg)?;
@@ -104,8 +104,8 @@ pub mod entry {
             ExecuteMsg::VerifyTextRecord { name, record_name } => {
                 execute_verify_text_record(deps, info, name, record_name)
             }
-            ExecuteMsg::UpdateVerificationOracle { oracle } => {
-                Ok(ORACLE.execute_update_admin(deps, info, maybe_addr(api, oracle)?)?)
+            ExecuteMsg::UpdateVerifier { verifier } => {
+                Ok(VERIFIER.execute_update_admin(deps, info, maybe_addr(api, verifier)?)?)
             }
             ExecuteMsg::SetNameMarketplace { address } => {
                 execute_set_name_marketplace(deps, info, address)
@@ -133,7 +133,7 @@ pub mod entry {
             QueryMsg::Params {} => to_binary(&query_params(deps)?),
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
-            QueryMsg::VerificationOracle {} => to_binary(&ORACLE.query_admin(deps)?),
+            QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
             // TODO: add queries that have the `Metadata` extension
             // TODO: this uses sg721_base query which has a empty extension without metadata
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
