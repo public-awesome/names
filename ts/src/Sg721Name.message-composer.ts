@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse, Nullable_String } from "./Sg721Name.types";
 export interface Sg721NameMessage {
   contractAddress: string;
   sender: string;
@@ -65,6 +65,18 @@ export interface Sg721NameMessage {
   }: {
     name: string;
     record: TextRecord;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  verifyTextRecord: ({
+    name,
+    recordName
+  }: {
+    name: string;
+    recordName: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  updateVerificationOracle: ({
+    oracle
+  }: {
+    oracle?: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   transferNft: ({
     recipient,
@@ -149,6 +161,8 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
+    this.verifyTextRecord = this.verifyTextRecord.bind(this);
+    this.updateVerificationOracle = this.updateVerificationOracle.bind(this);
     this.transferNft = this.transferNft.bind(this);
     this.sendNft = this.sendNft.bind(this);
     this.approve = this.approve.bind(this);
@@ -329,6 +343,47 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
           update_text_record: {
             name,
             record
+          }
+        })),
+        funds
+      })
+    };
+  };
+  verifyTextRecord = ({
+    name,
+    recordName
+  }: {
+    name: string;
+    recordName: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          verify_text_record: {
+            name,
+            record_name: recordName
+          }
+        })),
+        funds
+      })
+    };
+  };
+  updateVerificationOracle = ({
+    oracle
+  }: {
+    oracle?: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          update_verification_oracle: {
+            oracle
           }
         })),
         funds

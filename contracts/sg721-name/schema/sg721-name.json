@@ -339,6 +339,54 @@
         "additionalProperties": false
       },
       {
+        "description": "Verify a text record (via oracle)",
+        "type": "object",
+        "required": [
+          "verify_text_record"
+        ],
+        "properties": {
+          "verify_text_record": {
+            "type": "object",
+            "required": [
+              "name",
+              "record_name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "record_name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Update the reset the verification oracle",
+        "type": "object",
+        "required": [
+          "update_verification_oracle"
+        ],
+        "properties": {
+          "update_verification_oracle": {
+            "type": "object",
+            "properties": {
+              "oracle": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Transfer is a base message to move a token to another account without triggering actions",
         "type": "object",
         "required": [
@@ -772,6 +820,12 @@
           },
           "value": {
             "type": "string"
+          },
+          "verified": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         },
         "additionalProperties": false
@@ -892,6 +946,21 @@
         "additionalProperties": false
       },
       {
+        "description": "Returns the verification oracle address",
+        "type": "object",
+        "required": [
+          "verification_oracle"
+        ],
+        "properties": {
+          "verification_oracle": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Everything below is inherited from sg721",
         "type": "object",
         "required": [
           "owner_of"
@@ -1392,6 +1461,12 @@
             },
             "value": {
               "type": "string"
+            },
+            "verified": {
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           },
           "additionalProperties": false
@@ -1965,6 +2040,12 @@
             },
             "value": {
               "type": "string"
+            },
+            "verified": {
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           },
           "additionalProperties": false
@@ -2126,6 +2207,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "verification_oracle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Nullable_String",
+      "type": [
+        "string",
+        "null"
+      ]
     }
   }
 }

@@ -12,6 +12,7 @@ export interface InstantiateMsg {
   marketplace_addr: string;
   max_name_length: number;
   min_name_length: number;
+  oracle?: string | null;
   whitelists: string[];
 }
 export type ExecuteMsg = {

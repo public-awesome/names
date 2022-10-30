@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse, Nullable_String } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   params: () => Promise<ParamsResponse>;
@@ -16,6 +16,7 @@ export interface Sg721NameReadOnlyInterface {
     address: string;
   }) => Promise<NameResponse>;
   nameMarketplace: () => Promise<NameMarketplaceResponse>;
+  verificationOracle: () => Promise<NullableString>;
   ownerOf: ({
     includeExpired,
     tokenId
@@ -93,6 +94,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.params = this.params.bind(this);
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
+    this.verificationOracle = this.verificationOracle.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
     this.approval = this.approval.bind(this);
     this.approvals = this.approvals.bind(this);
@@ -126,6 +128,11 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   nameMarketplace = async (): Promise<NameMarketplaceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name_marketplace: {}
+    });
+  };
+  verificationOracle = async (): Promise<NullableString> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      verification_oracle: {}
     });
   };
   ownerOf = async ({
@@ -327,6 +334,18 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     name: string;
     record: TextRecord;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  verifyTextRecord: ({
+    name,
+    recordName
+  }: {
+    name: string;
+    recordName: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  updateVerificationOracle: ({
+    oracle
+  }: {
+    oracle?: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   transferNft: ({
     recipient,
     tokenId
@@ -413,6 +432,8 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
+    this.verifyTextRecord = this.verifyTextRecord.bind(this);
+    this.updateVerificationOracle = this.updateVerificationOracle.bind(this);
     this.transferNft = this.transferNft.bind(this);
     this.sendNft = this.sendNft.bind(this);
     this.approve = this.approve.bind(this);
@@ -532,6 +553,31 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       update_text_record: {
         name,
         record
+      }
+    }, fee, memo, funds);
+  };
+  verifyTextRecord = async ({
+    name,
+    recordName
+  }: {
+    name: string;
+    recordName: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      verify_text_record: {
+        name,
+        record_name: recordName
+      }
+    }, fee, memo, funds);
+  };
+  updateVerificationOracle = async ({
+    oracle
+  }: {
+    oracle?: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      update_verification_oracle: {
+        oracle
       }
     }, fee, memo, funds);
   };
