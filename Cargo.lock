@@ -828,6 +828,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sg-name-common"
+version = "0.11.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+ "sg-std",
+ "sg1",
+]
+
+[[package]]
 name = "sg-name-market"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

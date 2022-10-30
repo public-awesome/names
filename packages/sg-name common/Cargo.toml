@@ -1,0 +1,28 @@
+[package]
+name = "sg-name-common"
+authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
+description = "Rust definition of name service metadata, used by Stargaze Names"
+version     = { workspace = true }
+edition     = { workspace = true }
+homepage    = { workspace = true }
+repository  = { workspace = true }
+license     = { workspace = true }
+
+exclude = [
+  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+  "contract.wasm",
+  "hash.txt",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+schemars = { workspace = true }
+sg-std = { workspace = true }
+sg1 = { workspace = true }
+serde = { workspace = true }
