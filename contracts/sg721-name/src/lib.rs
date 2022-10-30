@@ -134,8 +134,6 @@ pub mod entry {
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
             QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
-            // TODO: add queries that have the `Metadata` extension
-            // TODO: this uses sg721_base query which has a empty extension without metadata
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }

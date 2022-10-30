@@ -31,16 +31,17 @@ cw-storage-plus = { workspace = true }
 cw-storage-macro = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
-schemars = { workspace = true }
-serde = { workspace = true }
-thiserror = { workspace = true }
 cw721 = { workspace = true }
 cw721-base = { workspace = true, features = ["library"] }
+name-marketplace = { path = "../marketplace", features = ["library"] }
+schemars = { workspace = true }
+serde = { workspace = true }
 sg-name = { path = "../../packages/sg-name" }
 sg721 = { workspace = true }
 sg721-name = { path = "../sg721-name", features = ["library"] }
-name-marketplace = { path = "../marketplace", features = ["library"] }
+sg-name-minter = { path = "../../packages/sg-name-minter" }
 sg-std = { workspace = true }
+thiserror = { workspace = true }
 whitelist-updatable = { path = "../whitelist-updatable", features = [
   "library",
 ] }

@@ -1,5 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::Uint128;
+use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
+
+// use crate::state::SudoParams;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -58,22 +61,4 @@ pub enum QueryMsg {
     Collection {},
     #[returns(ParamsResponse)]
     Params {},
-}
-
-#[cw_serde]
-pub struct CollectionResponse {
-    pub collection: String,
-}
-
-#[cw_serde]
-pub struct WhitelistsResponse {
-    pub whitelists: Vec<Addr>,
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub min_name_length: u32,
-    pub max_name_length: u32,
-    pub base_price: Uint128,
-    pub fair_burn_percent: Decimal,
 }

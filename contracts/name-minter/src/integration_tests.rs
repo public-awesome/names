@@ -306,9 +306,10 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::OperatorsResponse;
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
 
     use super::*;
 
@@ -610,9 +611,10 @@ mod execute {
 }
 
 mod admin {
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::ConfigResponse;
 
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
 
     use super::*;
 
@@ -1226,7 +1228,8 @@ mod collection {
 }
 
 mod whitelist {
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
 
     use super::*;

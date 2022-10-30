@@ -14,14 +14,13 @@ use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
 };
 use sg_name::{Metadata, SgNameExecuteMsg};
+use sg_name_minter::SudoParams;
 use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{
-    SudoParams, ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
-};
+use crate::state::{ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -60,7 +59,7 @@ pub fn instantiate(
     let params = SudoParams {
         min_name_length: msg.min_name_length,
         max_name_length: msg.max_name_length,
-        base_price: msg.base_price.u128(),
+        base_price: msg.base_price,
         fair_burn_percent: Decimal::from_ratio(msg.fair_burn_bps, 100u128),
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
@@ -153,7 +152,7 @@ pub fn execute_mint_and_list(
         None
     };
 
-    let price = validate_payment(name.len(), &info, params.base_price, discount)?;
+    let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     let community_pool_msg = create_fund_community_pool_msg(vec![price.clone()]);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;

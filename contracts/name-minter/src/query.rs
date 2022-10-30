@@ -1,9 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
+use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
 
 use crate::{
-    msg::{CollectionResponse, ParamsResponse, QueryMsg, WhitelistsResponse},
+    msg::QueryMsg,
     state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS, WHITELISTS},
 };
 
@@ -34,10 +35,5 @@ fn query_collection(deps: Deps) -> StdResult<CollectionResponse> {
 fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
-    Ok(ParamsResponse {
-        base_price: Uint128::from(params.base_price),
-        min_name_length: params.min_name_length,
-        max_name_length: params.max_name_length,
-        fair_burn_percent: params.fair_burn_percent,
-    })
+    Ok(ParamsResponse { params })
 }
