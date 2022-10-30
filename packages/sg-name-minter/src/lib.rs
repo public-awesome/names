@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 
 #[cw_serde]
 pub enum SgNameMinterExecuteMsg {
@@ -37,4 +37,5 @@ pub struct ParamsResponse {
     pub min_name_length: u32,
     pub max_name_length: u32,
     pub base_price: Uint128,
+    pub fair_burn_percent: Decimal,
 }

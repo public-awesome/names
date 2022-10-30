@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Addr, DepsMut, Env, Event};
+use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event};
 use sg_std::Response;
 
 use crate::{
@@ -18,7 +18,14 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: SudoMsg) -> Result<Response, Contract
             min_name_length,
             max_name_length,
             base_price,
-        } => sudo_update_params(deps, min_name_length, max_name_length, base_price.u128()),
+            fair_burn_bps,
+        } => sudo_update_params(
+            deps,
+            min_name_length,
+            max_name_length,
+            base_price.u128(),
+            fair_burn_bps,
+        ),
         SudoMsg::UpdateNameCollection { collection } => {
             sudo_update_name_collection(deps, api.addr_validate(&collection)?)
         }
@@ -33,6 +40,7 @@ pub fn sudo_update_params(
     min_name_length: u32,
     max_name_length: u32,
     base_price: u128,
+    fair_burn_bps: u64,
 ) -> Result<Response, ContractError> {
     SUDO_PARAMS.save(
         deps.storage,
@@ -40,6 +48,7 @@ pub fn sudo_update_params(
             min_name_length,
             max_name_length,
             base_price,
+            fair_burn_percent: Decimal::from_ratio(fair_burn_bps, 100u128),
         },
     )?;
 

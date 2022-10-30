@@ -117,6 +117,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         base_price: Uint128::from(BASE_PRICE),
         min_name_length: 3,
         max_name_length: 63,
+        fair_burn_bps: 5000, // 50%
         whitelists: vec![],
     };
     let minter = app
@@ -175,6 +176,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         &msg,
         &[],
     );
+    println!("res: {:?}", res);
     assert!(res.is_ok());
 
     // 7. Add Whitelist to Name Minter

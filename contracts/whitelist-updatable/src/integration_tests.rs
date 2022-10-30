@@ -47,6 +47,20 @@ mod tests {
         Box::new(contract)
     }
 
+    fn name_minter_init(collection_code_id: u64) -> NameMinterInstantiateMsg {
+        NameMinterInstantiateMsg {
+            admin: Some(CREATOR.to_string()),
+            verifier: None,
+            collection_code_id,
+            marketplace_addr: "marketplace".to_string(),
+            base_price: 100u128.into(),
+            min_name_length: 3,
+            max_name_length: 63,
+            fair_burn_bps: 5000,
+            whitelists: vec![],
+        }
+    }
+
     #[test]
     pub fn init() {
         let addrs: Vec<String> = vec![
@@ -79,16 +93,7 @@ mod tests {
             )
             .unwrap();
 
-        let msg = NameMinterInstantiateMsg {
-            admin: Some(CREATOR.to_string()),
-            verifier: None,
-            collection_code_id: sg721_id,
-            marketplace_addr: "marketplace".to_string(),
-            base_price: 100u128.into(),
-            min_name_length: 3,
-            max_name_length: 63,
-            whitelists: vec![],
-        };
+        let msg = name_minter_init(sg721_id);
 
         let minter_addr = app
             .instantiate_contract(
@@ -198,16 +203,7 @@ mod tests {
             )
             .unwrap();
 
-        let msg = NameMinterInstantiateMsg {
-            admin: Some(CREATOR.to_string()),
-            verifier: None,
-            collection_code_id: sg721_id,
-            marketplace_addr: "marketplace".to_string(),
-            base_price: 100u128.into(),
-            min_name_length: 3,
-            max_name_length: 63,
-            whitelists: vec![],
-        };
+        let msg = name_minter_init(sg721_id);
 
         let minter_addr = app
             .instantiate_contract(

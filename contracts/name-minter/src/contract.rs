@@ -61,6 +61,7 @@ pub fn instantiate(
         min_name_length: msg.min_name_length,
         max_name_length: msg.max_name_length,
         base_price: msg.base_price.u128(),
+        fair_burn_percent: Decimal::from_ratio(msg.fair_burn_bps, 100u128),
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 

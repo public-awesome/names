@@ -1,17 +1,19 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Decimal};
 use cw_controllers::Admin;
 use cw_storage_plus::Item;
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 
 #[cw_serde]
 pub struct SudoParams {
-    /// 3
+    /// 3 (same as DNS)
     pub min_name_length: u32,
-    /// 63
+    /// 63 (same as DNS)
     pub max_name_length: u32,
-    /// 100_000_000
+    /// 100_000_000 (5+ ASCII char price)
     pub base_price: u128,
+    /// Fair Burn fee (rest goes to Community Pool)
+    pub fair_burn_percent: Decimal,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("params");

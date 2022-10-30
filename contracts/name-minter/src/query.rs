@@ -38,5 +38,6 @@ fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
         base_price: Uint128::from(params.base_price),
         min_name_length: params.min_name_length,
         max_name_length: params.max_name_length,
+        fair_burn_percent: params.fair_burn_percent,
     })
 }
