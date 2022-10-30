@@ -12,7 +12,7 @@ use name_marketplace::msg::{
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
-use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
+use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
@@ -483,7 +483,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(USER.to_string()),
         };
@@ -496,7 +496,7 @@ mod execute {
         assert!(res.is_ok());
 
         // remove address
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: None,
         };
@@ -516,7 +516,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(MINTER.to_string()),
         };
@@ -536,7 +536,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(MINTER.to_string()),
         };
@@ -556,7 +556,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(USER2.to_string()),
         };
@@ -850,7 +850,7 @@ mod query {
         let res = mint_and_list(&mut app, "yoyo", user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: "yoyo".to_string(),
             address: Some(user.to_string()),
         };
@@ -937,7 +937,7 @@ mod collection {
         let name = "twitter";
         let value = "shan3v";
 
-        let msg = Sg721NameExecuteMsg::AddTextRecord {
+        let msg = SgNameExecuteMsg::AddTextRecord {
             name: NAME.to_string(),
             record: TextRecord::new(name, value),
         };
@@ -962,7 +962,7 @@ mod collection {
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
 
-        let msg = Sg721NameExecuteMsg::VerifyTextRecord {
+        let msg = SgNameExecuteMsg::VerifyTextRecord {
             name: NAME.to_string(),
             record_name: name.to_string(),
         };
@@ -1064,7 +1064,7 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(user.to_string()),
         };
@@ -1159,7 +1159,7 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(user.to_string()),
         };

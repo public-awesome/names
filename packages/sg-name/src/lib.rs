@@ -43,7 +43,10 @@ pub enum SgNameExecuteMsg {
     SetNameMarketplace { address: String },
     /// Set an address for name reverse lookup
     /// Can be an EOA or a contract address
-    AssociateAddress { name: String, address: String },
+    AssociateAddress {
+        name: String,
+        address: Option<String>,
+    },
     /// Update image
     UpdateImageNft { name: String, nft: Option<NFT> },
     /// Update profile
@@ -57,6 +60,10 @@ pub enum SgNameExecuteMsg {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+    /// Verify a text record (via oracle)
+    VerifyTextRecord { name: String, record_name: String },
+    /// Update the reset the verification oracle
+    UpdateVerifier { verifier: Option<String> },
 }
 
 #[cw_serde]
