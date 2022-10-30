@@ -1,17 +1,5 @@
 # Stargaze Names: A Cosmos IBC Name Service
 
-## DUAL LICENSED
-
-The code is this repository is under two licenses. Please make a note of them before forking / copying.
-
-[Name Marketplace](./contracts/marketplace/LICENSE) -- Business source license
-
-[Name Minter](./contracts/name-minter/LICENSE) -- Apache 2.0 license
-
-[SG721 Name](./contracts/sg721-name/LICENSE) -- Apache 2.0 license
-
-[Whitelist Updatable](./contracts/whitelist-updatable/LICENSE) -- Apache 2.0 license
-
 ## Architecture
 
 Names are stored without the TLD so they can be mapped to _any_ Cosmos address. All names can be resolved to an address that is derived via the same Cosmos key derivation path (118).
@@ -31,22 +19,22 @@ bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
 
 This architecture enables Stargaze Names to be a truly Interchain name service since it can mint and resolve names for any Cosmos chain.
 
-## Annual Auction
+### Annual Auction
 
-- When a name is minted it is automatically listed in Name Marketplace (x)
-- Owner can accept the top bid at any time (x)
-- After 1 year, owner has to pay 0.5% of the top bid to keep the name
-- If a bid is placed for 4 weeks, name value rises to this value
-- If fee is not paid, name is transferred to the bidder
-- If there are no bids, there is a minimum fee to keep the name based on the number of characters
-- Cap annual fee at X per year
+- [x] When a name is minted it is automatically listed in Name Marketplace
+- [x] Owner can accept the top bid at any time
+- [ ] After 1 year, owner has to pay 0.5% of the top bid to keep the name
+- [ ] If a bid is placed for 4 weeks, name value rises to this value
+- [ ] If fee is not paid, name is transferred to the bidder
+- [ ] If there are no bids, there is a minimum fee to keep the name based on the number of characters
+- [ ] Cap annual fee at X per year
 
 ## Initial Fees
 
 ```
-5+ chars = 500 STARS
-4 chars = 5,000 STARS
-3 chars = 50,000 STARS
+5+ chars = 100 STARS
+4 chars  = 1,000 STARS
+3 chars  = 10,000 STARS
 ```
 
 ## Contracts
@@ -58,24 +46,23 @@ A cw721 contract with on-chain metadata for a name.
 Types used in metadata:
 
 ```rs
-pub struct NFT {
-    pub collection: Addr,
-    pub token_id: String,
-}
-
 pub struct TextRecord {
-    pub name: String,  // "twitter"
-    pub value: String, // "shan3v"
+    pub name: String,           // "twitter"
+    pub value: String,          // "shan3v"
+    pub verified: Option<bool>  // verified by oracle
 }
 ```
 
 ```rs
 pub struct Metadata {
-    pub bio: String,
-    pub profile_nft: NFT,
+    pub profile_nft: Option<NFT>,
     pub record: Vec<TextRecord>,
 }
 ```
+
+Names are designed to be as flexible as possible, allowing generic `TextRecord` types to be added. Each record has a `verified` field that can only be modified by a verification oracle. For example, a Twitter verification oracle can verify a user's signature in a tweet, and set `verified` to `true`. Text records can also be used to link the name to other name services such as ENS.
+
+`profile_nft` points to another NFT with on-chain metadata for profile information such as bio, header (banner) image, and follower information. This will be implemented as a separate collection.
 
 ### [Name Minter](./contracts/name-minter/README.md)
 
@@ -85,7 +72,7 @@ Name minter is responsible for minting, validating, and updating names and their
 
 The secondary marketplace for names. Names are automatically listed here once they are minted.
 
-### [Whitelist Updatable](./contracts/whitelist-updatable/README.md)
+### [Whitelist](./contracts/whitelist-updatable/README.md)
 
 Whitelist allows for flexible updating to add / remove addresses at any point in minting. Also adds helper to account for whitelist minting limits.
 
