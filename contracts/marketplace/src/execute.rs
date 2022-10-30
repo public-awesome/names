@@ -41,7 +41,7 @@ pub fn instantiate(
     }
 
     let params = SudoParams {
-        trading_fee_percent: Decimal::percent(msg.trading_fee_bps),
+        trading_fee_percent: Decimal::percent(msg.trading_fee_bps) / Uint128::from(100u128),
         min_price: msg.min_price,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;

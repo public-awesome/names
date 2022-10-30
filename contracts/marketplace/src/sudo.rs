@@ -81,7 +81,7 @@ pub fn sudo_update_params(
     let mut params = SUDO_PARAMS.load(deps.storage)?;
 
     params.trading_fee_percent = trading_fee_bps
-        .map(Decimal::percent)
+        .map(|bps| Decimal::percent(bps) / Uint128::from(100u128))
         .unwrap_or(params.trading_fee_percent);
 
     params.min_price = min_price.unwrap_or(params.min_price);

@@ -176,7 +176,6 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         &msg,
         &[],
     );
-    println!("res: {:?}", res);
     assert!(res.is_ok());
 
     // 7. Add Whitelist to Name Minter
