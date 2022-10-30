@@ -6,7 +6,7 @@ Use an environment variable manager like [dotenv](https://github.com/motdotla/do
 
 `cp .env.example .env` and modify for your setup.
 
-Configure `starsd` with: `./config.sh`.
+Configure `starsd` with: `./00-config.sh`.
 
 ## Upload code to chain
 
