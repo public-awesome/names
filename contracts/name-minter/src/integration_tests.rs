@@ -934,20 +934,43 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
+        // check if name is listed in marketplace
+        let res: AskResponse = app
+            .wrap()
+            .query_wasm_smart(
+                MKT,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.ask.unwrap().token_id, NAME);
+
+        // check if token minted
+        let _res: NumTokensResponse = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &sg721_base::msg::QueryMsg::NumTokens {},
+            )
+            .unwrap();
+
+        assert_eq!(owner_of(&app, NAME.to_string()), USER.to_string());
+
         let name = "twitter";
         let value = "shan3v";
 
-        let msg = Sg721NameExecuteMsg::AddTextRecord {
-            name: NAME.to_string(),
-            record: TextRecord::new(name, value),
-        };
-        let res = app.execute_contract(
-            Addr::unchecked(USER),
-            Addr::unchecked(COLLECTION),
-            &msg,
-            &[],
-        );
-        assert!(res.is_ok());
+        // let msg = Sg721NameExecuteMsg::AddTextRecord {
+        //     name: NAME.to_string(),
+        //     record: TextRecord::new(name, value),
+        // };
+        // let res = app.execute_contract(
+        //     Addr::unchecked(USER),
+        //     Addr::unchecked(COLLECTION),
+        //     &msg,
+        //     &[],
+        // );
+        // assert!(res.is_ok());
 
         // query text record to see if verified is not set
         let res: TokenInfo<Metadata> = app
