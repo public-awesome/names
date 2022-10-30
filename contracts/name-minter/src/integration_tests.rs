@@ -12,7 +12,7 @@ use name_marketplace::msg::{
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
-use sg_name::{NameMarketplaceResponse, SgNameQueryMsg};
+use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
@@ -58,6 +58,7 @@ const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
+const VERIFIER: &str = "verifier";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
@@ -110,6 +111,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     // 2. Instantiate Name Minter (which instantiates Name Collection)
     let msg = InstantiateMsg {
         admin: admin.clone(),
+        verifier: Some(VERIFIER.to_string()),
         collection_code_id: sg721_id,
         marketplace_addr: marketplace.to_string(),
         base_price: Uint128::from(BASE_PRICE),
@@ -481,7 +483,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(USER.to_string()),
         };
@@ -494,7 +496,7 @@ mod execute {
         assert!(res.is_ok());
 
         // remove address
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: None,
         };
@@ -514,7 +516,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(MINTER.to_string()),
         };
@@ -534,7 +536,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, ADMIN2, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(MINTER.to_string()),
         };
@@ -554,7 +556,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(USER2.to_string()),
         };
@@ -848,7 +850,7 @@ mod query {
         let res = mint_and_list(&mut app, "yoyo", user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: "yoyo".to_string(),
             address: Some(user.to_string()),
         };
@@ -875,8 +877,10 @@ mod query {
 
 mod collection {
     use cosmwasm_std::{to_binary, StdResult};
+    use cw721::NftInfoResponse;
+    use cw_controllers::AdminResponse;
     use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
-    use sg_name::NameResponse;
+    use sg_name::{Metadata, NameResponse, TextRecord};
 
     use super::*;
 
@@ -921,6 +925,80 @@ mod collection {
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
+    }
+
+    #[test]
+    fn verify_twitter() {
+        let mut app = instantiate_contracts(None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        let name = "twitter";
+        let value = "shan3v";
+
+        let msg = SgNameExecuteMsg::AddTextRecord {
+            name: NAME.to_string(),
+            record: TextRecord::new(name, value),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // query text record to see if verified is not set
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, None);
+
+        let msg = SgNameExecuteMsg::VerifyTextRecord {
+            name: NAME.to_string(),
+            record_name: name.to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        // fails cuz caller is not oracle verifier
+        assert!(res.is_err());
+
+        let res = app.execute_contract(
+            Addr::unchecked(VERIFIER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = Sg721NameQueryMsg::Verifier {};
+        let verifier: AdminResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(verifier.admin, Some(VERIFIER.to_string()));
+
+        // query text record to see if verified is set
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, Some(true));
     }
 
     #[test]
@@ -986,7 +1064,7 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(user.to_string()),
         };
@@ -1081,7 +1159,7 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
-        let msg = Sg721NameExecuteMsg::AssociateAddress {
+        let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(user.to_string()),
         };

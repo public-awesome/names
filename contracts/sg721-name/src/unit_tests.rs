@@ -5,14 +5,14 @@ use cosmwasm_std::{
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
-use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg};
+use sg721::{CollectionInfo, ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
 use crate::contract::transcode;
 use crate::entry::{execute, instantiate, query};
-use crate::msg::ParamsResponse;
+use crate::msg::{InstantiateMsg, ParamsResponse};
 use crate::{ContractError, ExecuteMsg, QueryMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 const CREATOR: &str = "creator";
@@ -64,12 +64,7 @@ impl CustomMockQuerier {
     }
 }
 
-#[test]
-fn init() {
-    // instantiate sg-names collection
-    let mut deps = mock_deps();
-    let info = mock_info(CREATOR, &[]);
-
+fn init_msg() -> InstantiateMsg {
     let collection_info = CollectionInfo {
         creator: "bobo".to_string(),
         description: "bobo name da best".to_string(),
@@ -79,14 +74,25 @@ fn init() {
         start_trading_time: None,
         royalty_info: None,
     };
-    let init_msg = InstantiateMsg {
+    let base_init_msg = Sg721InstantiateMsg {
         name: "SG Names".to_string(),
         symbol: "NAME".to_string(),
         minter: CREATOR.to_string(),
         collection_info,
     };
+    InstantiateMsg {
+        verifier: None,
+        base_init_msg,
+    }
+}
 
-    instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+#[test]
+fn init() {
+    // instantiate sg-names collection
+    let mut deps = mock_deps();
+    let info = mock_info(CREATOR, &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, init_msg()).unwrap();
 }
 
 #[test]
@@ -95,23 +101,8 @@ fn mint_and_update() {
     // instantiate sg-names collection
     let mut deps = mock_deps();
     let info = mock_info(CREATOR, &[]);
-    let collection_info = CollectionInfo {
-        creator: "bobo".to_string(),
-        description: "bobo name da best".to_string(),
-        image: "ipfs://something".to_string(),
-        external_link: None,
-        explicit_content: None,
-        start_trading_time: None,
-        royalty_info: None,
-    };
-    let init_msg = InstantiateMsg {
-        name: "SG Names".to_string(),
-        symbol: "NAME".to_string(),
-        minter: CREATOR.to_string(),
-        collection_info,
-    };
 
-    instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg()).unwrap();
 
     // retrieve max record count
     let params: ParamsResponse =
@@ -151,6 +142,7 @@ fn mint_and_update() {
         records: vec![TextRecord {
             name: "key".to_string(),
             value: "value".to_string(),
+            verified: None,
         }],
     };
     let update_metadata_msg = ExecuteMsg::UpdateMetadata {
@@ -175,46 +167,57 @@ fn mint_and_update() {
             TextRecord {
                 name: "key1".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key2".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key3".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key4".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key5".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key6".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key7".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key8".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key9".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key10".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
             TextRecord {
                 name: "key11".to_string(),
                 value: "value".to_string(),
+                verified: None,
             },
         ],
     };
@@ -247,6 +250,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "test".to_string(),
         value: "test".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -276,6 +280,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "twitter".to_string(),
         value: "jackdorsey".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),
@@ -292,6 +297,7 @@ fn mint_and_update() {
     let record = TextRecord {
         name: "test".to_string(),
         value: "testtesttest".to_string(),
+        verified: None,
     };
     let add_record_msg = ExecuteMsg::AddTextRecord {
         name: token_id.to_string(),

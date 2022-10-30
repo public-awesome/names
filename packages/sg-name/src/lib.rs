@@ -13,8 +13,19 @@ pub struct NFT {
 
 #[cw_serde]
 pub struct TextRecord {
-    pub name: String,  // "twitter"
-    pub value: String, // "shan3v"
+    pub name: String,           // "twitter"
+    pub value: String,          // "shan3v"
+    pub verified: Option<bool>, // can only be set by oracle
+}
+
+impl TextRecord {
+    pub fn new(name: impl Into<String>, value: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            value: value.into(),
+            verified: None,
+        }
+    }
 }
 
 /// Note that the address mapped to the name is stored in `token_uri`.
@@ -32,7 +43,10 @@ pub enum SgNameExecuteMsg {
     SetNameMarketplace { address: String },
     /// Set an address for name reverse lookup
     /// Can be an EOA or a contract address
-    AssociateAddress { name: String, address: String },
+    AssociateAddress {
+        name: String,
+        address: Option<String>,
+    },
     /// Update image
     UpdateImageNft { name: String, nft: Option<NFT> },
     /// Update profile
@@ -46,6 +60,10 @@ pub enum SgNameExecuteMsg {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+    /// Verify a text record (via oracle)
+    VerifyTextRecord { name: String, record_name: String },
+    /// Update the reset the verification oracle
+    UpdateVerifier { verifier: Option<String> },
 }
 
 #[cw_serde]

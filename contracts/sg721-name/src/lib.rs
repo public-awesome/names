@@ -17,14 +17,14 @@ const CONTRACT_NAME: &str = "crates.io:sg721-name";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
-pub type InstantiateMsg = sg721::InstantiateMsg;
 pub type ExecuteMsg = crate::msg::ExecuteMsg<Metadata>;
 pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::{
-        contract::execute_update_profile_nft,
-        state::{SudoParams, SUDO_PARAMS},
+        contract::{execute_update_profile_nft, execute_verify_text_record},
+        msg::InstantiateMsg,
+        state::{SudoParams, SUDO_PARAMS, VERIFIER},
     };
 
     use super::*;
@@ -36,12 +36,13 @@ pub mod entry {
         execute_update_text_record, query_name, query_name_marketplace, query_params,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use cw_utils::maybe_addr;
     use sg721_base::ContractError as Sg721ContractError;
     use sg_std::Response;
 
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn instantiate(
-        deps: DepsMut,
+        mut deps: DepsMut,
         env: Env,
         info: MessageInfo,
         msg: InstantiateMsg,
@@ -55,7 +56,12 @@ pub mod entry {
                 max_record_count: 10,
             },
         )?;
-        let res = Sg721NameContract::default().instantiate(deps, env.clone(), info, msg)?;
+
+        let api = deps.api;
+        VERIFIER.set(deps.branch(), maybe_addr(api, msg.verifier)?)?;
+
+        let res =
+            Sg721NameContract::default().instantiate(deps, env.clone(), info, msg.base_init_msg)?;
 
         Ok(res
             .add_attribute("action", "instantiate")
@@ -71,6 +77,8 @@ pub mod entry {
         info: MessageInfo,
         msg: ExecuteMsg,
     ) -> Result<Response, ContractError> {
+        let api = deps.api;
+
         match msg {
             ExecuteMsg::UpdateMetadata { name, metadata } => {
                 execute_update_metadata(deps, env, info, name, metadata)
@@ -92,6 +100,12 @@ pub mod entry {
             }
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
+            }
+            ExecuteMsg::VerifyTextRecord { name, record_name } => {
+                execute_verify_text_record(deps, info, name, record_name)
+            }
+            ExecuteMsg::UpdateVerifier { verifier } => {
+                Ok(VERIFIER.execute_update_admin(deps, info, maybe_addr(api, verifier)?)?)
             }
             ExecuteMsg::SetNameMarketplace { address } => {
                 execute_set_name_marketplace(deps, info, address)
@@ -119,6 +133,9 @@ pub mod entry {
             QueryMsg::Params {} => to_binary(&query_params(deps)?),
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
+            QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
+            // TODO: add queries that have the `Metadata` extension
+            // TODO: this uses sg721_base query which has a empty extension without metadata
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }

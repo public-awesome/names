@@ -43,6 +43,13 @@
         "format": "uint32",
         "minimum": 0.0
       },
+      "verifier": {
+        "description": "Oracle for verifying records",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "whitelists": {
         "type": "array",
         "items": {

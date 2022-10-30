@@ -1,7 +1,7 @@
 use crate::{
     error::ContractError,
     msg::ParamsResponse,
-    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS},
+    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
 };
 
 use cosmwasm_std::{
@@ -472,6 +472,36 @@ pub fn execute_update_text_record(
     Ok(Response::new())
 }
 
+pub fn execute_verify_text_record(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    record_name: String,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+    VERIFIER.assert_admin(deps.as_ref(), &info.sender)?;
+
+    let token_id = name;
+
+    Sg721NameContract::default()
+        .tokens
+        .update(deps.storage, &token_id, |token| match token {
+            Some(mut token_info) => {
+                if let Some(r) = token_info
+                    .extension
+                    .records
+                    .iter_mut()
+                    .find(|r| r.name == record_name)
+                {
+                    r.verified = Some(true);
+                }
+                Ok(token_info)
+            }
+            None => Err(ContractError::NameNotFound {}),
+        })?;
+    Ok(Response::new())
+}
+
 pub fn execute_set_name_marketplace(
     deps: DepsMut,
     info: MessageInfo,
@@ -503,6 +533,9 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
 }
 
 fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
+    if record.verified.is_some() {
+        return Err(ContractError::UnauthorizedVerification {});
+    }
     let name_len = record.name.len();
     if name_len > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordNameTooLong {});

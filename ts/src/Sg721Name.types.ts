@@ -66,6 +66,15 @@ export type ExecuteMsg = {
     record: TextRecord;
   };
 } | {
+  verify_text_record: {
+    name: string;
+    record_name: string;
+  };
+} | {
+  update_verifier: {
+    verifier?: string | null;
+  };
+} | {
   transfer_nft: {
     recipient: string;
     token_id: string;
@@ -132,6 +141,7 @@ export interface NFT {
 export interface TextRecord {
   name: string;
   value: string;
+  verified?: boolean | null;
 }
 export interface MintMsgForMetadata {
   extension: Metadata;
@@ -154,6 +164,8 @@ export type QueryMsg = {
   };
 } | {
   name_marketplace: {};
+} | {
+  verifier: {};
 } | {
   owner_of: {
     include_expired?: boolean | null;
@@ -262,3 +274,4 @@ export interface NumTokensResponse {
 export interface ParamsResponse {
   max_record_count: number;
 }
+export type Nullable_String = string | null;

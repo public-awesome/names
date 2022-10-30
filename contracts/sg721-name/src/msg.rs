@@ -5,9 +5,18 @@ use cw721::{
     NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
 };
 use cw721_base::{MintMsg, MinterResponse};
-use sg721::{ExecuteMsg as Sg721ExecuteMsg, RoyaltyInfoResponse, UpdateCollectionInfoMsg};
+use sg721::{
+    ExecuteMsg as Sg721ExecuteMsg, InstantiateMsg as Sg721InstantiateMsg, RoyaltyInfoResponse,
+    UpdateCollectionInfoMsg,
+};
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
+
+#[cw_serde]
+pub struct InstantiateMsg {
+    pub verifier: Option<String>,
+    pub base_init_msg: Sg721InstantiateMsg,
+}
 
 // Add execute msgs related to bio, profile, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
@@ -39,6 +48,10 @@ pub enum ExecuteMsg<T> {
     RemoveTextRecord { name: String, record_name: String },
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
+    /// Verify a text record (via oracle)
+    VerifyTextRecord { name: String, record_name: String },
+    /// Update the reset the verification oracle
+    UpdateVerifier { verifier: Option<String> },
     /// Transfer is a base message to move a token to another account without triggering actions
     TransferNft { recipient: String, token_id: String },
     /// Send is a base message to transfer a token to a contract and trigger an action
@@ -155,6 +168,10 @@ pub enum QueryMsg {
     /// Returns the marketplace contract address
     #[returns(NameMarketplaceResponse)]
     NameMarketplace {},
+    /// Returns the verification oracle address
+    #[returns(Option<String>)]
+    Verifier {},
+    /// Everything below is inherited from sg721
     #[returns(OwnerOfResponse)]
     OwnerOf {
         token_id: String,

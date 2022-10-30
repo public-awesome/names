@@ -26,11 +26,11 @@ library = []
 [dependencies]
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
+cw-controllers = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-storage-macro = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
-cw-controllers = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
@@ -38,7 +38,7 @@ cw721 = { workspace = true }
 cw721-base = { workspace = true, features = ["library"] }
 sg-name = { path = "../../packages/sg-name" }
 sg721 = { workspace = true }
-sg721-name = { path = "../sg721-name" }
+sg721-name = { path = "../sg721-name", features = ["library"] }
 name-marketplace = { path = "../marketplace", features = ["library"] }
 sg-std = { workspace = true }
 whitelist-updatable = { path = "../whitelist-updatable", features = [
