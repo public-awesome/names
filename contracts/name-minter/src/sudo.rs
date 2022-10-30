@@ -49,7 +49,7 @@ pub fn sudo_update_params(
             min_name_length,
             max_name_length,
             base_price,
-            fair_burn_percent: Decimal::from_ratio(fair_burn_bps, 100u128),
+            fair_burn_percent: Decimal::percent(fair_burn_bps) / Uint128::from(100u128),
         },
     )?;
 
