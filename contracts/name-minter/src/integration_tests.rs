@@ -117,6 +117,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
         base_price: Uint128::from(BASE_PRICE),
         min_name_length: 3,
         max_name_length: 63,
+        fair_burn_bps: 5000, // 50%
         whitelists: vec![],
     };
     let minter = app
@@ -304,9 +305,10 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::OperatorsResponse;
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
 
     use super::*;
 
@@ -608,9 +610,10 @@ mod execute {
 }
 
 mod admin {
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::ConfigResponse;
 
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
 
     use super::*;
 
@@ -1224,7 +1227,8 @@ mod collection {
 }
 
 mod whitelist {
-    use crate::msg::{QueryMsg, WhitelistsResponse};
+    use crate::msg::QueryMsg;
+    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
 
     use super::*;

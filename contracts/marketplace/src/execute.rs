@@ -17,7 +17,8 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{may_pay, must_pay, nonpayable};
-use sg_std::{create_fund_community_pool_msg, Response, SubMsg, NATIVE_DENOM};
+use sg_name_common::charge_fees;
+use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
@@ -40,7 +41,7 @@ pub fn instantiate(
     }
 
     let params = SudoParams {
-        trading_fee_percent: Decimal::percent(msg.trading_fee_bps),
+        trading_fee_percent: Decimal::percent(msg.trading_fee_bps) / Uint128::from(100u128),
         min_price: msg.min_price,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
@@ -513,22 +514,16 @@ fn payout(
 ) -> StdResult<()> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
-    // send fees to community pool
-    let network_fee = payment * params.trading_fee_percent / Uint128::from(100u128);
-    if payment < network_fee {
+    let fee = payment * params.trading_fee_percent;
+    if fee > payment {
         return Err(StdError::generic_err("Fees exceed payment"));
     }
-    let community_pool_msg =
-        create_fund_community_pool_msg(vec![coin(network_fee.u128(), NATIVE_DENOM)]);
-    res.messages.push(SubMsg::new(community_pool_msg));
+    charge_fees(res, params.trading_fee_percent, fee);
 
     // pay seller
     let seller_share_msg = BankMsg::Send {
         to_address: payment_recipient.to_string(),
-        amount: vec![coin(
-            (payment - network_fee).u128(),
-            NATIVE_DENOM.to_string(),
-        )],
+        amount: vec![coin((payment - fee).u128(), NATIVE_DENOM.to_string())],
     };
     res.messages.push(SubMsg::new(seller_share_msg));
 

@@ -1,7 +1,7 @@
 [package]
-name = "sg-name-minter"
+name = "sg-name-common"
 authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-description = "Rust definition of name service metadata, used by Stargaze Names"
+description = "Stargaze Names common code"
 version     = { workspace = true }
 edition     = { workspace = true }
 homepage    = { workspace = true }
@@ -20,8 +20,9 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-cw-controllers = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
 schemars = { workspace = true }
+sg-std = { workspace = true }
+sg1 = { workspace = true }
 serde = { workspace = true }

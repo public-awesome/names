@@ -1,17 +1,19 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Uint128;
+use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     /// Temporary admin for managing whitelists
     pub admin: Option<String>,
-    /// Oracle for verifying records
+    /// Oracle for verifying text records
     pub verifier: Option<String>,
     pub collection_code_id: u64,
     pub marketplace_addr: String,
     pub min_name_length: u32,
     pub max_name_length: u32,
     pub base_price: Uint128,
+    pub fair_burn_bps: u64,
     pub whitelists: Vec<String>,
 }
 
@@ -36,6 +38,7 @@ pub enum SudoMsg {
         min_name_length: u32,
         max_name_length: u32,
         base_price: Uint128,
+        fair_burn_bps: u64,
     },
     UpdateNameCollection {
         collection: String,
@@ -56,21 +59,4 @@ pub enum QueryMsg {
     Collection {},
     #[returns(ParamsResponse)]
     Params {},
-}
-
-#[cw_serde]
-pub struct CollectionResponse {
-    pub collection: String,
-}
-
-#[cw_serde]
-pub struct WhitelistsResponse {
-    pub whitelists: Vec<Addr>,
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub min_name_length: u32,
-    pub max_name_length: u32,
-    pub base_price: Uint128,
 }

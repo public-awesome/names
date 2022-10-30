@@ -1,6 +1,6 @@
 {
   "contract_name": "name-marketplace",
-  "contract_version": "0.11.0",
+  "contract_version": "0.12.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1349,7 +1349,7 @@
               ]
             },
             "trading_fee_percent": {
-              "description": "Fair Burn fee for winning bids",
+              "description": "Fair Burn + Community Pool fee for winning bids",
               "allOf": [
                 {
                   "$ref": "#/definitions/Decimal"

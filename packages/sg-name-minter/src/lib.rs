@@ -1,5 +1,17 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Decimal, Uint128};
+
+#[cw_serde]
+pub struct SudoParams {
+    /// 3 (same as DNS)
+    pub min_name_length: u32,
+    /// 63 (same as DNS)
+    pub max_name_length: u32,
+    /// 100_000_000 (5+ ASCII char price)
+    pub base_price: Uint128,
+    /// Fair Burn fee (rest goes to Community Pool)
+    pub fair_burn_percent: Decimal,
+}
 
 #[cw_serde]
 pub enum SgNameMinterExecuteMsg {
@@ -15,10 +27,15 @@ pub enum SgNameMinterExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum SgNameMinterQueryMsg {
+    #[returns(cw_controllers::AdminResponse)]
     Admin {},
+    #[returns(WhitelistsResponse)]
     Whitelists {},
+    #[returns(CollectionResponse)]
     Collection {},
+    #[returns(ParamsResponse)]
     Params {},
 }
 
@@ -34,7 +51,5 @@ pub struct WhitelistsResponse {
 
 #[cw_serde]
 pub struct ParamsResponse {
-    pub min_name_length: u32,
-    pub max_name_length: u32,
-    pub base_price: Uint128,
+    pub params: SudoParams,
 }
