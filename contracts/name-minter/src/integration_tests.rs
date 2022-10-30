@@ -884,8 +884,6 @@ mod collection {
 
     use super::*;
 
-    // TODO: add some collection query tests, i.e: `NftInfo`
-
     fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
         let msg = Sg721NameExecuteMsg::TransferNft {
             recipient: to.to_string(),
@@ -936,29 +934,6 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        // check if name is listed in marketplace
-        let res: AskResponse = app
-            .wrap()
-            .query_wasm_smart(
-                MKT,
-                &MarketplaceQueryMsg::Ask {
-                    token_id: NAME.to_string(),
-                },
-            )
-            .unwrap();
-        assert_eq!(res.ask.unwrap().token_id, NAME);
-
-        // check if token minted
-        let _res: NumTokensResponse = app
-            .wrap()
-            .query_wasm_smart(
-                Addr::unchecked(COLLECTION),
-                &sg721_base::msg::QueryMsg::NumTokens {},
-            )
-            .unwrap();
-
-        assert_eq!(owner_of(&app, NAME.to_string()), USER.to_string());
-
         let name = "twitter";
         let value = "shan3v";
 
@@ -984,7 +959,6 @@ mod collection {
                 },
             )
             .unwrap();
-        println!("{:?}", res);
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
 
@@ -1023,7 +997,6 @@ mod collection {
                 },
             )
             .unwrap();
-        println!("{:?}", res);
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, Some(true));
     }
