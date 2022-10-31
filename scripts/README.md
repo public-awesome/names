@@ -6,13 +6,11 @@ Use an environment variable manager like [dotenv](https://github.com/motdotla/do
 
 `cp .env.example .env` and modify for your setup.
 
-Configure `starsd` with: `./00-config.sh`.
-
 ## Upload code to chain
 
 Download the latest WASM code from [releases](https://github.com/public-awesome/names/releases).
 
-`./store.sh`
+`./01-store.sh`
 
 Make a note of the code ids using `jq`:
 
@@ -30,13 +28,13 @@ Update `.env` with code ids.
 
 ## Instantiate Marketplace
 
-`./init_mkt.sh`
+`./02-init_mkt.sh`
 
 Update `.env` with Marketplace address (`MKT`).
 
 ## Instantiate Minter + Collection
 
-`./init_minter.sh`
+`./03-init_minter.sh`
 
 Update `.env` with both the minter and collection addresses (`MINTER` and `COLLECTION`).
 
@@ -54,7 +52,7 @@ Since the minter and collection addresses are output at the same time, it might 
 Marketplace has to be setup with the minter and collection addresses.
 
 ```sh
-./exec_mkt_setup.sh
+./04-exec_mkt_setup.sh
 ```
 
 Verify it was setup correctly with:
