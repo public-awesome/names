@@ -52,9 +52,14 @@ pub fn execute_update_metadata(
                 .save(deps.storage, &token_id, &token_info)?;
         }
         Some(metadata) => {
-            // update nft profile
+            // update image nft
             token_info.extension.image_nft = match metadata.image_nft {
                 None => token_info.extension.image_nft,
+                Some(image_nft) => Some(image_nft),
+            };
+            // update profile nft
+            token_info.extension.profile_nft = match metadata.profile_nft {
+                None => token_info.extension.profile_nft,
                 Some(profile_nft) => Some(profile_nft),
             };
             // update records. If empty, do nothing.
