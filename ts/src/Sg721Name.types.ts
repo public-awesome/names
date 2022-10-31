@@ -131,7 +131,6 @@ export type Expiration = {
 };
 export interface Metadata {
   image_nft?: NFT | null;
-  profile_nft?: string | null;
   records: TextRecord[];
 }
 export interface NFT {

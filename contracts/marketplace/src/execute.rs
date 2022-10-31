@@ -16,7 +16,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{may_pay, must_pay, nonpayable};
+use cw_utils::{must_pay, nonpayable};
 use sg_name_common::charge_fees;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
@@ -119,8 +119,6 @@ pub fn execute_set_ask(
         return Err(ContractError::UnauthorizedMinter {});
     }
 
-    let funds = may_pay(&info, NATIVE_DENOM)?;
-
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
     // check if collection is approved to transfer on behalf of the seller
@@ -140,7 +138,7 @@ pub fn execute_set_ask(
         id: increment_asks(deps.storage)?,
         seller: seller.clone(),
         renewal_time: env.block.time,
-        renewal_fund: funds,
+        renewal_fund: Uint128::zero(),
     };
     store_ask(deps.storage, &ask)?;
 
@@ -155,6 +153,8 @@ pub fn execute_set_ask(
 
     let event = Event::new("set-ask")
         .add_attribute("token_id", token_id)
+        .add_attribute("ask_id", ask.id.to_string())
+        .add_attribute("renewal_time", renewal_time.to_string())
         .add_attribute("seller", seller);
 
     Ok(Response::new().add_event(event).add_submessages(hook))
@@ -370,7 +370,7 @@ pub fn execute_accept_bid(
         token_id: token_id.to_string(),
         id: ask.id,
         seller: bidder.clone(),
-        renewal_time: env.block.time,
+        renewal_time,
         renewal_fund: Uint128::zero(),
     };
     store_ask(deps.storage, &ask)?;
