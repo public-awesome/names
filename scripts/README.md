@@ -1,38 +1,29 @@
 # Stargaze Names Deployment Scripts
 
-## Getting started
+## Requirements
 
-Use an environment variable manager like [dotenv](https://github.com/motdotla/dotenv).
+- `starsd` binary installed
+- Environment variable manager like [dotenv](https://github.com/motdotla/dotenv)
+
+## Deploy Contracts
 
 `cp .env.example .env` and modify for your setup.
 
-## Upload code to chain
+### Step 1: Upload code to chain
 
 Download the latest WASM code from [releases](https://github.com/public-awesome/names/releases).
 
 `./01-store.sh`
 
-Make a note of the code ids using `jq`:
-
-```sh
-starsd q tx [TX_HASH] | jq . -C | less -R
-```
-
-You can also get the code ids from the above output. Look for something like:
-
-```json
-{ "key": "code_id", "value": "245" }
-```
-
 Update `.env` with code ids.
 
-## Instantiate Marketplace
+### Step 2: Instantiate Marketplace
 
 `./02-init_mkt.sh`
 
 Update `.env` with Marketplace address (`MKT`).
 
-## Instantiate Minter + Collection
+### Step 3: Instantiate Minter + Collection
 
 `./03-init_minter.sh`
 
@@ -47,7 +38,7 @@ You can verify the correct addresses with the query helpers.
 
 Since the minter and collection addresses are output at the same time, it might be difficult to know which is which. Try one of them for `MINTER` and perform the above queries. If they fail, switch around the minter and collection.
 
-## Setup Marketplace
+### Step 4: Setup Marketplace
 
 Marketplace has to be setup with the minter and collection addresses.
 
@@ -63,13 +54,15 @@ Verify it was setup correctly with:
 
 You should see the minter and collection addresses.
 
-## Execute a mint
+## Profit!
+
+### Execute a mint
 
 ```sh
 ./exec_mint.sh [name]
 ```
 
-## Associate name with an address
+### Associate name with an address
 
 ```sh
 ./exec_assoc.sh [name]
@@ -87,22 +80,20 @@ Query name metadata:
 ./query_metadata.sh [name]
 ```
 
-## Place a bid
+### Place a bid
 
 ```
 ./exec_bid.sh [name] [price (in STARS)]
 ```
 
-## Accept a bid
+### Accept a bid
 
 ```
 ./exec_accept_bid.sh [name] [bidder] [price (in STARS)]
 ```
 
-## Deployment
+## Whitelists
 
-All the scripts are in `/scripts`. The other relevant files are `.env` and `starsd`.
-Step 0. Setup `starsd`, run `./config.sh` and set up `.env`
-Follow the other steps in order of numbers.
+Instantiate as many whitelists as needed.
 
-Instantiate as many whitelists as needed. Pause minting, then add/remove whitelists as needed for the next wave. Then resume minting.
+Pause minting, then add/remove whitelists as needed for the next wave. Then resume minting.

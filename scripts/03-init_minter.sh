@@ -6,6 +6,7 @@ MSG=$(cat <<EOF
   "min_name_length": 3,
   "max_name_length": 63,
   "base_price": "100000000",
+  "fair_burn_bps": 5000,
   "whitelists": []
 }
 EOF
