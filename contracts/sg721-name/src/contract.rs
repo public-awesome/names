@@ -143,6 +143,8 @@ pub fn execute_associate_address(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
+    // TODO: emit event
+
     Ok(Response::new())
 }
 
@@ -499,6 +501,8 @@ pub fn execute_verify_text_record(
 
     let token_id = name;
 
+    // TODO: pass in verified status (true or false)
+
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &token_id, |token| match token {
@@ -602,6 +606,8 @@ fn validate_address(deps: Deps, sender: &Addr, addr: &Addr) -> Result<(), Contra
     if sender == addr {
         return Ok(());
     }
+
+    // TODO: think of how to link contracts signed with a different key
 
     let ContractInfoResponse { admin, creator, .. } =
         deps.querier.query_wasm_contract_info(addr)?;

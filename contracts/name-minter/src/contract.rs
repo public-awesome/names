@@ -145,6 +145,10 @@ pub fn execute_mint_and_list(
     if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
     }
+    // TODO: have a public mint start date...
+
+    // TODO: maybe rate limit by `renewal_time` in `Ask`
+    // TODO: write stub...
 
     let discount = if let Some(list) = list {
         res = res.add_message(list.process_address(sender)?);

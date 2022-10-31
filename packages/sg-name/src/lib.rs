@@ -33,6 +33,7 @@ impl TextRecord {
 #[derive(Default)]
 pub struct Metadata {
     pub image_nft: Option<NFT>,
+    // TODO: remove profile_nft
     pub profile_nft: Option<TokenId>,
     pub records: Vec<TextRecord>,
 }
@@ -52,7 +53,7 @@ pub enum SgNameExecuteMsg {
     /// Update profile
     UpdateProfileNft {
         name: String,
-        token_id: Option<String>,
+        profile_token_id: Option<TokenId>,
     },
     /// Update Metadata
     UpdateMetadata {
