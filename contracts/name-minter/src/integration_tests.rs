@@ -1079,7 +1079,6 @@ mod collection {
             name: NAME.to_string(),
             metadata: Some(Metadata {
                 image_nft: None,
-                profile_nft: None,
                 records: vec![TextRecord {
                     name: name.to_string(),
                     value: "some new value".to_string(),

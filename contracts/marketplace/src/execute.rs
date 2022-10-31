@@ -16,7 +16,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{may_pay, must_pay, nonpayable};
+use cw_utils::{must_pay, nonpayable};
 use sg_name_common::charge_fees;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
@@ -118,9 +118,6 @@ pub fn execute_set_ask(
     if info.sender != minter {
         return Err(ContractError::UnauthorizedMinter {});
     }
-
-    // TODO: need this? renewal_funds
-    // let funds = may_pay(&info, NATIVE_DENOM)?;
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 

@@ -22,7 +22,7 @@ pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::{
-        contract::{execute_update_profile_nft, execute_verify_text_record},
+        contract::execute_verify_text_record,
         msg::InstantiateMsg,
         state::{SudoParams, SUDO_PARAMS, VERIFIER},
     };
@@ -88,9 +88,6 @@ pub mod entry {
             }
             ExecuteMsg::UpdateImageNft { name, nft } => {
                 execute_update_image_nft(deps, info, name, nft)
-            }
-            ExecuteMsg::UpdateProfileNft { name, token_id } => {
-                execute_update_profile_nft(deps, info, name, token_id)
             }
             ExecuteMsg::AddTextRecord { name, record } => {
                 execute_add_text_record(deps, info, name, record)

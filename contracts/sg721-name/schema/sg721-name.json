@@ -727,12 +727,6 @@
               }
             ]
           },
-          "profile_nft": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "records": {
             "type": "array",
             "items": {
@@ -1373,12 +1367,6 @@
                 }
               ]
             },
-            "profile_nft": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
             "records": {
               "type": "array",
               "items": {
@@ -1995,12 +1983,6 @@
                 {
                   "type": "null"
                 }
-              ]
-            },
-            "profile_nft": {
-              "type": [
-                "string",
-                "null"
               ]
             },
             "records": {

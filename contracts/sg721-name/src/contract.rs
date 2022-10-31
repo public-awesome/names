@@ -57,11 +57,6 @@ pub fn execute_update_metadata(
                 None => token_info.extension.image_nft,
                 Some(image_nft) => Some(image_nft),
             };
-            // update profile nft
-            token_info.extension.profile_nft = match metadata.profile_nft {
-                None => token_info.extension.profile_nft,
-                Some(profile_nft) => Some(profile_nft),
-            };
             // update records. If empty, do nothing.
             if !metadata.records.is_empty() {
                 for record in metadata.records.iter() {
@@ -142,8 +137,6 @@ pub fn execute_associate_address(
         // if no new token_uri, and existing token_uri, wipe entry from reverse map
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
-
-    // TODO: emit event
 
     Ok(Response::new())
 }
@@ -369,29 +362,6 @@ pub fn execute_update_image_nft(
     Ok(Response::new())
 }
 
-pub fn execute_update_profile_nft(
-    deps: DepsMut,
-    info: MessageInfo,
-    name: String,
-    nft: Option<String>,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), &info.sender, &token_id)?;
-
-    Sg721NameContract::default()
-        .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut token_info) => {
-                token_info.extension.profile_nft = nft;
-                Ok(token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
-    Ok(Response::new())
-}
-
 pub fn execute_add_text_record(
     deps: DepsMut,
     info: MessageInfo,
@@ -501,8 +471,6 @@ pub fn execute_verify_text_record(
 
     let token_id = name;
 
-    // TODO: pass in verified status (true or false)
-
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &token_id, |token| match token {
@@ -606,8 +574,6 @@ fn validate_address(deps: Deps, sender: &Addr, addr: &Addr) -> Result<(), Contra
     if sender == addr {
         return Ok(());
     }
-
-    // TODO: think of how to link contracts signed with a different key
 
     let ContractInfoResponse { admin, creator, .. } =
         deps.querier.query_wasm_contract_info(addr)?;

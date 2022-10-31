@@ -138,7 +138,6 @@ fn mint_and_update() {
             collection: Addr::unchecked("contract"),
             token_id: "token_id".to_string(),
         }),
-        profile_nft: None,
         records: vec![TextRecord {
             name: "key".to_string(),
             value: "value".to_string(),
@@ -162,7 +161,6 @@ fn mint_and_update() {
             collection: Addr::unchecked("contract"),
             token_id: "token_id".to_string(),
         }),
-        profile_nft: None,
         records: vec![
             TextRecord {
                 name: "key1".to_string(),
