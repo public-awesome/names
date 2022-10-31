@@ -52,21 +52,31 @@ pub fn execute_update_metadata(
                 .save(deps.storage, &token_id, &token_info)?;
         }
         Some(metadata) => {
-            // update nft profile
+            // update image nft
             token_info.extension.image_nft = match metadata.image_nft {
                 None => token_info.extension.image_nft,
+                Some(image_nft) => Some(image_nft),
+            };
+            // update profile nft
+            token_info.extension.profile_nft = match metadata.profile_nft {
+                None => token_info.extension.profile_nft,
                 Some(profile_nft) => Some(profile_nft),
             };
             // update records. If empty, do nothing.
             if !metadata.records.is_empty() {
                 for record in metadata.records.iter() {
-                    validate_and_sanitize_record(record)?;
+                    // updated records should reset verified to None
+                    let mut updated_record = record.clone();
+                    updated_record.verified = None;
+
+                    validate_and_sanitize_record(&updated_record)?;
+
                     // update same record name
                     token_info
                         .extension
                         .records
-                        .retain(|r| r.name != record.name);
-                    token_info.extension.records.push(record.clone());
+                        .retain(|r| r.name != updated_record.name);
+                    token_info.extension.records.push(updated_record.clone());
                 }
                 // check record length
                 if token_info.extension.records.len() > max_record_count as usize {
@@ -384,11 +394,14 @@ pub fn execute_add_text_record(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    record: TextRecord,
+    mut record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
     let params = SUDO_PARAMS.load(deps.storage)?;
     let max_record_count = params.max_record_count;
+
+    // new records should reset verified to None
+    record.verified = None;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -448,9 +461,12 @@ pub fn execute_update_text_record(
     deps: DepsMut,
     info: MessageInfo,
     name: String,
-    record: TextRecord,
+    mut record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
+
+    // updated records should reset verified to None
+    record.verified = None;
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;

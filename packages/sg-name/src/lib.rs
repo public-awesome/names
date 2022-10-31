@@ -54,6 +54,11 @@ pub enum SgNameExecuteMsg {
         name: String,
         token_id: Option<String>,
     },
+    /// Update Metadata
+    UpdateMetadata {
+        name: String,
+        metadata: Option<Metadata>,
+    },
     /// Add text record ex: twitter handle, discord name, etc
     AddTextRecord { name: String, record: TextRecord },
     /// Remove text record ex: twitter handle, discord name, etc
