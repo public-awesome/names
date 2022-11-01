@@ -134,10 +134,8 @@ pub fn execute_add_addresses(
     addresses.dedup();
 
     for address in addresses.into_iter() {
-        if WHITELIST.has(deps.storage, &address.clone()) { 
-            return Err(ContractError::AddressAlreadyExists {
-                addr: address
-            });
+        if WHITELIST.has(deps.storage, &address.clone()) {
+            return Err(ContractError::AddressAlreadyExists { addr: address });
         } else {
             WHITELIST.save(deps.storage, &address, &0u32)?;
             count += 1;
@@ -173,9 +171,7 @@ pub fn execute_remove_addresses(
             WHITELIST.remove(deps.storage, &address);
             count -= 1;
         } else {
-            return Err(ContractError::AddressNotFound {
-                addr: address,
-            });
+            return Err(ContractError::AddressNotFound { addr: address });
         }
     }
 
@@ -202,9 +198,7 @@ pub fn execute_process_address(
     }
 
     if !WHITELIST.has(deps.storage, &address) {
-        return Err(ContractError::AddressNotFound {
-            addr: address,
-        });
+        return Err(ContractError::AddressNotFound { addr: address });
     }
 
     if WHITELIST.load(deps.storage, &address)? >= config.per_address_limit {
