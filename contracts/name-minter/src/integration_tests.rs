@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::query;
 use anyhow::Result as AnyResult;
-use cosmwasm_std::{coins, Addr, Decimal, Uint128};
+use cosmwasm_std::{coins, Addr, Decimal, Timestamp, Uint128};
 use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{
     AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg,
@@ -13,6 +13,7 @@ use name_marketplace::msg::{
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
+use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
@@ -75,7 +76,14 @@ const WHITELIST: &str = "contract3";
 // NOTE: This are mostly Marketplace integration tests. They could possibly be moved into the marketplace contract.
 
 pub fn custom_mock_app() -> StargazeApp {
-    StargazeApp::default()
+    set_block_time(StargazeApp::default(), PUBLIC_MINT_START_TIME_IN_SECONDS)
+}
+
+pub fn set_block_time(mut app: StargazeApp, time: Timestamp) -> StargazeApp {
+    let mut block_info = app.block_info();
+    block_info.time = time;
+    app.set_block(block_info);
+    app
 }
 
 // 1. Instantiate Name Marketplace
