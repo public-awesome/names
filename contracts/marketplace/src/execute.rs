@@ -16,7 +16,6 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_storage_plus::Bound;
 use cw_utils::{must_pay, nonpayable};
 use sg_name_common::charge_fees;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
@@ -120,25 +119,7 @@ pub fn execute_set_ask(
         return Err(ContractError::UnauthorizedMinter {});
     }
 
-    // rate limit..
-
-    // let asks = asks()
-    //     .idx
-    //     .seller
-    //     .prefix(seller.clone())
-    //     .range(
-    //         deps.storage,
-    //         Some(Bound::exclusive(ask_key(&token_id))),
-    //         None,
-    //         Order::Ascending,
-    //     )
-    //     .take(1)
-    //     .map(|res| res.map(|item| item.1))
-    //     .collect::<StdResult<Vec<_>>>()?;
-
-    // let asks = asks()
-    //     .idx
-    //     .re
+    check_rate_limit(deps.storage, env.block.time, seller.clone())?;
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
@@ -573,4 +554,34 @@ fn only_owner(
     }
 
     Ok(res)
+}
+
+// TODO:: add test
+fn check_rate_limit(store: &dyn Storage, block_time: Timestamp, seller: Addr) -> StdResult<()> {
+    let mint_interval = 60u64; // TODO: move to sudo param
+    let too_soon = block_time.plus_seconds(SECONDS_PER_YEAR - mint_interval);
+
+    if asks()
+        .idx
+        .seller
+        .prefix(seller)
+        .range(store, None, None, Order::Ascending)
+        .filter_map(|item| {
+            let (_, ask) = item.unwrap();
+            if ask.renewal_time > too_soon {
+                Some(ask)
+            } else {
+                None
+            }
+        })
+        .count()
+        > 0
+    {
+        return Err(StdError::generic_err(format!(
+            "Minting names is rate limited. Try again after {} seconds",
+            mint_interval
+        )));
+    }
+
+    Ok(())
 }
