@@ -43,6 +43,7 @@ pub fn instantiate(
     let params = SudoParams {
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps) / Uint128::from(100u128),
         min_price: msg.min_price,
+        ask_interval: msg.ask_interval,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -135,16 +136,17 @@ pub fn execute_set_ask(
         return Err(ContractError::NotApproved {});
     }
 
+    let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+
     let ask = Ask {
         token_id: token_id.to_string(),
         id: increment_asks(deps.storage)?,
         seller: seller.clone(),
-        renewal_time: env.block.time,
+        renewal_time,
         renewal_fund: Uint128::zero(),
     };
     store_ask(deps.storage, &ask)?;
 
-    let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
     RENEWAL_QUEUE.save(
         deps.storage,
         (renewal_time.seconds(), ask.id),
@@ -556,30 +558,26 @@ fn only_owner(
     Ok(res)
 }
 
-// TODO:: add test
 fn check_rate_limit(store: &dyn Storage, block_time: Timestamp, seller: Addr) -> StdResult<()> {
-    let mint_interval = 60u64; // TODO: move to sudo param
-    let too_soon = block_time.plus_seconds(SECONDS_PER_YEAR - mint_interval);
+    let ask_interval = SUDO_PARAMS.load(store)?.ask_interval;
+
+    let min_renewal_time = block_time
+        .plus_seconds(SECONDS_PER_YEAR)
+        .minus_seconds(ask_interval);
 
     if asks()
         .idx
         .seller
         .prefix(seller)
         .range(store, None, None, Order::Ascending)
-        .filter_map(|item| {
-            let (_, ask) = item.unwrap();
-            if ask.renewal_time > too_soon {
-                Some(ask)
-            } else {
-                None
-            }
+        .any(|item| {
+            let (_, ask) = item.as_ref().unwrap();
+            ask.renewal_time > min_renewal_time
         })
-        .count()
-        > 0
     {
         return Err(StdError::generic_err(format!(
-            "Minting names is rate limited. Try again after {} seconds",
-            mint_interval
+            "You are rate limited. Try again after {} seconds",
+            ask_interval
         )));
     }
 

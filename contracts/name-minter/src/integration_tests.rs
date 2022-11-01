@@ -96,6 +96,7 @@ fn instantiate_contracts(creator: Option<String>, admin: Option<String>) -> Star
     let msg = name_marketplace::msg::InstantiateMsg {
         trading_fee_bps: TRADING_FEE_BPS,
         min_price: Uint128::from(5u128),
+        ask_interval: 60,
     };
     let marketplace = app
         .instantiate_contract(
@@ -208,6 +209,12 @@ fn owner_of(app: &StargazeApp, token_id: String) -> String {
 fn update_block_height(app: &mut StargazeApp, height: u64) {
     let mut block = app.block_info();
     block.height = height;
+    app.set_block(block);
+}
+
+fn update_block_time(app: &mut StargazeApp, add_secs: u64) {
+    let mut block = app.block_info();
+    block.time = block.time.plus_seconds(add_secs);
     app.set_block(block);
 }
 
@@ -607,6 +614,24 @@ mod execute {
         let err = mint_and_list(&mut app, "name2", USER, None);
         assert!(err.is_err());
     }
+
+    #[test]
+    fn test_rate_limiter() {
+        let mut app = instantiate_contracts(None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        update_block_time(&mut app, 10);
+
+        let res = mint_and_list(&mut app, "name2", USER, None);
+        assert!(res.is_err());
+
+        update_block_time(&mut app, 100);
+
+        let res = mint_and_list(&mut app, "name2", USER, None);
+        assert!(res.is_ok());
+    }
 }
 
 mod admin {
@@ -666,8 +691,15 @@ mod admin {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
+        // make rate limiter happy
+        update_block_time(&mut app, 100);
+
         let res = mint_and_list(&mut app, "ser1", USER, None);
         assert!(res.is_ok());
+
+        // make rate limiter happy
+        update_block_time(&mut app, 100);
+
         let res = mint_and_list(&mut app, "ser2", USER, None);
         assert!(res.is_err());
     }
@@ -1454,6 +1486,8 @@ mod whitelist {
         // user not on lists
         let res = mint_and_list(&mut app, "nbne", BIDDER, None);
         assert!(res.is_err());
+
+        update_block_time(&mut app, 1000);
 
         // mint over per address limit
         let res = mint_and_list(&mut app, "some", USER, None);

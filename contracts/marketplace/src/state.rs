@@ -10,6 +10,8 @@ pub struct SudoParams {
     pub trading_fee_percent: Decimal,
     /// Min value for a bid
     pub min_price: Uint128,
+    /// Interval to rate limit setting asks (in seconds)
+    pub ask_interval: u64,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("sudo-params");
