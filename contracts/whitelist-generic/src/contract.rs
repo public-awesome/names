@@ -8,8 +8,7 @@ use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use cw_utils::nonpayable;
 use sg_name_minter::{ParamsResponse, SgNameMinterQueryMsg};
-extern crate sg_std;
-use sg_std::Response as Response;
+use sg_std::{StargazeMsgWrapper};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:whitelist-updatable";
@@ -21,7 +20,7 @@ pub fn instantiate(
     _env: Env,
     info: MessageInfo,
     mut msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let config = Config {
@@ -57,7 +56,7 @@ pub fn execute(
     _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     match msg {
         ExecuteMsg::UpdateAdmin { new_admin } => execute_update_admin(deps, info, new_admin),
         ExecuteMsg::AddAddresses { addresses } => execute_add_addresses(deps, info, addresses),
@@ -79,7 +78,7 @@ pub fn execute_update_minter_contract(
     deps: DepsMut,
     info: MessageInfo,
     minter_contract: String,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -103,7 +102,7 @@ pub fn execute_update_admin(
     deps: DepsMut,
     info: MessageInfo,
     new_admin: String,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
@@ -122,7 +121,7 @@ pub fn execute_add_addresses(
     deps: DepsMut,
     info: MessageInfo,
     mut addresses: Vec<String>,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
     if config.admin != info.sender {
@@ -154,7 +153,7 @@ pub fn execute_remove_addresses(
     deps: DepsMut,
     info: MessageInfo,
     mut addresses: Vec<String>,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
@@ -186,7 +185,7 @@ pub fn execute_process_address(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     if let Some(minter_contract) = config.minter_contract {
@@ -219,7 +218,7 @@ pub fn execute_update_per_address_limit(
     deps: DepsMut,
     info: MessageInfo,
     limit: u32,
-) -> Result<Response, ContractError> {
+) -> Result<cosmwasm_std::Response<StargazeMsgWrapper>, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
     if config.admin != info.sender {
