@@ -15,13 +15,15 @@ use sg721_name::msg::{
 };
 use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_name_common::charge_fees;
-use sg_name_minter::SudoParams;
+use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::state::{ADMIN, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS};
+use crate::state::{
+    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:name-minter";
@@ -65,6 +67,11 @@ pub fn instantiate(
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
+    let config = Config {
+        public_mint_start_time: PUBLIC_MINT_START_TIME_IN_SECONDS,
+    };
+    CONFIG.save(deps.storage, &config)?;
+
     let collection_init_msg = Sg721InstantiateMsg {
         name: "Name Tokens".to_string(),
         symbol: "NAME".to_string(),
@@ -100,20 +107,21 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
 
     match msg {
-        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, name.trim()),
+        ExecuteMsg::MintAndList { name } => execute_mint_and_list(deps, info, env, name.trim()),
         ExecuteMsg::UpdateAdmin { admin } => {
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
         ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
         ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
         ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
+        ExecuteMsg::UpdateConfig { config } => execute_update_config(deps, info, env, config),
     }
 }
 
@@ -121,6 +129,7 @@ pub fn execute(
 pub fn execute_mint_and_list(
     deps: DepsMut,
     info: MessageInfo,
+    env: Env,
     name: &str,
 ) -> Result<Response, ContractError> {
     if PAUSED.load(deps.storage)? {
@@ -144,6 +153,11 @@ pub fn execute_mint_and_list(
 
     if !whitelists.is_empty() && list.is_none() {
         return Err(ContractError::NotWhitelisted {});
+    }
+
+    // if no whitelists, check public mint start time
+    if whitelists.is_empty() && env.block.time < PUBLIC_MINT_START_TIME_IN_SECONDS {
+        return Err(ContractError::MintingNotStarted {});
     }
 
     let discount = if let Some(list) = list {
@@ -239,6 +253,29 @@ pub fn execute_remove_whitelist(
     WHITELISTS.save(deps.storage, &lists)?;
 
     let event = Event::new("remove_whitelist").add_attribute("address", address);
+    Ok(Response::new().add_event(event))
+}
+
+pub fn execute_update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    env: Env,
+    config: Config,
+) -> Result<Response, ContractError> {
+    ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
+    let start_time = config.public_mint_start_time;
+
+    // Can not set public mint time in the past
+    if env.block.time > start_time {
+        return Err(ContractError::InvalidTradingStartTime(
+            env.block.time,
+            start_time,
+        ));
+    }
+
+    CONFIG.save(deps.storage, &config)?;
+
+    let event = Event::new("update_config").add_attribute("address", info.sender.to_string());
     Ok(Response::new().add_event(event))
 }
 

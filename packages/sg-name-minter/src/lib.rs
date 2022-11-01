@@ -1,6 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Addr, Decimal, Timestamp, Uint128};
 
+pub const PUBLIC_MINT_START_TIME_IN_SECONDS: Timestamp = Timestamp::from_seconds(1669406400);
 #[cw_serde]
 pub struct SudoParams {
     /// 3 (same as DNS)
@@ -22,8 +23,11 @@ pub enum SgNameMinterExecuteMsg {
     UpdateAdmin { admin: Option<String> },
     /// Add a whiltelist address
     AddWhitelist { address: String },
-    /// Remove a whiltelist address
+    /// Remove a whitelist address
     RemoveWhitelist { address: String },
+    /// Update config, only callable by admin
+    /// will not be callable after admin is removed
+    UpdateConfig { config: Config },
 }
 
 #[cw_serde]
@@ -52,4 +56,14 @@ pub struct WhitelistsResponse {
 #[cw_serde]
 pub struct ParamsResponse {
     pub params: SudoParams,
+}
+
+#[cw_serde]
+pub struct Config {
+    pub public_mint_start_time: Timestamp,
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
 }
