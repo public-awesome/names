@@ -42,7 +42,7 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 }
 
 pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
-    let contract = ContractWrapper::new_with_empty(
+    let contract = ContractWrapper::new(
         whitelist_updatable::contract::execute,
         whitelist_updatable::contract::instantiate,
         whitelist_updatable::contract::query,
