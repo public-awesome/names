@@ -76,6 +76,8 @@ pub struct AskIndicies<'a> {
     pub id: UniqueIndex<'a, u64, Ask, AskKey>,
     /// Index by seller
     pub seller: MultiIndex<'a, Addr, Ask, AskKey>,
+    /// Index by renewal time
+    pub renewal_time: MultiIndex<'a, u64, Ask, AskKey>,
 }
 
 pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
@@ -85,6 +87,11 @@ pub fn asks<'a>() -> IndexedMap<'a, AskKey, Ask, AskIndicies<'a>> {
             |_pk: &[u8], d: &Ask| d.seller.clone(),
             "asks",
             "asks__seller",
+        ),
+        renewal_time: MultiIndex::new(
+            |_pk: &[u8], d: &Ask| d.renewal_time.seconds(),
+            "asks",
+            "asks__renewal_time",
         ),
     };
     IndexedMap::new("asks", indexes)
@@ -122,6 +129,7 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 pub struct BidIndicies<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
+    pub height: MultiIndex<'a, u64, Bid, BidKey>,
 }
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
@@ -136,6 +144,7 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
             "bids",
             "bids__bidder",
         ),
+        height: MultiIndex::new(|_pk: &[u8], d: &Bid| d.height, "bids", "bids__height"),
     };
     IndexedMap::new("bids", indexes)
 }

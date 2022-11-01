@@ -16,6 +16,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
+use cw_storage_plus::Bound;
 use cw_utils::{must_pay, nonpayable};
 use sg_name_common::charge_fees;
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
@@ -118,6 +119,26 @@ pub fn execute_set_ask(
     if info.sender != minter {
         return Err(ContractError::UnauthorizedMinter {});
     }
+
+    // rate limit..
+
+    // let asks = asks()
+    //     .idx
+    //     .seller
+    //     .prefix(seller.clone())
+    //     .range(
+    //         deps.storage,
+    //         Some(Bound::exclusive(ask_key(&token_id))),
+    //         None,
+    //         Order::Ascending,
+    //     )
+    //     .take(1)
+    //     .map(|res| res.map(|item| item.1))
+    //     .collect::<StdResult<Vec<_>>>()?;
+
+    // let asks = asks()
+    //     .idx
+    //     .re
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
