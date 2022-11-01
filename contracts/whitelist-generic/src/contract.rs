@@ -8,7 +8,7 @@ use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use cw_utils::nonpayable;
 use sg_name_minter::{ParamsResponse, SgNameMinterQueryMsg};
-use sg_std::{StargazeMsgWrapper};
+use sg_std::{StargazeMsgWrapper, Response};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:whitelist-updatable";
