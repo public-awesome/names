@@ -139,6 +139,7 @@ pub fn execute_mint_and_list(
     let whitelists = WHITELISTS.load(deps.storage)?;
     let sender = &info.sender.to_string();
     let mut res = Response::new();
+    let config = CONFIG.load(deps.storage)?;
 
     let params = SUDO_PARAMS.load(deps.storage)?;
     validate_name(name, params.min_name_length, params.max_name_length)?;
@@ -156,7 +157,7 @@ pub fn execute_mint_and_list(
     }
 
     // if no whitelists, check public mint start time
-    if whitelists.is_empty() && env.block.time < PUBLIC_MINT_START_TIME_IN_SECONDS {
+    if whitelists.is_empty() && env.block.time < config.public_mint_start_time {
         return Err(ContractError::MintingNotStarted {});
     }
 
