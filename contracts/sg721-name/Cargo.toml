@@ -35,13 +35,13 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
-sg-name = { path = "../../packages/sg-name" }
+sg-name = { workspace = true }
 sg-std = { workspace = true }
 sg721 = { workspace = true }
 sg721-base = {  workspace = true, features = ["library"] }
 thiserror = { workspace = true }
 cw721 = { workspace = true }
 cw721-base = { workspace = true, features = ["library"] }
-sg-name-market = { path = "../../packages/sg-name-market" }
+sg-name-market = { workspace = true }
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
 name-marketplace = { path = "../marketplace", features = ["library"] }

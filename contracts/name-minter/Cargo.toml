@@ -36,14 +36,14 @@ cw721-base = { workspace = true, features = ["library"] }
 name-marketplace = { path = "../marketplace", features = ["library"] }
 schemars = { workspace = true }
 serde = { workspace = true }
-sg-name = { path = "../../packages/sg-name" }
+sg-name = { workspace = true }
 sg721 = { workspace = true }
 sg721-name = { path = "../sg721-name", features = ["library"] }
-sg-name-common = { path = "../../packages/sg-name-common" }
-sg-name-minter = { path = "../../packages/sg-name-minter" }
+sg-name-common = { workspace = true }
+sg-name-minter = { workspace = true }
 sg-std = { workspace = true }
 thiserror = { workspace = true }
-whitelist-updatable = { path = "../whitelist-updatable", features = [
+whitelist-updatable = { workspace = true, features = [
   "library",
 ] }
 
