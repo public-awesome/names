@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, Env, StdResult};
-use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
+use sg_name_minter::{CollectionResponse, ConfigResponse, ParamsResponse, WhitelistsResponse};
 
 use crate::{
     msg::QueryMsg,
@@ -15,6 +15,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Collection {} => to_binary(&query_collection(deps)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
         QueryMsg::Whitelists {} => to_binary(&query_whitelists(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
 
@@ -36,4 +37,10 @@ fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
     Ok(ParamsResponse { params })
+}
+
+fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+    let config = crate::state::CONFIG.load(deps.storage)?;
+
+    Ok(ConfigResponse { config })
 }

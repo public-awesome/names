@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Timestamp};
 use cw_controllers::AdminError;
 use cw_utils::PaymentError;
 use thiserror::Error;
@@ -37,6 +37,12 @@ pub enum ContractError {
 
     #[error("Incorrect payment, got: {got}, expected {expected}")]
     IncorrectPayment { got: u128, expected: u128 },
+
+    #[error("InvalidTradingStartTime {0} < {1}")]
+    InvalidTradingStartTime(Timestamp, Timestamp),
+
+    #[error("MintingNotStarted")]
+    MintingNotStarted {},
 
     #[error("Reply error")]
     ReplyOnSuccess {},
