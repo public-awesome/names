@@ -6,6 +6,7 @@
 
 export type Uint128 = string;
 export interface InstantiateMsg {
+  ask_interval: number;
   min_price: Uint128;
   trading_fee_bps: number;
 }
@@ -170,6 +171,7 @@ export interface ParamsResponse {
   params: SudoParams;
 }
 export interface SudoParams {
+  ask_interval: number;
   min_price: Uint128;
   trading_fee_percent: Decimal;
 }

@@ -7,10 +7,17 @@
     "title": "InstantiateMsg",
     "type": "object",
     "required": [
+      "ask_interval",
       "min_price",
       "trading_fee_bps"
     ],
     "properties": {
+      "ask_interval": {
+        "description": "Interval to rate limit setting asks (in seconds)",
+        "type": "integer",
+        "format": "uint64",
+        "minimum": 0.0
+      },
       "min_price": {
         "description": "Min value for bids and asks",
         "allOf": [
@@ -1336,10 +1343,17 @@
         "SudoParams": {
           "type": "object",
           "required": [
+            "ask_interval",
             "min_price",
             "trading_fee_percent"
           ],
           "properties": {
+            "ask_interval": {
+              "description": "Interval to rate limit setting asks (in seconds)",
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
             "min_price": {
               "description": "Min value for a bid",
               "allOf": [
