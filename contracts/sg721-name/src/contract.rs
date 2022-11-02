@@ -92,7 +92,10 @@ pub fn execute_update_metadata(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+    let event = Event::new("update_metadata")
+        .add_attribute("token_id", token_id)
+        .add_attribute("owner", info.sender);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_associate_address(
@@ -138,7 +141,11 @@ pub fn execute_associate_address(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
-    Ok(Response::new())
+    let event = Event::new("associate_address")
+        .add_attribute("token_id", name)
+        .add_attribute("owner", sender);
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_mint(
@@ -166,11 +173,11 @@ pub fn execute_mint(
 
     Sg721NameContract::default().increment_tokens(deps.storage)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "mint")
+    let event = Event::new("mint")
         .add_attribute("minter", info.sender)
-        .add_attribute("owner", msg.owner)
-        .add_attribute("token_id", msg.token_id))
+        .add_attribute("token_id", msg.token_id)
+        .add_attribute("owner", msg.owner);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_burn(
@@ -211,10 +218,10 @@ pub fn execute_burn(
         Sg721NameContract::default().decrement_tokens(deps.storage)?;
     }
 
-    Ok(res
-        .add_attribute("action", "burn")
-        .add_attribute("sender", info.sender)
-        .add_attribute("token_id", token_id))
+    let event = Event::new("burn")
+        .add_attribute("token_id", token_id)
+        .add_attribute("owner", info.sender);
+    Ok(res.add_event(event))
 }
 
 pub fn execute_transfer_nft(
@@ -389,7 +396,7 @@ pub fn execute_add_text_record(
                         return Err(ContractError::RecordNameAlreadyExists {});
                     }
                 }
-                token_info.extension.records.push(record);
+                token_info.extension.records.push(record.clone());
                 // check record length
                 if token_info.extension.records.len() > max_record_count as usize {
                     return Err(ContractError::TooManyRecords {
@@ -400,7 +407,12 @@ pub fn execute_add_text_record(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    let event = Event::new("add_text_record")
+        .add_attribute("sender", info.sender)
+        .add_attribute("name", token_id)
+        .add_attribute("record", record.name);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_remove_text_record(
@@ -426,7 +438,12 @@ pub fn execute_remove_text_record(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    let event = Event::new("remove_text_record")
+        .add_attribute("sender", info.sender)
+        .add_attribute("name", token_id)
+        .add_attribute("record", record_name);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_update_text_record(
@@ -452,12 +469,17 @@ pub fn execute_update_text_record(
                     .extension
                     .records
                     .retain(|r| r.name != record.name);
-                token_info.extension.records.push(record);
+                token_info.extension.records.push(record.clone());
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    let event = Event::new("update_text_record")
+        .add_attribute("sender", info.sender)
+        .add_attribute("name", token_id)
+        .add_attribute("record", record.name);
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_verify_text_record(
@@ -488,7 +510,13 @@ pub fn execute_verify_text_record(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    let event = Event::new("verify_text_record")
+        .add_attribute("sender", info.sender)
+        .add_attribute("name", token_id)
+        .add_attribute("record", record_name)
+        .add_attribute("result", result.to_string());
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_set_name_marketplace(
@@ -505,7 +533,10 @@ pub fn execute_set_name_marketplace(
 
     NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
 
-    Ok(Response::new())
+    let event = Event::new("set_name_marketplace")
+        .add_attribute("sender", info.sender)
+        .add_attribute("address", address);
+    Ok(Response::new().add_event(event))
 }
 
 fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, ContractError> {

@@ -101,6 +101,9 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_attribute("names_minter_addr", env.contract.address.to_string())
+        .add_attribute("CONTRACT_NAME", CONTRACT_NAME.to_string())
+        .add_attribute("CONTRACT_VERSION", CONTRACT_VERSION.to_string())
         .add_submessage(submsg))
 }
 

@@ -19,7 +19,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     mut msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -49,6 +49,7 @@ pub fn instantiate(
 
     Ok(Response::default()
         .add_attribute("action", "instantiate")
+        .add_attribute("whitelist_addr", env.contract.address.to_string())
         .add_attribute("contract_name", CONTRACT_NAME)
         .add_attribute("contract_version", CONTRACT_VERSION))
 }
