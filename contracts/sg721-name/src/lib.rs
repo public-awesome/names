@@ -65,9 +65,7 @@ pub mod entry {
 
         Ok(res
             .add_attribute("action", "instantiate")
-            .add_attribute("sg721_names_addr", env.contract.address.to_string())
-            .add_attribute("contract_name", CONTRACT_NAME)
-            .add_attribute("contract_version", CONTRACT_VERSION))
+            .add_attribute("sg721_names_addr", env.contract.address.to_string()))
     }
 
     #[cfg_attr(not(feature = "library"), entry_point)]

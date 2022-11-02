@@ -49,10 +49,7 @@ pub fn instantiate(
 
     IS_SETUP.save(deps.storage, &false)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "instantiate")
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+    Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

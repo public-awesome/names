@@ -49,9 +49,7 @@ pub fn instantiate(
 
     Ok(Response::default()
         .add_attribute("action", "instantiate")
-        .add_attribute("whitelist_addr", env.contract.address.to_string())
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+        .add_attribute("whitelist_addr", env.contract.address.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
