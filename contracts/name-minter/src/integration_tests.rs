@@ -630,7 +630,7 @@ mod execute {
 
     #[test]
     fn test_rate_limiter() {
-        let mut app = instantiate_contracts(None, None);
+        let mut app = instantiate_contracts(None, None, None);
 
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
