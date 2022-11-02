@@ -1048,6 +1048,33 @@ mod collection {
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, Some(true));
+
+        // verify something as false
+        let msg = SgNameExecuteMsg::VerifyTextRecord {
+            name: NAME.to_string(),
+            record_name: name.to_string(),
+            result: false,
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(VERIFIER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // query text record to see if verified is set
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, Some(false));
     }
 
     #[test]
