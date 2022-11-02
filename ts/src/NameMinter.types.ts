@@ -36,7 +36,16 @@ export type ExecuteMsg = {
   remove_whitelist: {
     address: string;
   };
+} | {
+  update_config: {
+    config: Config;
+  };
 };
+export type Timestamp = Uint64;
+export type Uint64 = string;
+export interface Config {
+  public_mint_start_time: Timestamp;
+}
 export type QueryMsg = {
   admin: {};
 } | {
@@ -45,12 +54,17 @@ export type QueryMsg = {
   collection: {};
 } | {
   params: {};
+} | {
+  config: {};
 };
 export interface AdminResponse {
   admin?: string | null;
 }
 export interface CollectionResponse {
   collection: string;
+}
+export interface ConfigResponse {
+  config: Config;
 }
 export type Decimal = string;
 export interface ParamsResponse {

@@ -8,6 +8,12 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("{0}")]
+    BidPaymentError(#[from] PaymentError),
+
+    #[error("{0}")]
+    Hook(#[from] HookError),
+
     #[error("AlreadySetup")]
     AlreadySetup {},
 
@@ -55,12 +61,6 @@ pub enum ContractError {
 
     #[error("Invalid finders fee bps: {0}")]
     InvalidTradingFeeBps(u64),
-
-    #[error("{0}")]
-    BidPaymentError(#[from] PaymentError),
-
-    #[error("{0}")]
-    Hook(#[from] HookError),
 
     #[error("InvalidContractVersion")]
     InvalidContractVersion {},

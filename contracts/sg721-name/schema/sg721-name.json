@@ -339,7 +339,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Verify a text record (via oracle)",
+        "description": "Verify a text record as true or false (via oracle)",
         "type": "object",
         "required": [
           "verify_text_record"
@@ -349,7 +349,8 @@
             "type": "object",
             "required": [
               "name",
-              "record_name"
+              "record_name",
+              "result"
             ],
             "properties": {
               "name": {
@@ -357,6 +358,9 @@
               },
               "record_name": {
                 "type": "string"
+              },
+              "result": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false

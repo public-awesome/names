@@ -10,6 +10,8 @@ pub struct InstantiateMsg {
     pub trading_fee_bps: u64,
     /// Min value for bids and asks
     pub min_price: Uint128,
+    /// Interval to rate limit setting asks (in seconds)
+    pub ask_interval: u64,
 }
 
 #[cw_serde]

@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, Decimal, ParamsResponse, SudoParams, Addr, WhitelistsResponse } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, Config, QueryMsg, AdminResponse, CollectionResponse, ConfigResponse, Decimal, ParamsResponse, SudoParams, Addr, WhitelistsResponse } from "./NameMinter.types";
 export interface NameMinterMessage {
   contractAddress: string;
   sender: string;
@@ -37,6 +37,11 @@ export interface NameMinterMessage {
   }: {
     address: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  updateConfig: ({
+    config
+  }: {
+    config: Config;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class NameMinterMessageComposer implements NameMinterMessage {
   sender: string;
@@ -50,6 +55,7 @@ export class NameMinterMessageComposer implements NameMinterMessage {
     this.pause = this.pause.bind(this);
     this.addWhitelist = this.addWhitelist.bind(this);
     this.removeWhitelist = this.removeWhitelist.bind(this);
+    this.updateConfig = this.updateConfig.bind(this);
   }
 
   mintAndList = ({
@@ -141,6 +147,25 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         msg: toUtf8(JSON.stringify({
           remove_whitelist: {
             address
+          }
+        })),
+        funds
+      })
+    };
+  };
+  updateConfig = ({
+    config
+  }: {
+    config: Config;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          update_config: {
+            config
           }
         })),
         funds

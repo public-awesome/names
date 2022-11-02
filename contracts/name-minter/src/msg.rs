@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
-use sg_name_minter::{CollectionResponse, ParamsResponse, WhitelistsResponse};
+use sg_name_minter::{
+    CollectionResponse, Config, ConfigResponse, ParamsResponse, WhitelistsResponse,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -30,6 +32,8 @@ pub enum ExecuteMsg {
     AddWhitelist { address: String },
     /// Remove a whitelist address
     RemoveWhitelist { address: String },
+    /// Update config, only callable by admin
+    UpdateConfig { config: Config },
 }
 
 #[cw_serde]
@@ -59,4 +63,6 @@ pub enum QueryMsg {
     Collection {},
     #[returns(ParamsResponse)]
     Params {},
+    #[returns(ConfigResponse)]
+    Config {},
 }
