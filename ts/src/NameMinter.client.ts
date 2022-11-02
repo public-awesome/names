@@ -6,13 +6,14 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Uint128, InstantiateMsg, ExecuteMsg, QueryMsg, AdminResponse, CollectionResponse, Decimal, ParamsResponse, SudoParams, Addr, WhitelistsResponse } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, Config, QueryMsg, AdminResponse, CollectionResponse, ConfigResponse, Decimal, ParamsResponse, SudoParams, Addr, WhitelistsResponse } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
   admin: () => Promise<AdminResponse>;
   whitelists: () => Promise<WhitelistsResponse>;
   collection: () => Promise<CollectionResponse>;
   params: () => Promise<ParamsResponse>;
+  config: () => Promise<ConfigResponse>;
 }
 export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   client: CosmWasmClient;
@@ -25,6 +26,7 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
     this.whitelists = this.whitelists.bind(this);
     this.collection = this.collection.bind(this);
     this.params = this.params.bind(this);
+    this.config = this.config.bind(this);
   }
 
   admin = async (): Promise<AdminResponse> => {
@@ -45,6 +47,11 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   params = async (): Promise<ParamsResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       params: {}
+    });
+  };
+  config = async (): Promise<ConfigResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      config: {}
     });
   };
 }
@@ -76,6 +83,11 @@ export interface NameMinterInterface extends NameMinterReadOnlyInterface {
   }: {
     address: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  updateConfig: ({
+    config
+  }: {
+    config: Config;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
 }
 export class NameMinterClient extends NameMinterQueryClient implements NameMinterInterface {
   client: SigningCosmWasmClient;
@@ -92,6 +104,7 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     this.pause = this.pause.bind(this);
     this.addWhitelist = this.addWhitelist.bind(this);
     this.removeWhitelist = this.removeWhitelist.bind(this);
+    this.updateConfig = this.updateConfig.bind(this);
   }
 
   mintAndList = async ({
@@ -146,6 +159,17 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     return await this.client.execute(this.sender, this.contractAddress, {
       remove_whitelist: {
         address
+      }
+    }, fee, memo, funds);
+  };
+  updateConfig = async ({
+    config
+  }: {
+    config: Config;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      update_config: {
+        config
       }
     }, fee, memo, funds);
   };

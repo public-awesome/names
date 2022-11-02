@@ -630,7 +630,7 @@ mod execute {
 
     #[test]
     fn test_rate_limiter() {
-        let mut app = instantiate_contracts(None, None);
+        let mut app = instantiate_contracts(None, None, None);
 
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
@@ -1013,6 +1013,7 @@ mod collection {
         let msg = SgNameExecuteMsg::VerifyTextRecord {
             name: NAME.to_string(),
             record_name: name.to_string(),
+            result: true,
         };
         let res = app.execute_contract(
             Addr::unchecked(USER),
@@ -1047,6 +1048,56 @@ mod collection {
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, Some(true));
+    }
+
+    #[test]
+    fn verify_false() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        let name = "twitter";
+        let value = "shan3v";
+
+        let msg = SgNameExecuteMsg::AddTextRecord {
+            name: NAME.to_string(),
+            record: TextRecord::new(name, value),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // verify something as false
+        let msg = SgNameExecuteMsg::VerifyTextRecord {
+            name: NAME.to_string(),
+            record_name: name.to_string(),
+            result: false,
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(VERIFIER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // query text record to see if verified is set
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.extension.records[0].name, name.to_string());
+        assert_eq!(res.extension.records[0].verified, Some(false));
     }
 
     #[test]
