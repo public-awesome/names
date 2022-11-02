@@ -64,7 +64,4 @@ pub enum ContractError {
 
     #[error("InvalidContractVersion")]
     InvalidContractVersion {},
-
-    #[error("HitRateLimit")]
-    HitRateLimit {},
 }
