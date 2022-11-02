@@ -60,7 +60,11 @@ pub enum SgNameExecuteMsg {
     /// Update text record ex: twitter handle, discord name, etc
     UpdateTextRecord { name: String, record: TextRecord },
     /// Verify a text record (via oracle)
-    VerifyTextRecord { name: String, record_name: String },
+    VerifyTextRecord {
+        name: String,
+        record_name: String,
+        result: bool,
+    },
     /// Update the reset the verification oracle
     UpdateVerifier { verifier: Option<String> },
 }

@@ -465,6 +465,7 @@ pub fn execute_verify_text_record(
     info: MessageInfo,
     name: String,
     record_name: String,
+    result: bool,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     VERIFIER.assert_admin(deps.as_ref(), &info.sender)?;
@@ -481,7 +482,7 @@ pub fn execute_verify_text_record(
                     .iter_mut()
                     .find(|r| r.name == record_name)
                 {
-                    r.verified = Some(true);
+                    r.verified = Some(result);
                 }
                 Ok(token_info)
             }

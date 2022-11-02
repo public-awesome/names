@@ -1013,6 +1013,7 @@ mod collection {
         let msg = SgNameExecuteMsg::VerifyTextRecord {
             name: NAME.to_string(),
             record_name: name.to_string(),
+            result: true,
         };
         let res = app.execute_contract(
             Addr::unchecked(USER),

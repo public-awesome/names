@@ -98,9 +98,11 @@ pub mod entry {
             ExecuteMsg::UpdateTextRecord { name, record } => {
                 execute_update_text_record(deps, info, name, record)
             }
-            ExecuteMsg::VerifyTextRecord { name, record_name } => {
-                execute_verify_text_record(deps, info, name, record_name)
-            }
+            ExecuteMsg::VerifyTextRecord {
+                name,
+                record_name,
+                result,
+            } => execute_verify_text_record(deps, info, name, record_name, result),
             ExecuteMsg::UpdateVerifier { verifier } => {
                 Ok(VERIFIER.execute_update_admin(deps, info, maybe_addr(api, verifier)?)?)
             }
