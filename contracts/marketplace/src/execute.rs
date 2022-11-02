@@ -155,7 +155,7 @@ pub fn execute_set_ask(
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
 
-    let event = Event::new("set_ask")
+    let event = Event::new("set-ask")
         .add_attribute("token_id", token_id)
         .add_attribute("ask_id", ask.id.to_string())
         .add_attribute("renewal_time", renewal_time.to_string())
@@ -195,7 +195,7 @@ pub fn execute_remove_ask(
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
 
-    let event = Event::new("remove_ask").add_attribute("token_id", token_id);
+    let event = Event::new("remove-ask").add_attribute("token_id", token_id);
 
     Ok(Response::new().add_event(event).add_submessages(hook))
 }
@@ -228,7 +228,7 @@ pub fn execute_update_ask(
     }
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("update_ask")
+    let event = Event::new("update-ask")
         .add_attribute("token_id", token_id)
         .add_attribute("seller", seller);
 
@@ -270,7 +270,7 @@ pub fn execute_set_bid(
 
     let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Create)?;
 
-    let event = Event::new("set_bid")
+    let event = Event::new("set-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("bid_price", bid_price.to_string());
@@ -299,7 +299,7 @@ pub fn execute_remove_bid(
 
     let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Delete)?;
 
-    let event = Event::new("remove_bid")
+    let event = Event::new("remove-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder);
 
@@ -379,7 +379,7 @@ pub fn execute_accept_bid(
     };
     store_ask(deps.storage, &ask)?;
 
-    let event = Event::new("accept_bid")
+    let event = Event::new("accept-bid")
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder)
         .add_attribute("price", bid.amount.to_string());
@@ -398,7 +398,7 @@ pub fn execute_fund_renewal(
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("fund_renewal")
+    let event = Event::new("fund-renewal")
         .add_attribute("token_id", token_id)
         .add_attribute("payment", payment);
     Ok(Response::new().add_event(event))
@@ -428,7 +428,7 @@ pub fn execute_refund_renewal(
     ask.renewal_fund = Uint128::zero();
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("refund_renewal")
+    let event = Event::new("refund-renewal")
         .add_attribute("token_id", token_id)
         .add_attribute("refund", ask.renewal_fund);
     Ok(Response::new().add_event(event).add_message(msg))
@@ -472,7 +472,7 @@ pub fn execute_process_renewal(
     //     store_ask(deps.storage, &ask)?;
     // }
 
-    let event = Event::new("process_renewal").add_attribute("time", time.to_string());
+    let event = Event::new("process-renewal").add_attribute("time", time.to_string());
     Ok(Response::new().add_event(event))
 }
 
@@ -503,7 +503,7 @@ fn finalize_sale(
     res.messages
         .append(&mut prepare_sale_hook(deps, &ask, buyer.clone())?);
 
-    let event = Event::new("finalize_sale")
+    let event = Event::new("finalize-sale")
         .add_attribute("token_id", ask.token_id.to_string())
         .add_attribute("seller", ask.seller.to_string())
         .add_attribute("buyer", buyer.to_string())

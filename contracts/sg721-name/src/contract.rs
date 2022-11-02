@@ -92,7 +92,7 @@ pub fn execute_update_metadata(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    let event = Event::new("update_metadata")
+    let event = Event::new("update-metadata")
         .add_attribute("token_id", token_id)
         .add_attribute("owner", info.sender);
     Ok(Response::new().add_event(event))
@@ -141,7 +141,7 @@ pub fn execute_associate_address(
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
     }
 
-    let event = Event::new("associate_address")
+    let event = Event::new("associate-address")
         .add_attribute("token_id", name)
         .add_attribute("owner", sender);
 
@@ -408,7 +408,7 @@ pub fn execute_add_text_record(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    let event = Event::new("add_text_record")
+    let event = Event::new("add-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
         .add_attribute("record", record.name);
@@ -439,7 +439,7 @@ pub fn execute_remove_text_record(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    let event = Event::new("remove_text_record")
+    let event = Event::new("remove-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
         .add_attribute("record", record_name);
@@ -475,7 +475,7 @@ pub fn execute_update_text_record(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    let event = Event::new("update_text_record")
+    let event = Event::new("update-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
         .add_attribute("record", record.name);
@@ -511,7 +511,7 @@ pub fn execute_verify_text_record(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    let event = Event::new("verify_text_record")
+    let event = Event::new("verify-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
         .add_attribute("record", record_name)
@@ -533,7 +533,7 @@ pub fn execute_set_name_marketplace(
 
     NAME_MARKETPLACE.save(deps.storage, &deps.api.addr_validate(&address)?)?;
 
-    let event = Event::new("set_name_marketplace")
+    let event = Event::new("set-name-marketplace")
         .add_attribute("sender", info.sender)
         .add_attribute("address", address);
     Ok(Response::new().add_event(event))

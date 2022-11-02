@@ -336,10 +336,12 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   verifyTextRecord: ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   updateVerifier: ({
     verifier
@@ -558,15 +560,18 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
   };
   verifyTextRecord = async ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       verify_text_record: {
         name,
-        record_name: recordName
+        record_name: recordName,
+        result
       }
     }, fee, memo, funds);
   };
