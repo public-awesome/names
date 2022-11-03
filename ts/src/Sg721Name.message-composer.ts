@@ -68,10 +68,12 @@ export interface Sg721NameMessage {
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   verifyTextRecord: ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   updateVerifier: ({
     verifier
@@ -351,10 +353,12 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
   };
   verifyTextRecord = ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -364,7 +368,8 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
         msg: toUtf8(JSON.stringify({
           verify_text_record: {
             name,
-            record_name: recordName
+            record_name: recordName,
+            result
           }
         })),
         funds
