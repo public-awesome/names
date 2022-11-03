@@ -3,7 +3,9 @@ use crate::{
     state::Bid,
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
+use cosmwasm_std::{
+    to_binary, Addr, QuerierWrapper, QueryRequest, StdError, StdResult, WasmMsg, WasmQuery,
+};
 use sg_std::CosmosMsg;
 
 /// MarketplaceContract is a wrapper around Addr that provides a lot of helpers
@@ -40,5 +42,30 @@ impl NameMarketplaceContract {
         }))?;
 
         Ok(res.bid)
+    }
+
+    // contract needs approval from nft owner before accepting bid
+    pub fn accept_bid(
+        &self,
+        querier: &QuerierWrapper,
+        token_id: &str,
+        bidder: &str,
+    ) -> StdResult<CosmosMsg> {
+        let highest_bid: Option<Bid> = self.highest_bid(querier, token_id)?;
+        let bid = highest_bid.ok_or_else(|| {
+            StdError::generic_err(format!("No bid found for token_id {}", token_id))
+        })?;
+
+        if bid.bidder != bidder {
+            return Err(StdError::generic_err(format!(
+                "Bidder {} is not the highest bidder",
+                bidder
+            )));
+        }
+
+        self.call(ExecuteMsg::AcceptBid {
+            token_id: token_id.to_string(),
+            bidder: bidder.to_string(),
+        })
     }
 }
