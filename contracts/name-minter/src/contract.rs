@@ -30,6 +30,7 @@ const CONTRACT_NAME: &str = "crates.io:name-minter";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_COLLECTION_REPLY_ID: u64 = 1;
+const TRADING_START_TIME_OFFSET_IN_SECONDS: u64 = 2 * SECONDS_PER_YEAR;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -82,7 +83,11 @@ pub fn instantiate(
             image: "ipfs://example.com".to_string(),
             external_link: None,
             explicit_content: None,
-            start_trading_time: Some(env.block.time.plus_seconds(2 * SECONDS_PER_YEAR)),
+            start_trading_time: Some(
+                env.block
+                    .time
+                    .plus_seconds(TRADING_START_TIME_OFFSET_IN_SECONDS),
+            ),
             royalty_info: None,
         },
     };

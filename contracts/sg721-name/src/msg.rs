@@ -287,6 +287,7 @@ impl From<QueryMsg> for Sg721QueryMsg {
                 Sg721QueryMsg::AllTokens { start_after, limit }
             }
             QueryMsg::Minter {} => Sg721QueryMsg::Minter {},
+            QueryMsg::CollectionInfo {} => Sg721QueryMsg::CollectionInfo {},
             _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }
