@@ -17,7 +17,7 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{must_pay, nonpayable};
-use sg_name_common::charge_fees;
+use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -26,7 +26,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
-const SECONDS_PER_YEAR: u64 = 31536000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -369,7 +368,7 @@ pub fn execute_accept_bid(
         &mut res,
     )?;
 
-    // Update Ask with new seller and height
+    // Update Ask with new seller and time
     let ask = Ask {
         token_id: token_id.to_string(),
         id: ask.id,
@@ -443,7 +442,7 @@ pub fn execute_process_renewal(
     }
 
     // // TODO: add renewal processing logic
-    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, time)?;
     // for name in renewal_queue.iter() {
     //     let ask = asks().load(deps.storage, ask_key(name))?;
     //     if ask.renewal_fund.is_zero() {
@@ -457,13 +456,14 @@ pub fn execute_process_renewal(
     //     // pay out reward to operator
     //     // reset ask
 
-    //     // Update Ask with new height
+    //     // Update Ask with new renewal_time
+    //     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
     //     let ask = Ask {
     //         token_id: name.to_string(),
     //         id: ask.id,
     //         seller: ask.seller,
-    //         height: env.block.height,
-    //         renewal_fund: Uint128::zero(),
+    //         renewal_time,
+    //         renewal_fund: ask.renewal_fund - payment, // validate payment
     //     };
     //     store_ask(deps.storage, &ask)?;
     // }

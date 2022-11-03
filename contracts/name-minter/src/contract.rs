@@ -14,7 +14,7 @@ use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
 };
 use sg_name::{Metadata, SgNameExecuteMsg};
-use sg_name_common::charge_fees;
+use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
@@ -30,6 +30,7 @@ const CONTRACT_NAME: &str = "crates.io:name-minter";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_COLLECTION_REPLY_ID: u64 = 1;
+const TRADING_START_TIME_OFFSET_IN_SECONDS: u64 = 2 * SECONDS_PER_YEAR;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -82,7 +83,11 @@ pub fn instantiate(
             image: "ipfs://example.com".to_string(),
             external_link: None,
             explicit_content: None,
-            start_trading_time: None,
+            start_trading_time: Some(
+                env.block
+                    .time
+                    .plus_seconds(TRADING_START_TIME_OFFSET_IN_SECONDS),
+            ),
             royalty_info: None,
         },
     };
