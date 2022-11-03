@@ -180,8 +180,10 @@ pub fn execute_mint(
     Ok(Response::new().add_event(event))
 }
 
+/// If bid exists for name in marketplace, finalize sale with highest bidder.
+/// Otherwise burn name token.
 pub fn execute_burn(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     token_id: String,
@@ -196,20 +198,19 @@ pub fn execute_burn(
         .check_can_send(deps.as_ref(), &env, &info, &token)
         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    if let Some(token_uri) = token.token_uri {
-        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
-    }
+    rm_reverse_map(&mut deps, &token_id)?;
 
     let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
     let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
     let mut res = Response::new();
 
-    // If bids exist, transfer name to the highest bidder.
-    // If not, then burn the name.
     if let Some(highest_bid) = highest_bid {
         let recipient = highest_bid.bidder;
-        let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
-        res = res.add_message(update_ask_msg);
+        res = res.add_message(marketplace.accept_bid(
+            &deps.querier,
+            &token_id,
+            &recipient.to_string(),
+        )?);
     } else {
         res = res.add_message(marketplace.remove_ask(&token_id)?);
         Sg721NameContract::default()
@@ -273,6 +274,15 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
         .tokens
         .save(deps.storage, token_id, &token)?;
 
+    rm_reverse_map(deps, token_id)?;
+    Ok(())
+}
+
+fn rm_reverse_map(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
+    let mut token = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, token_id)?;
+
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
@@ -282,6 +292,7 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, token_id, &token)?;
+
     Ok(())
 }
 

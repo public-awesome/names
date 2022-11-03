@@ -1347,7 +1347,9 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_ok());
+        dbg!(res);
+        assert!(false);
+        // assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
