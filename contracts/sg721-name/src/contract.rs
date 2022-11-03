@@ -245,7 +245,7 @@ pub fn execute_transfer_nft(
 }
 
 // Update the ask on the marketplace
-fn _update_ask_on_marketplace(
+fn update_ask_on_marketplace(
     deps: Deps,
     token_id: &str,
     recipient: Addr,
@@ -262,7 +262,7 @@ fn _update_ask_on_marketplace(
     Ok(update_ask_msg)
 }
 
-fn _reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
+fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
     let mut token = Sg721NameContract::default()
         .tokens
         .load(deps.storage, token_id)?;
@@ -292,9 +292,9 @@ fn _transfer_nft(
     recipient: &Addr,
     token_id: &str,
 ) -> Result<WasmMsg, ContractError> {
-    let update_ask_msg = _update_ask_on_marketplace(deps.as_ref(), token_id, recipient.clone())?;
+    let update_ask_msg = update_ask_on_marketplace(deps.as_ref(), token_id, recipient.clone())?;
 
-    _reset_token_metadata_and_reverse_map(&mut deps, token_id)?;
+    reset_token_metadata_and_reverse_map(&mut deps, token_id)?;
 
     let msg = Sg721ExecuteMsg::TransferNft {
         recipient: recipient.to_string(),
@@ -316,9 +316,9 @@ pub fn execute_send_nft(
 ) -> Result<Response, ContractError> {
     let contract_addr = deps.api.addr_validate(&contract)?;
     let update_ask_msg =
-        _update_ask_on_marketplace(deps.as_ref(), &token_id, contract_addr.clone())?;
+        update_ask_on_marketplace(deps.as_ref(), &token_id, contract_addr.clone())?;
 
-    _reset_token_metadata_and_reverse_map(&mut deps, &token_id)?;
+    reset_token_metadata_and_reverse_map(&mut deps, &token_id)?;
 
     let msg = Sg721ExecuteMsg::SendNft {
         contract: contract_addr.to_string(),
