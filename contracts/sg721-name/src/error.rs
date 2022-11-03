@@ -46,4 +46,7 @@ pub enum ContractError {
 
     #[error("TooManyRecords max: {max}")]
     TooManyRecords { max: u32 },
+
+    #[error("NotImplemented")]
+    NotImplemented {},
 }
