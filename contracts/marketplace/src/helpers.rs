@@ -44,6 +44,7 @@ impl NameMarketplaceContract {
         Ok(res.bid)
     }
 
+    // contract needs approval from nft owner before accepting bid
     pub fn accept_bid(
         &self,
         querier: &QuerierWrapper,

@@ -12,8 +12,6 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
-use name_marketplace::state::Bid;
-use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -180,44 +178,45 @@ pub fn execute_mint(
     Ok(Response::new().add_event(event))
 }
 
-/// If bid exists for name in marketplace, finalize sale with highest bidder.
+/// WIP If bid exists for name in marketplace, finalize sale with highest bidder.
+/// requires approval from nft owner.
 /// Otherwise burn name token.
 pub fn execute_burn(
-    mut deps: DepsMut,
-    env: Env,
+    _deps: DepsMut,
+    _env: Env,
     info: MessageInfo,
     token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
 
-    let token = Sg721NameContract::default()
-        .tokens
-        .load(deps.storage, &token_id)?;
+    //     let token = Sg721NameContract::default()
+    //         .tokens
+    //         .load(deps.storage, &token_id)?;
 
-    Sg721NameContract::default()
-        .check_can_send(deps.as_ref(), &env, &info, &token)
-        .map_err(|_| ContractError::Base(Unauthorized {}))?;
+    //     Sg721NameContract::default()
+    //         .check_can_send(deps.as_ref(), &env, &info, &token)
+    //         .map_err(|_| ContractError::Base(Unauthorized {}))?;
 
-    rm_reverse_map(&mut deps, &token_id)?;
+    //     rm_reverse_map(&mut deps, &token_id)?;
 
-    let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
-    let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
-    let mut res = Response::new();
+    //     let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
+    //     let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
+    let res = Response::new();
 
-    if let Some(highest_bid) = highest_bid {
-        let recipient = highest_bid.bidder;
-        res = res.add_message(marketplace.accept_bid(
-            &deps.querier,
-            &token_id,
-            &recipient.to_string(),
-        )?);
-    } else {
-        res = res.add_message(marketplace.remove_ask(&token_id)?);
-        Sg721NameContract::default()
-            .tokens
-            .remove(deps.storage, &token_id)?;
-        Sg721NameContract::default().decrement_tokens(deps.storage)?;
-    }
+    //     if let Some(highest_bid) = highest_bid {
+    //         let recipient = highest_bid.bidder;
+    //         res = res.add_message(marketplace.accept_bid(
+    //             &deps.querier,
+    //             &token_id,
+    //             &recipient.to_string(),
+    //         )?);
+    //     } else {
+    //         res = res.add_message(marketplace.remove_ask(&token_id)?);
+    //         Sg721NameContract::default()
+    //             .tokens
+    //             .remove(deps.storage, &token_id)?;
+    //         Sg721NameContract::default().decrement_tokens(deps.storage)?;
+    //     }
 
     let event = Event::new("burn")
         .add_attribute("token_id", token_id)
