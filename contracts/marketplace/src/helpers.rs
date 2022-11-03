@@ -52,10 +52,9 @@ impl NameMarketplaceContract {
         bidder: &str,
     ) -> StdResult<CosmosMsg> {
         let highest_bid: Option<Bid> = self.highest_bid(querier, token_id)?;
-        let bid = highest_bid.ok_or(StdError::generic_err(format!(
-            "No bid found for token_id {}",
-            token_id
-        )))?;
+        let bid = highest_bid.ok_or_else(|| {
+            StdError::generic_err(format!("No bid found for token_id {}", token_id))
+        })?;
 
         if bid.bidder != bidder {
             return Err(StdError::generic_err(format!(
