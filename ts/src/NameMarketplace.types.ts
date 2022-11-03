@@ -156,7 +156,7 @@ export interface BidResponse {
 export interface Bid {
   amount: Uint128;
   bidder: Addr;
-  height: number;
+  created_time: Timestamp;
   token_id: string;
 }
 export interface BidsResponse {

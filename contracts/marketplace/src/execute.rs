@@ -261,7 +261,7 @@ pub fn execute_set_bid(
         res = res.add_message(refund_bidder)
     }
 
-    let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.height);
+    let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.time);
     store_bid(deps.storage, &bid)?;
 
     let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Create)?;
@@ -365,7 +365,7 @@ pub fn execute_accept_bid(
         &mut res,
     )?;
 
-    // Update Ask with new seller and time
+    // Update Ask with new seller and renewal time
     let ask = Ask {
         token_id: token_id.to_string(),
         id: ask.id,

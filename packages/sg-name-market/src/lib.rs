@@ -1,4 +1,5 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::Timestamp;
 
 #[cw_serde]
 pub enum SgNameMarketplaceExecuteMsg {
@@ -23,7 +24,7 @@ pub enum SgNameMarketplaceExecuteMsg {
     RefundRenewal { token_id: String },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
-    ProcessRenewals { height: u64 },
+    ProcessRenewals { time: Timestamp },
     /// Setup contract with minter and collection addresses
     /// Can only be run once
     Setup { minter: String, collection: String },

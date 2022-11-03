@@ -5,7 +5,7 @@ use crate::query::{query_asks_by_seller, query_bids_by_bidder};
 use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid};
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, Addr, DepsMut, Uint128};
+use cosmwasm_std::{coins, Addr, DepsMut, Timestamp, Uint128};
 use sg_std::NATIVE_DENOM;
 
 const CREATOR: &str = "creator";
@@ -61,7 +61,7 @@ fn bid_indexed_map() {
         token_id: TOKEN_ID.to_string(),
         bidder: bidder.clone(),
         amount: Uint128::from(500u128),
-        height: 6,
+        created_time: Timestamp::from_seconds(6),
     };
     let key = bid_key(TOKEN_ID, &bidder);
     let res = bids().save(deps.as_mut().storage, key.clone(), &bid);
@@ -71,7 +71,7 @@ fn bid_indexed_map() {
         token_id: TOKEN_ID_NEXT.to_string(),
         bidder: bidder.clone(),
         amount: Uint128::from(500u128),
-        height: 6,
+        created_time: Timestamp::from_seconds(6),
     };
     let key2 = bid_key(TOKEN_ID_NEXT, &bidder);
     let res = bids().save(deps.as_mut().storage, key2, &bid2);
