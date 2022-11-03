@@ -62,7 +62,7 @@ pub fn sudo_update_name_collection(
 ) -> Result<Response, ContractError> {
     NAME_COLLECTION.save(deps.storage, &collection)?;
 
-    let event = Event::new("update_name_collection").add_attribute("collection", collection);
+    let event = Event::new("update-name-collection").add_attribute("collection", collection);
     Ok(Response::new().add_event(event))
 }
 
@@ -72,6 +72,6 @@ pub fn sudo_update_name_marketplace(
 ) -> Result<Response, ContractError> {
     NAME_MARKETPLACE.save(deps.storage, &marketplace)?;
 
-    let event = Event::new("update_name_marketplace").add_attribute("marketplace", marketplace);
+    let event = Event::new("update-name-marketplace").add_attribute("marketplace", marketplace);
     Ok(Response::new().add_event(event))
 }

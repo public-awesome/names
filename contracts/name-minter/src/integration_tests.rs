@@ -13,6 +13,7 @@ use name_marketplace::msg::{
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
+use sg_name_common::SECONDS_PER_YEAR;
 use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
@@ -65,8 +66,7 @@ const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
 const PER_ADDRESS_LIMIT: u32 = 2;
-
-const SECONDS_PER_YEAR: u64 = 31536000;
+const TRADING_START_TIME_OFFSET_IN_SECONDS: u64 = 2 * SECONDS_PER_YEAR;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";
@@ -715,6 +715,8 @@ mod admin {
 mod query {
     use cosmwasm_std::StdResult;
     use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
+    use sg721_base::msg::CollectionInfoResponse;
+    use sg721_base::msg::QueryMsg as Sg721QueryMsg;
     use sg_name::NameResponse;
 
     use super::*;
@@ -906,6 +908,22 @@ mod query {
             )
             .unwrap();
         assert_eq!(res.name, "yoyo".to_string());
+    }
+
+    #[test]
+    fn query_trading_start_time() {
+        let app = instantiate_contracts(None, None, None);
+
+        let res: CollectionInfoResponse = app
+            .wrap()
+            .query_wasm_smart(COLLECTION, &Sg721QueryMsg::CollectionInfo {})
+            .unwrap();
+        assert_eq!(
+            res.start_trading_time.unwrap(),
+            app.block_info()
+                .time
+                .plus_seconds(TRADING_START_TIME_OFFSET_IN_SECONDS)
+        );
     }
 }
 

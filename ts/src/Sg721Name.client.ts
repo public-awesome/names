@@ -306,13 +306,6 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     name: string;
     nft?: NFT;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateProfileNft: ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addTextRecord: ({
     name,
     record
@@ -430,7 +423,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.associateAddress = this.associateAddress.bind(this);
     this.updateMetadata = this.updateMetadata.bind(this);
     this.updateImageNft = this.updateImageNft.bind(this);
-    this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
@@ -499,20 +491,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       update_image_nft: {
         name,
         nft
-      }
-    }, fee, memo, funds);
-  };
-  updateProfileNft = async ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      update_profile_nft: {
-        name,
-        token_id: tokenId
       }
     }, fee, memo, funds);
   };

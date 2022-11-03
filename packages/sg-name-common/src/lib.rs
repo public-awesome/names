@@ -14,3 +14,5 @@ pub fn charge_fees(res: &mut Response, fair_burn_percent: Decimal, fee: Uint128)
             NATIVE_DENOM,
         ))));
 }
+
+pub const SECONDS_PER_YEAR: u64 = 31536000;

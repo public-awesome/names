@@ -17,7 +17,7 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{must_pay, nonpayable};
-use sg_name_common::charge_fees;
+use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -26,7 +26,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
-const SECONDS_PER_YEAR: u64 = 31536000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -49,10 +48,7 @@ pub fn instantiate(
 
     IS_SETUP.save(deps.storage, &false)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "instantiate")
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+    Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -398,7 +394,9 @@ pub fn execute_fund_renewal(
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("fund-renewal").add_attribute("token_id", token_id);
+    let event = Event::new("fund-renewal")
+        .add_attribute("token_id", token_id)
+        .add_attribute("payment", payment);
     Ok(Response::new().add_event(event))
 }
 
@@ -426,7 +424,9 @@ pub fn execute_refund_renewal(
     ask.renewal_fund = Uint128::zero();
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("refund-renewal").add_attribute("token_id", token_id);
+    let event = Event::new("refund-renewal")
+        .add_attribute("token_id", token_id)
+        .add_attribute("refund", ask.renewal_fund);
     Ok(Response::new().add_event(event).add_message(msg))
 }
 
@@ -457,13 +457,14 @@ pub fn execute_process_renewal(
     //     // pay out reward to operator
     //     // reset ask
 
-    //     // Update Ask with new time
+    //     // Update Ask with new renewal_time
+    //     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
     //     let ask = Ask {
     //         token_id: name.to_string(),
     //         id: ask.id,
     //         seller: ask.seller,
-    //         renewal_time: env.block.time.plus_seconds(SECONDS_PER_YEAR),
-    //         renewal_fund: Uint128::zero(), // check renewal fund - fees
+    //         renewal_time,
+    //         renewal_fund: ask.renewal_fund - payment, // validate payment
     //     };
     //     store_ask(deps.storage, &ask)?;
     // }
