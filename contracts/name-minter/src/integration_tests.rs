@@ -740,7 +740,6 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
@@ -759,7 +758,6 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
@@ -778,7 +776,6 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", USER2, None);
         assert!(res.is_ok());
 
@@ -798,7 +795,6 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
