@@ -48,10 +48,7 @@ pub fn instantiate(
 
     IS_SETUP.save(deps.storage, &false)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "instantiate")
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+    Ok(Response::new().add_attribute("action", "instantiate"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -397,7 +394,9 @@ pub fn execute_fund_renewal(
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("fund-renewal").add_attribute("token_id", token_id);
+    let event = Event::new("fund-renewal")
+        .add_attribute("token_id", token_id)
+        .add_attribute("payment", payment);
     Ok(Response::new().add_event(event))
 }
 
@@ -425,7 +424,9 @@ pub fn execute_refund_renewal(
     ask.renewal_fund = Uint128::zero();
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
-    let event = Event::new("refund-renewal").add_attribute("token_id", token_id);
+    let event = Event::new("refund-renewal")
+        .add_attribute("token_id", token_id)
+        .add_attribute("refund", ask.renewal_fund);
     Ok(Response::new().add_event(event).add_message(msg))
 }
 

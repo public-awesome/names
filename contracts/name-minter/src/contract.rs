@@ -106,6 +106,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_attribute("names_minter_addr", env.contract.address.to_string())
         .add_submessage(submsg))
 }
 
@@ -201,7 +202,7 @@ pub fn execute_mint_and_list(
         funds: vec![],
     };
 
-    let event = Event::new("mint_and_list")
+    let event = Event::new("mint-and-list")
         .add_attribute("name", name)
         .add_attribute("owner", sender)
         .add_attribute("price", price.amount.to_string());
@@ -241,7 +242,7 @@ pub fn execute_add_whitelist(
 
     WHITELISTS.save(deps.storage, &lists)?;
 
-    let event = Event::new("add_whitelist").add_attribute("address", address);
+    let event = Event::new("add-whitelist").add_attribute("address", address);
     Ok(Response::new().add_event(event))
 }
 
@@ -258,7 +259,7 @@ pub fn execute_remove_whitelist(
 
     WHITELISTS.save(deps.storage, &lists)?;
 
-    let event = Event::new("remove_whitelist").add_attribute("address", address);
+    let event = Event::new("remove-whitelist").add_attribute("address", address);
     Ok(Response::new().add_event(event))
 }
 
@@ -281,7 +282,7 @@ pub fn execute_update_config(
 
     CONFIG.save(deps.storage, &config)?;
 
-    let event = Event::new("update_config").add_attribute("address", info.sender.to_string());
+    let event = Event::new("update-config").add_attribute("address", info.sender.to_string());
     Ok(Response::new().add_event(event))
 }
 

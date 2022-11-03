@@ -19,6 +19,6 @@ pub fn sudo_update_params(deps: DepsMut, max_record_count: u32) -> Result<Respon
     SUDO_PARAMS.save(deps.storage, &SudoParams { max_record_count })?;
 
     let event =
-        Event::new("update_params").add_attribute("max_record_count", max_record_count.to_string());
+        Event::new("update-params").add_attribute("max_record_count", max_record_count.to_string());
     Ok(Response::new().add_event(event))
 }

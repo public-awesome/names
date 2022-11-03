@@ -69,6 +69,7 @@ export type ExecuteMsg = {
   verify_text_record: {
     name: string;
     record_name: string;
+    result: boolean;
   };
 } | {
   update_verifier: {
