@@ -46,11 +46,6 @@ export type ExecuteMsg = {
     nft?: NFT | null;
   };
 } | {
-  update_profile_nft: {
-    name: string;
-    token_id?: string | null;
-  };
-} | {
   add_text_record: {
     name: string;
     record: TextRecord;
@@ -69,6 +64,7 @@ export type ExecuteMsg = {
   verify_text_record: {
     name: string;
     record_name: string;
+    result: boolean;
   };
 } | {
   update_verifier: {

@@ -18,7 +18,7 @@ pub struct InstantiateMsg {
     pub base_init_msg: Sg721InstantiateMsg,
 }
 
-// Add execute msgs related to bio, profile, text records
+// Add execute msgs related to metadata, image, text records
 // The rest are inherited from sg721 and impl to properly convert the msgs.
 #[cw_serde]
 pub enum ExecuteMsg<T> {
@@ -37,11 +37,6 @@ pub enum ExecuteMsg<T> {
     },
     /// Update image NFT
     UpdateImageNft { name: String, nft: Option<NFT> },
-    /// Update profile
-    UpdateProfileNft {
-        name: String,
-        token_id: Option<String>,
-    },
     /// Add text record ex: twitter handle, discord name, etc
     AddTextRecord { name: String, record: TextRecord },
     /// Remove text record ex: twitter handle, discord name, etc
@@ -287,6 +282,7 @@ impl From<QueryMsg> for Sg721QueryMsg {
                 Sg721QueryMsg::AllTokens { start_after, limit }
             }
             QueryMsg::Minter {} => Sg721QueryMsg::Minter {},
+            QueryMsg::CollectionInfo {} => Sg721QueryMsg::CollectionInfo {},
             _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }

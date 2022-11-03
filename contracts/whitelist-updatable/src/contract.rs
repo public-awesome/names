@@ -19,7 +19,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     mut msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -49,8 +49,7 @@ pub fn instantiate(
 
     Ok(Response::default()
         .add_attribute("action", "instantiate")
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION))
+        .add_attribute("whitelist_addr", env.contract.address.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -97,7 +96,7 @@ pub fn execute_update_minter_contract(
     config.minter_contract = Some(minter_addr);
     CONFIG.save(deps.storage, &config)?;
     let event =
-        Event::new("update_minter_contract").add_attribute("minter_contract", minter_contract);
+        Event::new("update-minter-contract").add_attribute("minter_contract", minter_contract);
     Ok(Response::default().add_event(event))
 }
 
@@ -114,7 +113,7 @@ pub fn execute_update_admin(
 
     config.admin = deps.api.addr_validate(&new_admin)?;
     CONFIG.save(deps.storage, &config)?;
-    let event = Event::new("update_admin")
+    let event = Event::new("update-admin")
         .add_attribute("new_admin", config.admin)
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
@@ -149,7 +148,7 @@ pub fn execute_add_addresses(
 
     TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
 
-    let event = Event::new("add_addresses")
+    let event = Event::new("add-addresses")
         .add_attribute("new-count", count.to_string())
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
@@ -184,7 +183,7 @@ pub fn execute_remove_addresses(
     }
 
     TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
-    let event = Event::new("remove_addresses")
+    let event = Event::new("remove-addresses")
         .add_attribute("new-count", count.to_string())
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
@@ -219,7 +218,7 @@ pub fn execute_process_address(
     let count = WHITELIST.load(deps.storage, addr.clone())?;
     WHITELIST.save(deps.storage, addr, &(count + 1))?;
 
-    let event = Event::new("process_address")
+    let event = Event::new("process-address")
         .add_attribute("address", address)
         .add_attribute("mint-count", (count + 1).to_string())
         .add_attribute("sender", info.sender);
@@ -240,7 +239,7 @@ pub fn execute_update_per_address_limit(
     config.per_address_limit = limit;
     CONFIG.save(deps.storage, &config)?;
 
-    let event = Event::new("update_per_address_limit")
+    let event = Event::new("update-per-address-limit")
         .add_attribute("new-limit", limit.to_string())
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
