@@ -12,9 +12,9 @@ use crate::{
 /// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct WhitelistUpdatableContract(pub Addr);
+pub struct WhitelistGenericContract(pub Addr);
 
-impl WhitelistUpdatableContract {
+impl WhitelistGenericContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
