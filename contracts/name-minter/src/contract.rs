@@ -14,7 +14,7 @@ use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
 };
 use sg_name::{Metadata, SgNameExecuteMsg};
-use sg_name_common::charge_fees;
+use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
@@ -82,7 +82,7 @@ pub fn instantiate(
             image: "ipfs://example.com".to_string(),
             external_link: None,
             explicit_content: None,
-            start_trading_time: None,
+            start_trading_time: Some(env.block.time.plus_seconds(2 * SECONDS_PER_YEAR)),
             royalty_info: None,
         },
     };

@@ -13,6 +13,7 @@ use name_marketplace::msg::{
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
+use sg_name_common::SECONDS_PER_YEAR;
 use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
 use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
@@ -65,8 +66,6 @@ const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
 const BID_AMOUNT: u128 = 1_000_000_000;
 const PER_ADDRESS_LIMIT: u32 = 2;
-
-const SECONDS_PER_YEAR: u64 = 31536000;
 
 const MKT: &str = "contract0";
 const MINTER: &str = "contract1";

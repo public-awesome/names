@@ -17,7 +17,7 @@ use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_utils::{must_pay, nonpayable};
-use sg_name_common::charge_fees;
+use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -26,7 +26,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
-const SECONDS_PER_YEAR: u64 = 31536000;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
