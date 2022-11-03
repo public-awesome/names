@@ -23,7 +23,7 @@ pub const SALE_HOOKS: Hooks = Hooks::new("sale-hooks");
 pub const NAME_MINTER: Item<Addr> = Item::new("name-minter");
 pub const NAME_COLLECTION: Item<Addr> = Item::new("name-collection");
 
-/// (renewal_time, id) -> [token_id]
+/// (renewal_time (in seconds), id) -> [token_id]
 pub const RENEWAL_QUEUE: Map<(u64, u64), TokenId> = Map::new("rq");
 
 pub const ASK_COUNT: Item<u64> = Item::new("ask-count");
@@ -105,16 +105,16 @@ pub struct Bid {
     pub token_id: TokenId,
     pub bidder: Addr,
     pub amount: Uint128,
-    pub height: u64,
+    pub created_time: Timestamp,
 }
 
 impl Bid {
-    pub fn new(token_id: &str, bidder: Addr, amount: Uint128, height: u64) -> Self {
+    pub fn new(token_id: &str, bidder: Addr, amount: Uint128, created_time: Timestamp) -> Self {
         Bid {
             token_id: token_id.to_string(),
             bidder,
             amount,
-            height,
+            created_time,
         }
     }
 }
@@ -131,7 +131,7 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 pub struct BidIndicies<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
-    pub height: MultiIndex<'a, u64, Bid, BidKey>,
+    pub created_time: MultiIndex<'a, u64, Bid, BidKey>,
 }
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
@@ -146,7 +146,11 @@ pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
             "bids",
             "bids__bidder",
         ),
-        height: MultiIndex::new(|_pk: &[u8], d: &Bid| d.height, "bids", "bids__height"),
+        created_time: MultiIndex::new(
+            |_pk: &[u8], d: &Bid| d.created_time.seconds(),
+            "bids",
+            "bids__time",
+        ),
     };
     IndexedMap::new("bids", indexes)
 }

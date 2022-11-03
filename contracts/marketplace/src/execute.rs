@@ -265,7 +265,7 @@ pub fn execute_set_bid(
         res = res.add_message(refund_bidder)
     }
 
-    let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.height);
+    let bid = Bid::new(token_id, bidder.clone(), bid_price, env.block.time);
     store_bid(deps.storage, &bid)?;
 
     let hook = prepare_bid_hook(deps.as_ref(), &bid, HookAction::Create)?;
@@ -369,7 +369,7 @@ pub fn execute_accept_bid(
         &mut res,
     )?;
 
-    // Update Ask with new seller and height
+    // Update Ask with new seller and renewal time
     let ask = Ask {
         token_id: token_id.to_string(),
         id: ask.id,
@@ -443,7 +443,7 @@ pub fn execute_process_renewal(
     }
 
     // // TODO: add renewal processing logic
-    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, height)?;
+    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, time)?;
     // for name in renewal_queue.iter() {
     //     let ask = asks().load(deps.storage, ask_key(name))?;
     //     if ask.renewal_fund.is_zero() {
@@ -457,13 +457,13 @@ pub fn execute_process_renewal(
     //     // pay out reward to operator
     //     // reset ask
 
-    //     // Update Ask with new height
+    //     // Update Ask with new time
     //     let ask = Ask {
     //         token_id: name.to_string(),
     //         id: ask.id,
     //         seller: ask.seller,
-    //         height: env.block.height,
-    //         renewal_fund: Uint128::zero(),
+    //         renewal_time: env.block.time.plus_seconds(SECONDS_PER_YEAR),
+    //         renewal_fund: Uint128::zero(), // check renewal fund - fees
     //     };
     //     store_ask(deps.storage, &ask)?;
     // }

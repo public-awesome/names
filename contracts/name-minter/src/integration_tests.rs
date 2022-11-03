@@ -219,12 +219,6 @@ fn owner_of(app: &StargazeApp, token_id: String) -> String {
     res.owner
 }
 
-fn update_block_height(app: &mut StargazeApp, height: u64) {
-    let mut block = app.block_info();
-    block.height = height;
-    app.set_block(block);
-}
-
 fn update_block_time(app: &mut StargazeApp, add_secs: u64) {
     let mut block = app.block_info();
     block.time = block.time.plus_seconds(add_secs);
@@ -746,8 +740,7 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
+        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
@@ -766,8 +759,7 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
+        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
@@ -786,8 +778,7 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
+        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", USER2, None);
         assert!(res.is_ok());
 
@@ -807,8 +798,7 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        let height = app.block_info().height;
-        update_block_height(&mut app, height + 1);
+        update_block_time(&mut app, 10);
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
