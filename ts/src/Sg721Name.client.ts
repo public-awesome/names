@@ -306,13 +306,6 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     name: string;
     nft?: NFT;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateProfileNft: ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addTextRecord: ({
     name,
     record
@@ -336,10 +329,12 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   verifyTextRecord: ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   updateVerifier: ({
     verifier
@@ -428,7 +423,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.associateAddress = this.associateAddress.bind(this);
     this.updateMetadata = this.updateMetadata.bind(this);
     this.updateImageNft = this.updateImageNft.bind(this);
-    this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
@@ -500,20 +494,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
       }
     }, fee, memo, funds);
   };
-  updateProfileNft = async ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      update_profile_nft: {
-        name,
-        token_id: tokenId
-      }
-    }, fee, memo, funds);
-  };
   addTextRecord = async ({
     name,
     record
@@ -558,15 +538,18 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
   };
   verifyTextRecord = async ({
     name,
-    recordName
+    recordName,
+    result
   }: {
     name: string;
     recordName: string;
+    result: boolean;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       verify_text_record: {
         name,
-        record_name: recordName
+        record_name: recordName,
+        result
       }
     }, fee, memo, funds);
   };

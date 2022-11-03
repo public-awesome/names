@@ -233,34 +233,6 @@
         "additionalProperties": false
       },
       {
-        "description": "Update profile",
-        "type": "object",
-        "required": [
-          "update_profile_nft"
-        ],
-        "properties": {
-          "update_profile_nft": {
-            "type": "object",
-            "required": [
-              "name"
-            ],
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "token_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
         "description": "Add text record ex: twitter handle, discord name, etc",
         "type": "object",
         "required": [

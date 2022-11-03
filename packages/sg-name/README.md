@@ -14,10 +14,8 @@ pub struct TextRecord {
     pub verified_at: Option<Timestamp>,
 }
 
-pub struct Metadata<T> {
-    pub bio: Option<String>,
-    pub profile: Option<NFT>,
+pub struct Metadata {
+    pub image: Option<NFT>,
     pub records: Vec<TextRecord>,
-    pub extension: T,
 }
 ```
