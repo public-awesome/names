@@ -1304,6 +1304,7 @@ mod collection {
         assert!(err.is_err());
     }
 
+    // test that burn nft currently does nothing. this is a placeholder for future functionality
     #[test]
     fn burn_nft() {
         let mut app = instantiate_contracts(None, None, None);
@@ -1320,15 +1321,16 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_ok());
+        assert!(res.is_err());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_none());
+        assert!(res.ask.is_some());
     }
 
+    // test that burn nft currently does nothing. this is a placeholder for future functionality
     #[test]
     fn burn_with_existing_bids() {
         let mut app = instantiate_contracts(None, None, None);
@@ -1347,16 +1349,17 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_ok());
+        assert!(res.is_err());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         let ask = res.ask.unwrap();
-        assert_eq!(ask.seller.to_string(), BIDDER.to_string());
+        assert_eq!(ask.seller.to_string(), USER.to_string());
     }
 
+    // test that burn nft currently does nothing. this is a placeholder for future functionality
     #[test]
     fn burn_nft_with_reverse_map() {
         let mut app = instantiate_contracts(None, None, None);
@@ -1393,19 +1396,19 @@ mod collection {
             &msg,
             &[],
         );
-        assert!(res.is_ok());
+        assert!(res.is_err());
 
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
         let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_none());
+        assert!(res.ask.is_some());
 
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),
         };
-        let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
-        assert!(err.is_err());
+        let res: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        assert!(res.is_ok());
     }
 
     #[test]
