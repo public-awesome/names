@@ -266,7 +266,7 @@ fn _transfer_nft(
         .tokens
         .load(deps.storage, token_id)?;
 
-    // Reset bio, profile, records
+    // Reset image, records
     token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens
@@ -315,7 +315,7 @@ pub fn execute_send_nft(
         .tokens
         .load(deps.storage, &token_id)?;
 
-    // Reset bio, profile, records
+    // Reset image, records
     token.extension = Metadata::default();
     Sg721NameContract::default()
         .tokens

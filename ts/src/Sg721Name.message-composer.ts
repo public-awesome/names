@@ -38,13 +38,6 @@ export interface Sg721NameMessage {
     name: string;
     nft?: NFT;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  updateProfileNft: ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   addTextRecord: ({
     name,
     record
@@ -159,7 +152,6 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
     this.associateAddress = this.associateAddress.bind(this);
     this.updateMetadata = this.updateMetadata.bind(this);
     this.updateImageNft = this.updateImageNft.bind(this);
-    this.updateProfileNft = this.updateProfileNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
     this.updateTextRecord = this.updateTextRecord.bind(this);
@@ -257,28 +249,6 @@ export class Sg721NameMessageComposer implements Sg721NameMessage {
           update_image_nft: {
             name,
             nft
-          }
-        })),
-        funds
-      })
-    };
-  };
-  updateProfileNft = ({
-    name,
-    tokenId
-  }: {
-    name: string;
-    tokenId?: string;
-  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          update_profile_nft: {
-            name,
-            token_id: tokenId
           }
         })),
         funds

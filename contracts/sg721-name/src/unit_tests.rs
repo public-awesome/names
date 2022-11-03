@@ -132,7 +132,7 @@ fn mint_and_update() {
     assert_eq!(res.extension, mint_msg.extension);
 
     // update metadata
-    // update bio, profile, records
+    // update image, records
     let new_metadata = Metadata {
         image_nft: Some(NFT {
             collection: Addr::unchecked("contract"),

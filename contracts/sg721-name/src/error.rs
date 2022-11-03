@@ -23,9 +23,6 @@ pub enum ContractError {
     #[error("AddressAlreadyMapped")]
     AddressAlreadyMapped {},
 
-    #[error("BioTooLong")]
-    BioTooLong {},
-
     #[error("RecordNameAlreadyExists")]
     RecordNameAlreadyExists {},
 

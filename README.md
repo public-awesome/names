@@ -55,7 +55,7 @@ pub struct TextRecord {
 
 ```rs
 pub struct Metadata {
-    pub profile_nft: Option<NFT>,
+    pub image_nft: Option<NFT>,
     pub record: Vec<TextRecord>,
 }
 ```
