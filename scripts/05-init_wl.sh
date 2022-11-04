@@ -1,6 +1,6 @@
 MSG=$(cat <<EOF
 {
-  "mint_discount_bps": 4500,  
+  "mint_discount_bps": 5000,  
   "per_address_limit": 1,
   "addresses": []
 }
