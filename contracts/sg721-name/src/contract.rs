@@ -12,8 +12,6 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
-use name_marketplace::state::Bid;
-use name_marketplace::NameMarketplaceContract;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -180,48 +178,15 @@ pub fn execute_mint(
     Ok(Response::new().add_event(event))
 }
 
+/// WIP Throw not implemented error
 pub fn execute_burn(
-    deps: DepsMut,
-    env: Env,
+    _deps: DepsMut,
+    _env: Env,
     info: MessageInfo,
-    token_id: String,
+    _token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-
-    let token = Sg721NameContract::default()
-        .tokens
-        .load(deps.storage, &token_id)?;
-
-    Sg721NameContract::default()
-        .check_can_send(deps.as_ref(), &env, &info, &token)
-        .map_err(|_| ContractError::Base(Unauthorized {}))?;
-
-    if let Some(token_uri) = token.token_uri {
-        REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
-    }
-
-    let marketplace = NameMarketplaceContract(NAME_MARKETPLACE.load(deps.storage)?);
-    let highest_bid: Option<Bid> = marketplace.highest_bid(&deps.querier, &token_id)?;
-    let mut res = Response::new();
-
-    // If bids exist, transfer name to the highest bidder.
-    // If not, then burn the name.
-    if let Some(highest_bid) = highest_bid {
-        let recipient = highest_bid.bidder;
-        let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
-        res = res.add_message(update_ask_msg);
-    } else {
-        res = res.add_message(marketplace.remove_ask(&token_id)?);
-        Sg721NameContract::default()
-            .tokens
-            .remove(deps.storage, &token_id)?;
-        Sg721NameContract::default().decrement_tokens(deps.storage)?;
-    }
-
-    let event = Event::new("burn")
-        .add_attribute("token_id", token_id)
-        .add_attribute("owner", info.sender);
-    Ok(res.add_event(event))
+    Err(ContractError::NotImplemented {})
 }
 
 pub fn execute_transfer_nft(
@@ -273,6 +238,15 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
         .tokens
         .save(deps.storage, token_id, &token)?;
 
+    rm_reverse_map(deps, token_id)?;
+    Ok(())
+}
+
+fn rm_reverse_map(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
+    let mut token = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, token_id)?;
+
     // remove reverse mapping if exists
     if let Some(token_uri) = token.token_uri {
         REVERSE_MAP.remove(deps.storage, &Addr::unchecked(token_uri));
@@ -282,6 +256,7 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
     Sg721NameContract::default()
         .tokens
         .save(deps.storage, token_id, &token)?;
+
     Ok(())
 }
 
