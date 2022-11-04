@@ -7,7 +7,8 @@ MSG=$(cat <<EOF
   "max_name_length": 63,
   "base_price": "100000000",
   "fair_burn_bps": 5000,
-  "whitelists": []
+  "whitelists": [],
+  "verifier": "$ADMIN",
 }
 EOF
 )
