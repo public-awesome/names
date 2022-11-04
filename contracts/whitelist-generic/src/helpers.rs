@@ -1,6 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
 use sg_std::CosmosMsg;
 
@@ -9,9 +7,8 @@ use crate::{
     state::Config,
 };
 
-/// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
-/// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+/// WhitelistGenericContract is a wrapper around Addr that provides a lot of helpers
+#[cw_serde]
 pub struct WhitelistGenericContract(pub Addr);
 
 impl WhitelistGenericContract {
