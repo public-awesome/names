@@ -1,7 +1,8 @@
 MSG=$(cat <<EOF
 {
   "trading_fee_bps": 200,
-  "min_price": "5000000"
+  "min_price": "5000000",
+  "ask_interval": 60
 }
 EOF
 )
