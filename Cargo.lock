@@ -1144,7 +1144,6 @@ dependencies = [
  "sg-name",
  "sg-name-minter",
  "sg-std",
- "sg-whitelist-basic",
  "sg721-name",
  "thiserror",
 ]

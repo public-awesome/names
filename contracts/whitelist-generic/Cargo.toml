@@ -52,7 +52,6 @@ cw-utils = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-sg-whitelist-basic = { path = "../../packages/sg-whitelist-basic" }
 sg-name-minter = { path = "../../packages/sg-name-minter" }
 sg-std = { workspace = true }
 
