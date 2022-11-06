@@ -26,3 +26,6 @@ tarpaulin-report.*
 
 *.env
 *.wasm
+
+# package libs
+node_modules/*
