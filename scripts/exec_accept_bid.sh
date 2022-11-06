@@ -10,7 +10,7 @@ EOF
 
 starsd tx wasm execute $COLLECTION "$MSG" \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -b block -y -o json | jq .
+  --from $ADMIN -b block -y -o json | jq .
  
 
 MSG=$(cat <<EOF
@@ -26,5 +26,5 @@ EOF
 starsd tx wasm execute $MKT "$MSG" \
   --amount $3000000ustars \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -b block -y -o json | jq .
+  --from $ADMIN -b block -y -o json | jq .
  

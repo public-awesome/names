@@ -10,5 +10,5 @@ EOF
 starsd tx wasm execute $MKT "$MSG" \
   --amount $2000000ustars \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -y -b block -o json | jq .
+  --from $ADMIN -y -b block -o json | jq .
  
