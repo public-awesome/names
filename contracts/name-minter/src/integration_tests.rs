@@ -1616,7 +1616,7 @@ mod whitelist {
         // query discount, pass to mint_and_list
         let discount: Decimal = app
             .wrap()
-            .query_wasm_smart(wl2.clone(), &WhitelistQueryMsg::MintDiscountPercent {})
+            .query_wasm_smart(wl2, &WhitelistQueryMsg::MintDiscountPercent {})
             .unwrap();
         let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
         assert!(res.is_ok());
