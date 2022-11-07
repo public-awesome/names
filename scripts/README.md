@@ -97,3 +97,16 @@ Query name metadata:
 Instantiate as many whitelists as needed.
 
 Pause minting, then add/remove whitelists as needed for the next wave. Then resume minting.
+
+## Deploying with a Multisig
+
+These scripts optionally work with a multisig admin.
+
+Update env vars to support them:
+
+```
+ADMIN_MULTISIG=true
+MULTISIG_NAME=admin
+```
+
+Now when you run the instantiate scripts, it'll use the `admin` multisig address, and generate `unsignedTx.json` and your signed version as `$USER.json`. Please share `$USER.json` with others in the multisig, and finally broadcast the tx with `broadcast.sh [signed1.json] [signed2.json] [signed3.json]`.
