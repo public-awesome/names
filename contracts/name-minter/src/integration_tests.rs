@@ -89,11 +89,10 @@ pub fn set_block_time(mut app: StargazeApp, time: Timestamp) -> StargazeApp {
 
 // 1. Instantiate Name Marketplace
 // 2. Instantiate Name Minter (which instantiates Name Collection)
-// 3. Update Name Marketplace with Name Minter address
-// 4. Update Name Marketplace with Name Collection address
-// 5. Instantiate Whitelist
-// 6. Update Whitelist with Name Minter
-// 7. Add Whitelist to Name Minter
+// 3. Setup Name Marketplace with Name Minter and Collection addresses
+// 4. Instantiate Whitelist
+// 5. Update Whitelist with Name Minter
+// 6. Add Whitelist to Name Minter
 fn instantiate_contracts(
     creator: Option<String>,
     admin: Option<String>,
@@ -145,11 +144,17 @@ fn instantiate_contracts(
         )
         .unwrap();
 
-    // 3. Update Name Marketplace with Name Minter address
-    let msg = name_marketplace::msg::SudoMsg::UpdateNameMinter {
+    // 3. Setup Name Marketplace
+    let msg = name_marketplace::msg::ExecuteMsg::Setup {
         minter: minter.to_string(),
+        collection: COLLECTION.to_string(),
     };
-    let res = app.wasm_sudo(marketplace.clone(), &msg);
+    let res = app.execute_contract(
+        Addr::unchecked(ADMIN.to_string()),
+        marketplace.clone(),
+        &msg,
+        &[],
+    );
     assert!(res.is_ok());
 
     let res: NameMarketplaceResponse = app
@@ -158,14 +163,7 @@ fn instantiate_contracts(
         .unwrap();
     assert_eq!(res.address, marketplace.to_string());
 
-    // 4. Update Name Marketplace with Name Collection address
-    let msg = name_marketplace::msg::SudoMsg::UpdateNameCollection {
-        collection: COLLECTION.to_string(),
-    };
-    let res = app.wasm_sudo(marketplace, &msg);
-    assert!(res.is_ok());
-
-    // 5. Instantiate Whitelist
+    // 4. Instantiate Whitelist
     let msg = whitelist_updatable::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
         addresses: vec![
@@ -180,7 +178,7 @@ fn instantiate_contracts(
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
         .unwrap();
 
-    // 6. Update Whitelist with Name Minter
+    // 5. Update Whitelist with Name Minter
     let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
         minter_contract: MINTER.to_string(),
     };
@@ -192,7 +190,7 @@ fn instantiate_contracts(
     );
     assert!(res.is_ok());
 
-    // 7. Add Whitelist to Name Minter
+    // 6. Add Whitelist to Name Minter
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
