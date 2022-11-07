@@ -1,5 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
+use cosmwasm_std::{
+    to_binary, Addr, Decimal, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery,
+};
 use sg_std::CosmosMsg;
 
 use crate::{
@@ -47,5 +49,12 @@ impl WhitelistUpdatableContract {
         }))?;
 
         Ok(res.config)
+    }
+
+    pub fn mint_discount_percent(&self, querier: &QuerierWrapper) -> StdResult<Decimal> {
+        querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&QueryMsg::MintDiscountPercent {})?,
+        }))
     }
 }

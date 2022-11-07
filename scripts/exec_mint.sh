@@ -9,7 +9,8 @@ EOF
 
 starsd tx wasm execute $COLLECTION "$MSG" \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -b block -y -o json | jq .
+  --from $USER -b block -y -o json | jq .
+ 
 
 # generate random 20 char string for name
 name=$(openssl rand -hex 20);
@@ -25,5 +26,5 @@ EOF
 starsd tx wasm execute $MINTER "$MSG" \
   --amount 100ustars \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -b block -y -o json | jq .
+  --from $USER -b block -y -o json | jq .
  

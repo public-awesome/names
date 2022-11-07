@@ -2,7 +2,7 @@ MSG=$(cat <<EOF
 {
   "associate_address": {
     "name": "$1",
-    "address": "$ADMIN"
+    "address": "$USER"
   }
 }
 EOF
@@ -10,5 +10,5 @@ EOF
 
 starsd tx wasm execute $COLLECTION "$MSG" \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $TESTNET_KEY -y -b block -o json | jq .
+  --from $USER -y -b block -o json | jq .
  

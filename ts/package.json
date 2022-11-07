@@ -2,7 +2,7 @@
   "name": "@stargazezone/ts-names",
   "version": "0.9.0",
   "description": "Stargaze Names CosmWasm Typescript Types",
-  "main": "index.js",
+  "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "codegen": "ts-node codegen.ts"
