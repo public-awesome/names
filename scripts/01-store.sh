@@ -1,9 +1,3 @@
-curl -s https://api.github.com/repos/public-awesome/names/releases/latest \
-| grep ".*wasm" \
-| cut -d : -f 2,3 \
-| tr -d \" \
-| wget -qi -
-
 starsd config node $NODE
 starsd config chain-id $CHAIN_ID
 starsd config output json

@@ -13,6 +13,8 @@
 
 Download the latest WASM code from [releases](https://github.com/public-awesome/names/releases).
 
+Alternatively, run `00-download.sh`.
+
 `./01-store.sh`
 
 Update `.env` with code ids.
