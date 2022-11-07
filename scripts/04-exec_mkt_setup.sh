@@ -8,7 +8,7 @@ MSG=$(cat <<EOF
 EOF
 )
 
+# Any account can setup the name marketplace contract 
 starsd tx wasm execute $MKT "$MSG" \
   --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
-  --from $ADMIN -y -o json | jq .
- 
+  --from $USER -y -o json | jq .

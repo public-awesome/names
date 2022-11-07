@@ -13,8 +13,21 @@ MSG=$(cat <<EOF
 EOF
 )
 
-starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
- --admin $ADMIN \
- --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
- --from $ADMIN -y -b block -o json | jq .
- 
+if [ "$ADMIN_MULTISIG" = true ] ; then
+  echo 'Using multisig'
+  starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
+    --admin $ADMIN \
+    --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
+    --from $ADMIN \
+    --generate-only > unsignedTx.json
+
+  starsd tx sign unsignedTx.json \
+    --multisig=$ADMIN --from $USER --output-document=$USER.json \
+    --chain-id $CHAIN_ID
+else
+  echo 'Using single signer'
+  starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
+    --admin $ADMIN \
+    --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
+    --from $ADMIN -y -b block -o json | jq .
+fi
