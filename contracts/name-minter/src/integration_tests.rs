@@ -1613,8 +1613,12 @@ mod whitelist {
         assert!(res.is_ok());
 
         // mint and list with discount
-        let discount_dec = Decimal::percent(3500u64) / Uint128::from(100u128);
-        let res = mint_and_list(&mut app, NAME, USER2, Some(discount_dec));
+        // query discount, pass to mint_and_list
+        let discount: Decimal = app
+            .wrap()
+            .query_wasm_smart(wl2, &WhitelistQueryMsg::MintDiscountPercent {})
+            .unwrap();
+        let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
         assert!(res.is_ok());
     }
 

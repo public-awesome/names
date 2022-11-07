@@ -2,7 +2,8 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo, Order, StdResult,
+    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, Event, MessageInfo, Order, StdResult,
+    Uint128,
 };
 use cw2::set_contract_version;
 
@@ -277,6 +278,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
+        QueryMsg::MintDiscountPercent {} => to_binary(&query_mint_discount_percent(deps)?),
     }
 }
 
@@ -318,4 +320,10 @@ pub fn query_is_processable(deps: Deps, address: String) -> StdResult<bool> {
     let count = WHITELIST.load(deps.storage, addr)?;
     let config = CONFIG.load(deps.storage)?;
     Ok(count < config.per_address_limit)
+}
+
+pub fn query_mint_discount_percent(deps: Deps) -> StdResult<Decimal> {
+    let config = CONFIG.load(deps.storage)?;
+    let discount_bps = config.mint_discount_bps.map_or(0u64, |v| v);
+    Ok(Decimal::percent(discount_bps) / Uint128::from(100u128))
 }

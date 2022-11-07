@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Decimal;
 
 use crate::state::Config;
 
@@ -51,6 +52,9 @@ pub enum QueryMsg {
     AddressCount {},
     #[returns(PerAddressLimitResponse)]
     PerAddressLimit {},
+    // Mint discount converts bps to decimal percentage
+    #[returns(Decimal)]
+    MintDiscountPercent {},
 }
 
 #[cw_serde]
