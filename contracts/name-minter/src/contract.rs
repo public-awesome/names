@@ -167,14 +167,14 @@ pub fn execute_mint_and_list(
         return Err(ContractError::MintingNotStarted {});
     }
 
-    // get discount as a percentage
-    let discount: Option<Decimal> = if let Some(list) = list {
-        res = res.add_message(list.process_address(sender)?);
-        let d = list.mint_discount_percent(&deps.querier)?;
-        Some(d)
-    } else {
-        None
-    };
+    let discount = list
+        .map(|list| {
+            res.messages
+                .push(SubMsg::new(list.process_address(sender)?));
+            list.mint_discount_percent(&deps.querier)
+        })
+        .transpose()?
+        .unwrap_or(None);
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
