@@ -3,7 +3,6 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, Event, MessageInfo, Order, StdResult,
-    Uint128,
 };
 use cw2::set_contract_version;
 
@@ -322,8 +321,9 @@ pub fn query_is_processable(deps: Deps, address: String) -> StdResult<bool> {
     Ok(count < config.per_address_limit)
 }
 
-pub fn query_mint_discount_percent(deps: Deps) -> StdResult<Decimal> {
+pub fn query_mint_discount_percent(deps: Deps) -> StdResult<Option<Decimal>> {
     let config = CONFIG.load(deps.storage)?;
-    let discount_bps = config.mint_discount_bps.map_or(0u64, |v| v);
-    Ok(Decimal::percent(discount_bps) / Uint128::from(100u128))
+    Ok(config
+        .mint_discount_bps
+        .map(|x| Decimal::from_ratio(x, 10_000u128)))
 }
