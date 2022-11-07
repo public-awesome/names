@@ -167,9 +167,11 @@ pub fn execute_mint_and_list(
         return Err(ContractError::MintingNotStarted {});
     }
 
-    let discount = if let Some(list) = list {
+    // get discount as a percentage
+    let discount: Option<Decimal> = if let Some(list) = list {
         res = res.add_message(list.process_address(sender)?);
-        list.config(&deps.querier).map(|c| c.mint_discount())?
+        let d = list.mint_discount_percent(&deps.querier)?;
+        Some(d)
     } else {
         None
     };
@@ -333,8 +335,8 @@ fn validate_payment(
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
         return Err(ContractError::IncorrectPayment {
-            got: amount.u128(),
-            expected: payment.u128(),
+            got: payment.u128(),
+            expected: amount.u128(),
         });
     }
 
