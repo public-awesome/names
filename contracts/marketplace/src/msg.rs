@@ -161,6 +161,9 @@ pub enum QueryMsg {
         start_before: Option<BidOffset>,
         limit: Option<u32>,
     },
+    /// Get all bids for a specific account
+    #[returns(BidsResponse)]
+    BidsBySeller { seller: String },
     /// Get the highest bid for a name
     #[returns(BidResponse)]
     HighestBid { token_id: TokenId },
