@@ -66,6 +66,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_before,
             limit,
         )?),
+        QueryMsg::BidsBySeller { seller } => {
+            to_binary(&query_bids_by_seller(deps, api.addr_validate(&seller)?)?)
+        }
         QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
         QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
@@ -212,6 +215,25 @@ pub fn query_bids_by_bidder(
         .take(limit)
         .map(|item| item.map(|(_, b)| b))
         .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(BidsResponse { bids })
+}
+
+pub fn query_bids_by_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse> {
+    let bids: Vec<_> = asks()
+        .idx
+        .seller
+        .prefix(seller)
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|res| res.map(|item| item.0).unwrap())
+        .flat_map(|token_id| {
+            bids()
+                .prefix(token_id)
+                .range(deps.storage, None, None, Order::Ascending)
+                .flat_map(|item| item.map(|(_, b)| b))
+                .collect::<Vec<_>>()
+        })
+        .collect();
 
     Ok(BidsResponse { bids })
 }

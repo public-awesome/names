@@ -823,6 +823,24 @@ mod query {
     }
 
     #[test]
+    fn query_bids_by_seller() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+
+        let msg = MarketplaceQueryMsg::BidsBySeller {
+            seller: USER.to_string(),
+        };
+        let res: BidsResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.bids.len(), 2);
+        assert_eq!(res.bids[0].amount.u128(), BID_AMOUNT);
+    }
+
+    #[test]
     fn query_highest_bid() {
         let mut app = instantiate_contracts(None, None, None);
 

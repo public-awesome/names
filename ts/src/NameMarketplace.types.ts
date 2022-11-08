@@ -107,6 +107,10 @@ export type QueryMsg = {
     start_before?: BidOffset | null;
   };
 } | {
+  bids_by_seller: {
+    seller: string;
+  };
+} | {
   highest_bid: {
     token_id: string;
   };
