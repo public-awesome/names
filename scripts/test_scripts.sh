@@ -34,3 +34,11 @@ EOF
 
 # reverse look up
 ./query_lookup.sh $name
+
+# make a bid
+./exec_bid.sh $name
+
+
+# accept bid
+bidder=$(starsd keys show $BIDDER | jq -r '.address')
+./exec_accept_bid.sh $name $bidder
