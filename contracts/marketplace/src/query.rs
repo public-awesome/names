@@ -220,19 +220,15 @@ pub fn query_bids_by_bidder(
 }
 
 pub fn query_bids_by_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse> {
-    let token_ids = asks()
+    let bids = asks()
         .idx
         .seller
         .prefix(seller)
         .range(deps.storage, None, None, Order::Ascending)
-        .map(|res| res.map(|item| item.0))
-        .collect::<StdResult<Vec<_>>>()?;
-
-    let bids = token_ids
-        .iter()
+        .map(|res| res.map(|item| item.0).unwrap())
         .flat_map(|token_id| {
             bids()
-                .prefix(token_id.to_string())
+                .prefix(token_id)
                 .range(deps.storage, None, None, Order::Ascending)
                 .flat_map(|item| item.map(|(_, b)| b))
                 .collect::<Vec<_>>()
