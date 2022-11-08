@@ -138,7 +138,7 @@ pub fn execute_associate_address(
             rm_reverse_map(&mut deps, &name)?;
         }
         REVERSE_MAP.save(deps.storage, &token_uri_key, &name)?;
-    } else if let Some(_) = token.token_uri {
+    } else if token.token_uri.is_some() {
         // if no new addr, and existing addr, wipe entry from reverse map
         rm_reverse_map(&mut deps, &name)?;
     }
