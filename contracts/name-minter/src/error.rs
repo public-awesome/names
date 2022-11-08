@@ -20,9 +20,8 @@ pub enum ContractError {
     #[error("MintingPaused")]
     MintingPaused {},
 
-    #[error("NotWhitelisted")]
-    NotWhitelisted {},
-
+    // #[error("NotWhitelisted")]
+    // NotWhitelisted {},
     #[error("Invalid reply ID")]
     InvalidReplyID {},
 

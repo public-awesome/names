@@ -1552,9 +1552,6 @@ mod whitelist {
         // mint from user on second whitelist
         let res = mint_and_list(&mut app, "none", USER2, None);
         assert!(res.is_ok());
-        // user not on lists
-        let res = mint_and_list(&mut app, "nbne", BIDDER, None);
-        assert!(res.is_err());
 
         update_block_time(&mut app, 1000);
 
@@ -1637,9 +1634,6 @@ mod whitelist {
         let msg = WhitelistQueryMsg::AddressCount {};
         let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
         assert_eq!(wl_addr_count, 4);
-
-        let res = mint_and_list(&mut app, NAME, USER3, None);
-        assert!(res.is_err());
 
         let msg = WhitelistExecuteMsg::AddAddresses {
             addresses: vec![USER3.to_string()],
@@ -1738,6 +1732,19 @@ mod public_start_time {
         assert_eq!(
             res.config.public_mint_start_time,
             PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)
+        );
+
+        // mint succeeds w new mint start time
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn whitelist_with_public_mint() {
+        let mut app = instantiate_contracts(
+            None,
+            Some(ADMIN.to_string()),
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.plus_seconds(1)),
         );
 
         // mint succeeds w new mint start time
