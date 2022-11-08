@@ -1,6 +1,6 @@
 MSG=$(cat <<EOF
 {
-  "name": { "address": "$ADMIN" }
+  "name": { "address": "$USER" }
 }
 EOF
 )
