@@ -317,6 +317,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::OperatorsResponse;
+    use sg_name::NameResponse;
     use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
@@ -493,21 +494,54 @@ mod execute {
     #[test]
     fn test_reverse_map() {
         let mut app = instantiate_contracts(None, None, None);
+        // needs to use valid address for querying addresses
+        let user = "stars1hsk6jryyqjfhp5dhc55tc9jtckygx0eprx6sym";
 
-        let res = mint_and_list(&mut app, NAME, USER, None);
+        let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
         let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
-            address: Some(USER.to_string()),
+            address: Some(user.to_string()),
         };
         let res = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
             &[],
         );
         assert!(res.is_ok());
+
+        // added to get around rate limiting
+        update_block_time(&mut app, 60);
+
+        // associate another
+        let name2 = "exam";
+        let res = mint_and_list(&mut app, name2, user, None);
+        assert!(res.is_ok());
+
+        let msg = SgNameExecuteMsg::AssociateAddress {
+            name: name2.to_string(),
+            address: Some(user.to_string()),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(user),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let res: NameResponse = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &SgNameQueryMsg::Name {
+                    address: user.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.name, name2.to_string());
 
         // remove address
         let msg = SgNameExecuteMsg::AssociateAddress {
@@ -515,7 +549,7 @@ mod execute {
             address: None,
         };
         let res = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
             &[],
