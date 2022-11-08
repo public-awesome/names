@@ -220,7 +220,7 @@ pub fn query_bids_by_bidder(
 }
 
 pub fn query_bids_by_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse> {
-    let bids = asks()
+    let bids: Vec<_> = asks()
         .idx
         .seller
         .prefix(seller)
@@ -233,7 +233,7 @@ pub fn query_bids_by_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse>
                 .flat_map(|item| item.map(|(_, b)| b))
                 .collect::<Vec<_>>()
         })
-        .collect::<Vec<_>>();
+        .collect();
 
     Ok(BidsResponse { bids })
 }
