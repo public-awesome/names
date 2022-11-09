@@ -368,12 +368,7 @@ mod tests {
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(
-            Addr::unchecked(minter_addr.clone()),
-            wl_addr.clone(),
-            &msg,
-            &[],
-        );
+        let res = app.execute_contract(Addr::unchecked(minter_addr), wl_addr.clone(), &msg, &[]);
         assert!(res.is_err());
 
         // purge
