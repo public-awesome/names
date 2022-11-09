@@ -13,11 +13,13 @@ bobo -> D93385094E906D7DA4EBFDEC2C4B167D5CAA431A (in hex)
 Now this can be resolved per chain:
 
 ```
-bobo.stars -> stars1myec2z2wjpkhmf8tlhkzcjck04w25sc6ymhplz
+bobo.stars  -> stars1myec2z2wjpkhmf8tlhkzcjck04w25sc6ymhplz
 bobo.cosmos -> cosmos1myec2z2wjpkhmf8tlhkzcjck04w25sc6y2xq2r
 ```
 
 This architecture enables Stargaze Names to be a truly Interchain name service since it can mint and resolve names for any Cosmos chain.
+
+Chains that use different account types or key derivation paths can have support added later by migrating contracts. Name contracts are community-owned contracts that can be migrated by Stargaze governance.
 
 ### Annual Auction
 
