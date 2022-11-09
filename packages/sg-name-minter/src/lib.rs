@@ -35,7 +35,7 @@ pub enum SgNameMinterExecuteMsg {
 pub enum SgNameMinterQueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(WhitelistsResponse)]
+    #[returns(Vec<Addr>)]
     Whitelists {},
     #[returns(CollectionResponse)]
     Collection {},
@@ -46,11 +46,6 @@ pub enum SgNameMinterQueryMsg {
 #[cw_serde]
 pub struct CollectionResponse {
     pub collection: String,
-}
-
-#[cw_serde]
-pub struct WhitelistsResponse {
-    pub whitelists: Vec<Addr>,
 }
 
 #[cw_serde]

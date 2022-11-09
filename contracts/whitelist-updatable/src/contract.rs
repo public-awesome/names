@@ -5,11 +5,11 @@ use cosmwasm_std::{
     to_binary, Addr, Binary, Decimal, Deps, DepsMut, Env, Event, MessageInfo, Order, StdResult,
 };
 use cw2::set_contract_version;
+use sg_name_minter::SgNameMinterQueryMsg;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use cw_utils::nonpayable;
-use sg_name_minter::{ParamsResponse, SgNameMinterQueryMsg};
 use sg_std::Response;
 
 // version info for migration info
@@ -28,7 +28,6 @@ pub fn instantiate(
     let config = Config {
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
-        minter_contract: None,
         /// 1% = 100, 50% = 5000
         mint_discount_bps: msg.mint_discount_bps,
     };
@@ -55,7 +54,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -65,39 +64,12 @@ pub fn execute(
         ExecuteMsg::RemoveAddresses { addresses } => {
             execute_remove_addresses(deps, info, addresses)
         }
-        ExecuteMsg::ProcessAddress { address } => execute_process_address(deps, info, address),
+        ExecuteMsg::ProcessAddress { address } => execute_process_address(deps, env, info, address),
         ExecuteMsg::UpdatePerAddressLimit { limit } => {
             execute_update_per_address_limit(deps, info, limit)
         }
-        ExecuteMsg::UpdateMinterContract { minter_contract } => {
-            execute_update_minter_contract(deps, info, minter_contract)
-        }
         ExecuteMsg::Purge {} => execute_purge(deps, info),
     }
-}
-
-pub fn execute_update_minter_contract(
-    deps: DepsMut,
-    info: MessageInfo,
-    minter_contract: String,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let minter_addr = deps.api.addr_validate(&minter_contract)?;
-    // Make sure the sender is the name minter contract
-    // This will fail if the sender cannot parse a response from the name minter contract
-    let _: ParamsResponse = deps
-        .querier
-        .query_wasm_smart(minter_addr.clone(), &SgNameMinterQueryMsg::Params {})?;
-
-    config.minter_contract = Some(minter_addr);
-    CONFIG.save(deps.storage, &config)?;
-    let event =
-        Event::new("update-minter-contract").add_attribute("minter_contract", minter_contract);
-    Ok(Response::default().add_event(event))
 }
 
 pub fn execute_update_admin(
@@ -191,16 +163,19 @@ pub fn execute_remove_addresses(
 
 pub fn execute_process_address(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     address: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
-    if let Some(minter_contract) = config.minter_contract {
-        if minter_contract != info.sender {
-            return Err(ContractError::Unauthorized {});
-        }
-    } else {
+    let minter = info.sender;
+
+    // query whitelists from minter to see if this one exists...
+    let whitelists: Vec<Addr> = deps
+        .querier
+        .query_wasm_smart(&minter, &SgNameMinterQueryMsg::Whitelists {})?;
+    if !whitelists.contains(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -221,7 +196,7 @@ pub fn execute_process_address(
     let event = Event::new("process-address")
         .add_attribute("address", address)
         .add_attribute("mint-count", (count + 1).to_string())
-        .add_attribute("sender", info.sender);
+        .add_attribute("sender", minter);
     Ok(Response::new().add_event(event))
 }
 

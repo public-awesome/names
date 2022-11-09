@@ -178,19 +178,7 @@ fn instantiate_contracts(
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
         .unwrap();
 
-    // 5. Update Whitelist with Name Minter
-    let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
-        minter_contract: MINTER.to_string(),
-    };
-    let res = app.execute_contract(
-        Addr::unchecked(ADMIN2),
-        Addr::unchecked(wl.clone()),
-        &msg,
-        &[],
-    );
-    assert!(res.is_ok());
-
-    // 6. Add Whitelist to Name Minter
+    // 5. Add Whitelist to Name Minter
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
@@ -318,7 +306,6 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 mod execute {
     use cw721::OperatorsResponse;
     use sg_name::NameResponse;
-    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
@@ -622,14 +609,14 @@ mod execute {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         // verify addr in wl
-        let res: WhitelistsResponse = app
+        let whitelists: Vec<Addr> = app
             .wrap()
             .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
             .unwrap();
 
-        assert_eq!(res.whitelists.len(), 1);
+        assert_eq!(whitelists.len(), 1);
 
-        res.whitelists.iter().find(|whitelist| {
+        whitelists.iter().find(|whitelist| {
             let included: bool = app
                 .wrap()
                 .query_wasm_smart(
@@ -674,7 +661,6 @@ mod execute {
 }
 
 mod admin {
-    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::ConfigResponse;
 
     use crate::msg::QueryMsg;
@@ -710,8 +696,8 @@ mod admin {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 1);
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), 1);
 
         let msg = WhitelistQueryMsg::Config {};
         let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
@@ -1485,7 +1471,6 @@ mod collection {
 
 mod whitelist {
     use crate::msg::QueryMsg;
-    use sg_name_minter::WhitelistsResponse;
     use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
 
     use super::*;
@@ -1501,11 +1486,11 @@ mod whitelist {
     fn add_remove_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
-        let res: WhitelistsResponse = app
+        let whitelists: Vec<Addr> = app
             .wrap()
             .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
             .unwrap();
-        let wl_count = res.whitelists.len();
+        let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
         };
@@ -1514,8 +1499,8 @@ mod whitelist {
         assert!(res.is_ok());
 
         let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), wl_count + 1);
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count + 1);
 
         let msg = ExecuteMsg::RemoveWhitelist {
             address: "whitelist".to_string(),
@@ -1524,8 +1509,8 @@ mod whitelist {
         assert!(res.is_ok());
 
         let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), wl_count);
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count);
     }
 
     #[test]
@@ -1548,17 +1533,6 @@ mod whitelist {
         let wl2 = app
             .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
             .unwrap();
-        // add minter to wl2
-        let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
-            minter_contract: MINTER.to_string(),
-        };
-        let res = app.execute_contract(
-            Addr::unchecked(ADMIN2),
-            Addr::unchecked(wl2.clone()),
-            &msg,
-            &[],
-        );
-        assert!(res.is_ok());
 
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
@@ -1635,17 +1609,6 @@ mod whitelist {
         let wl2 = app
             .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
             .unwrap();
-        // add minter to wl2
-        let msg = whitelist_updatable::msg::ExecuteMsg::UpdateMinterContract {
-            minter_contract: MINTER.to_string(),
-        };
-        let res = app.execute_contract(
-            Addr::unchecked(ADMIN2),
-            Addr::unchecked(wl2.clone()),
-            &msg,
-            &[],
-        );
-        assert!(res.is_ok());
 
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
@@ -1680,8 +1643,8 @@ mod whitelist {
         assert!(res.is_ok());
 
         let msg = QueryMsg::Whitelists {};
-        let res: WhitelistsResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.whitelists.len(), 2);
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), 2);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();

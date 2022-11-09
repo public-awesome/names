@@ -146,12 +146,13 @@ mod tests {
             .unwrap();
         assert_eq!(limit, 10);
 
-        // set minter_addr in whitelist
-        let msg = ExecuteMsg::UpdateMinterContract {
-            minter_contract: minter_addr.to_string(),
+        // add wl_addr to minter
+        let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
+            address: wl_addr.to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
+
         // process_address to increase mint count and check mint count incremented
         // execute_process_address
         let msg = ExecuteMsg::ProcessAddress {
@@ -328,14 +329,12 @@ mod tests {
             .unwrap();
         assert_eq!(res, 1);
 
-        // set minter_addr in whitelist
-        let msg = ExecuteMsg::UpdateMinterContract {
-            minter_contract: minter_addr.to_string(),
-        };
-        let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
-        assert!(res.is_ok());
-
         // surpass limit
+        let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
+            address: wl_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
         let res: bool = app
             .wrap()
             .query_wasm_smart(
@@ -369,12 +368,7 @@ mod tests {
         let msg = ExecuteMsg::ProcessAddress {
             address: "addr0007".to_string(),
         };
-        let res = app.execute_contract(
-            Addr::unchecked(minter_addr.clone()),
-            wl_addr.clone(),
-            &msg,
-            &[],
-        );
+        let res = app.execute_contract(Addr::unchecked(minter_addr), wl_addr.clone(), &msg, &[]);
         assert!(res.is_err());
 
         // purge
@@ -404,7 +398,6 @@ mod tests {
             .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
             .unwrap();
         assert_eq!(res.config.admin, Addr::unchecked(OTHER_ADMIN).to_string());
-        assert_eq!(res.config.minter_contract, Some(minter_addr));
         assert_eq!(res.config.per_address_limit, new_per_address_limit);
     }
 }
