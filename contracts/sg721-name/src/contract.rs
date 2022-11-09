@@ -97,7 +97,7 @@ pub fn execute_update_metadata(
 }
 
 pub fn execute_associate_address(
-    mut deps: DepsMut,
+    deps: DepsMut,
     info: MessageInfo,
     name: String,
     address: Option<String>,
@@ -135,12 +135,12 @@ pub fn execute_associate_address(
     if let Some(token_uri_key) = token_uri_key {
         // if addr already exists, wipe it before adding new name to addr
         if REVERSE_MAP.has(deps.storage, &token_uri_key) {
-            rm_reverse_map(&mut deps, &name)?;
+            REVERSE_MAP.remove(deps.storage, &token_uri_key);
         }
         REVERSE_MAP.save(deps.storage, &token_uri_key, &name)?;
-    } else if token.token_uri.is_some() {
+    } else if let Some(token_uri_key) = token.token_uri {
         // if no new addr, and existing addr, wipe entry from reverse map
-        rm_reverse_map(&mut deps, &name)?;
+        REVERSE_MAP.remove(deps.storage, &deps.api.addr_validate(&token_uri_key)?);
     }
 
     let event = Event::new("associate-address")
