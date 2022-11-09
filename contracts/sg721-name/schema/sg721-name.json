@@ -141,7 +141,7 @@
         "additionalProperties": false
       },
       {
-        "description": "Set an address for name reverse lookup Can be an EOA or a contract address",
+        "description": "Set an address for name reverse lookup and updates token_uri Can be an EOA or a contract address.",
         "type": "object",
         "required": [
           "associate_address"
