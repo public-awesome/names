@@ -1,8 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Uint128;
-use sg_name_minter::{
-    CollectionResponse, Config, ConfigResponse, ParamsResponse, WhitelistsResponse,
-};
+use cosmwasm_std::{Addr, Uint128};
+use sg_name_minter::{CollectionResponse, Config, ConfigResponse, ParamsResponse};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -57,7 +55,7 @@ pub enum SudoMsg {
 pub enum QueryMsg {
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
-    #[returns(WhitelistsResponse)]
+    #[returns(Vec<Addr>)]
     Whitelists {},
     #[returns(CollectionResponse)]
     Collection {},

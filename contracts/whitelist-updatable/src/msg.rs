@@ -28,9 +28,6 @@ pub enum ExecuteMsg {
     UpdatePerAddressLimit {
         limit: u32,
     },
-    UpdateMinterContract {
-        minter_contract: String,
-    },
     Purge {},
 }
 
