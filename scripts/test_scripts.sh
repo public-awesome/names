@@ -1,6 +1,8 @@
 # test all contract functionality in this script
 
 # pause and unpause mint
+./exec_pause.sh true
+./exec_pause.sh false
 
 # mint a new token
 name=$(openssl rand -hex 20);
@@ -42,3 +44,5 @@ EOF
 # accept bid
 bidder=$(starsd keys show $BIDDER | jq -r '.address')
 ./exec_accept_bid.sh $name $bidder
+
+# make new whitelist
