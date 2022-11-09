@@ -1,3 +1,5 @@
+KEY=$(starsd keys show $USER | jq -r .name)
+
 MSG=$(cat <<EOF
 {
   "collection_code_id": $COLLECTION_CODE_ID,
@@ -22,7 +24,7 @@ if [ "$ADMIN_MULTISIG" = true ] ; then
     --generate-only > unsignedTx.json
 
   starsd tx sign unsignedTx.json \
-    --multisig=$ADMIN --from $USER --output-document=$USER.json \
+    --multisig=$ADMIN --from $USER --output-document=$KEY.json \
     --chain-id $CHAIN_ID
 else
   echo 'Using single signer'
