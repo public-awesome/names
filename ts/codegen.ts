@@ -14,6 +14,10 @@ codegen({
       name: "Sg721Name",
       dir: "../contracts/sg721-name/schema",
     },
+    {
+      name: "WhitelistUpdatable",
+      dir: "../contracts/whitelist-updatable/schema",
+    },
   ],
   outPath: "./src/",
 

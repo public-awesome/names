@@ -13,6 +13,9 @@ import * as _5 from "./NameMinter.message-composer";
 import * as _6 from "./Sg721Name.types";
 import * as _7 from "./Sg721Name.client";
 import * as _8 from "./Sg721Name.message-composer";
+import * as _9 from "./WhitelistUpdatable.types";
+import * as _10 from "./WhitelistUpdatable.client";
+import * as _11 from "./WhitelistUpdatable.message-composer";
 export namespace contracts {
   export const NameMarketplace = { ..._0,
     ..._1,
@@ -25,5 +28,9 @@ export namespace contracts {
   export const Sg721Name = { ..._6,
     ..._7,
     ..._8
+  };
+  export const WhitelistUpdatable = { ..._9,
+    ..._10,
+    ..._11
   };
 }
