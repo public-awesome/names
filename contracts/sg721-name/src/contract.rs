@@ -104,6 +104,7 @@ pub fn execute_associate_address(
 ) -> Result<Response, ContractError> {
     let sender = info.sender;
     let mut token_uri_key: Option<Addr> = None;
+    let mut prev_token_id: Option<String> = None;
     only_owner(deps.as_ref(), &sender, &name)?;
 
     let token_uri = match address {
@@ -117,10 +118,31 @@ pub fn execute_associate_address(
         None => None,
     };
 
-    let token = Sg721NameContract::default()
-        .tokens
-        .load(deps.storage, &name)?;
+    // 1. use reverse map to find previous name / token_id for address
+    if let Some(addr) = token_uri_key.as_ref() {
+        if REVERSE_MAP.has(deps.storage, addr) {
+            prev_token_id = Some(REVERSE_MAP.load(deps.storage, addr)?);
+            // 2. remove old token_uri from reverse map
+            REVERSE_MAP.remove(deps.storage, addr);
+        }
+    }
 
+    // 3. remove old token_uri / address from previous name
+    if let Some(token_id) = prev_token_id {
+        Sg721NameContract::default().tokens.update(
+            deps.storage,
+            &token_id,
+            |token| match token {
+                Some(mut token_info) => {
+                    token_info.token_uri = None;
+                    Ok(token_info)
+                }
+                None => Err(ContractError::NameNotFound {}),
+            },
+        )?;
+    }
+
+    // 4. associate new token_uri / address with new name / token_id
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &name, |token| match token {
@@ -131,16 +153,9 @@ pub fn execute_associate_address(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    // save addr in reverse map if present
+    // 5. save new reverse map entry
     if let Some(token_uri_key) = token_uri_key {
-        // if addr already exists, wipe it before adding new name to addr
-        if REVERSE_MAP.has(deps.storage, &token_uri_key) {
-            REVERSE_MAP.remove(deps.storage, &token_uri_key);
-        }
         REVERSE_MAP.save(deps.storage, &token_uri_key, &name)?;
-    } else if let Some(token_uri_key) = token.token_uri {
-        // if no new addr, and existing addr, wipe entry from reverse map
-        REVERSE_MAP.remove(deps.storage, &deps.api.addr_validate(&token_uri_key)?);
     }
 
     let event = Event::new("associate-address")

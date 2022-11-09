@@ -304,8 +304,9 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 }
 
 mod execute {
-    use cw721::OperatorsResponse;
-    use sg_name::NameResponse;
+    use cw721::{NftInfoResponse, OperatorsResponse};
+    use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
+    use sg_name::{Metadata, NameResponse};
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
@@ -529,6 +530,30 @@ mod execute {
             )
             .unwrap();
         assert_eq!(res.name, name2.to_string());
+
+        // prev token_id should reset token_uri to None
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.token_uri, None);
+
+        // token uri should be user address
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: name2.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.token_uri, Some(user.to_string()));
 
         // remove address
         let msg = SgNameExecuteMsg::AssociateAddress {

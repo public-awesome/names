@@ -24,8 +24,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg<T> {
     /// Set name marketplace contract address
     SetNameMarketplace { address: String },
-    /// Set an address for name reverse lookup
-    /// Can be an EOA or a contract address
+    /// Set an address for name reverse lookup and updates token_uri
+    /// Can be an EOA or a contract address.
     AssociateAddress {
         name: String,
         address: Option<String>,
