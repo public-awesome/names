@@ -146,6 +146,13 @@ mod tests {
             .unwrap();
         assert_eq!(limit, 10);
 
+        // add wl_addr to minter
+        let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
+            address: wl_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
+
         // process_address to increase mint count and check mint count incremented
         // execute_process_address
         let msg = ExecuteMsg::ProcessAddress {
@@ -323,6 +330,11 @@ mod tests {
         assert_eq!(res, 1);
 
         // surpass limit
+        let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
+            address: wl_addr.to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
+        assert!(res.is_ok());
         let res: bool = app
             .wrap()
             .query_wasm_smart(
