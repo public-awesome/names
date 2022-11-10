@@ -57,7 +57,7 @@ bidder_addr=$(starsd keys show $BIDDER | jq -r '.address')
 WL2=$(bash 05-init_wl.sh | jq -r '.logs[0].events[0].attributes[0].value')
 
 # add addresses to whitelist
-./exec_wl_add_addrs.sh "['$BIDDER']"
+./exec_wl_add_addrs.sh "[\"$BIDDER\"]"
 
 # add wl to minter
 ./06-exec_minter_add_wl.sh $WL2
@@ -67,8 +67,10 @@ name=$(openssl rand -hex 20);
 ./exec_mint_specific_user.sh $name $BIDDER
 
 # update public time
-TIME=$(date -v+1M +%s)
+TIME=$(date -v+1S +%s)
 ./exec_update_public_time.sh "$(echo $TIME)000000000"
+
+sleep 1
 
 # test public mint and whitelist mint
 name=$(openssl rand -hex 20);
