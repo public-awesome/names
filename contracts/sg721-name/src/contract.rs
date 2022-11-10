@@ -41,44 +41,41 @@ pub fn execute_update_metadata(
         .load(deps.storage, &token_id)?;
 
     // Update to new metadata or current metadata
-    match metadata {
-        None => {
-            // reset metadata to empty
-            token_info.extension = Metadata::default();
-            Sg721NameContract::default()
-                .tokens
-                .save(deps.storage, &token_id, &token_info)?;
+    if let Some(metadata) = metadata {
+        // update image nft
+        if let Some(image_nft) = metadata.image_nft {
+            token_info.extension.image_nft = Some(image_nft);
         }
-        Some(metadata) => {
-            // update image nft
-            token_info.extension.image_nft = match metadata.image_nft {
-                None => token_info.extension.image_nft,
-                Some(image_nft) => Some(image_nft),
-            };
-            // update records. If empty, do nothing.
-            if !metadata.records.is_empty() {
-                for record in metadata.records.iter() {
-                    // updated records should reset verified to None
-                    let mut updated_record = record.clone();
-                    updated_record.verified = None;
 
-                    validate_and_sanitize_record(&updated_record)?;
+        // update records. If empty, do nothing.
+        if !metadata.records.is_empty() {
+            for record in metadata.records.iter() {
+                // updated records should reset verified to None
+                let mut updated_record = record.clone();
+                updated_record.verified = None;
 
-                    // update same record name
-                    token_info
-                        .extension
-                        .records
-                        .retain(|r| r.name != updated_record.name);
-                    token_info.extension.records.push(updated_record.clone());
-                }
-                // check record length
-                if token_info.extension.records.len() > max_record_count as usize {
-                    return Err(ContractError::TooManyRecords {
-                        max: max_record_count,
-                    });
-                }
-            };
-        }
+                validate_and_sanitize_record(&updated_record)?;
+
+                // update same record name
+                token_info
+                    .extension
+                    .records
+                    .retain(|r| r.name != updated_record.name);
+                token_info.extension.records.push(updated_record.clone());
+            }
+            // check record length
+            if token_info.extension.records.len() > max_record_count as usize {
+                return Err(ContractError::TooManyRecords {
+                    max: max_record_count,
+                });
+            }
+        };
+    } else {
+        // reset metadata to empty
+        token_info.extension = Metadata::default();
+        Sg721NameContract::default()
+            .tokens
+            .save(deps.storage, &token_id, &token_info)?;
     };
 
     Sg721NameContract::default()
@@ -90,6 +87,7 @@ pub fn execute_update_metadata(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
+
     let event = Event::new("update-metadata")
         .add_attribute("token_id", token_id)
         .add_attribute("owner", info.sender);
@@ -252,11 +250,11 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
         .tokens
         .save(deps.storage, token_id, &token)?;
 
-    rm_reverse_map(deps, token_id)?;
+    remove_reverse_mapping(deps, token_id)?;
     Ok(())
 }
 
-fn rm_reverse_map(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
+fn remove_reverse_mapping(deps: &mut DepsMut, token_id: &str) -> StdResult<()> {
     let mut token = Sg721NameContract::default()
         .tokens
         .load(deps.storage, token_id)?;
