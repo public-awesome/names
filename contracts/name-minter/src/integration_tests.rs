@@ -9,6 +9,7 @@ use cw_multi_test::{
 };
 use name_marketplace::msg::{
     AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
+    SudoMsg as MarketplaceSudoMsg,
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
@@ -682,6 +683,33 @@ mod execute {
 
         let res = mint_and_list(&mut app, "name2", USER, None);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn update_mkt_sudo() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        let res = mint_and_list(&mut app, NAME, USER, None);
+        assert!(res.is_ok());
+
+        let msg = MarketplaceSudoMsg::UpdateParams {
+            trading_fee_bps: Some(1000u64),
+            min_price: Some(Uint128::from(1000u128)),
+            ask_interval: Some(1000),
+        };
+
+        let res = app.wasm_sudo(Addr::unchecked(MKT), &msg);
+        assert!(res.is_ok());
+
+        let res: name_marketplace::msg::ParamsResponse = app
+            .wrap()
+            .query_wasm_smart(Addr::unchecked(MKT), &QueryMsg::Params {})
+            .unwrap();
+        let params = res.params;
+
+        assert_eq!(params.trading_fee_percent, Decimal::percent(10));
+        assert_eq!(params.min_price, Uint128::from(1000u128));
+        assert_eq!(params.ask_interval, 1000);
     }
 }
 
