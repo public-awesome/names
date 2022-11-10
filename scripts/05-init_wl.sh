@@ -4,13 +4,13 @@ MSG=$(cat <<EOF
 {
   "mint_discount_bps": 5000,  
   "per_address_limit": 1000,
-  "addresses": ["$ADMIN", "$USER", "$BIDDER"]
+  "addresses": ["$ADMIN", "$USER"]
 }
 EOF
 )
 
 if [ "$ADMIN_MULTISIG" = true ] ; then
-  echo 'Using multisig'
+#   echo 'Using multisig'
   starsd tx wasm instantiate $WHITELIST_CODE_ID "$MSG" --label "WhitelistUpdatable" \
     --no-admin \
     --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
@@ -21,7 +21,7 @@ if [ "$ADMIN_MULTISIG" = true ] ; then
     --multisig=$ADMIN --from $USER --output-document=$KEY.json \
     --chain-id $CHAIN_ID
 else
-  echo 'Using single signer'
+#   echo 'Using single signer'
   starsd tx wasm instantiate $WHITELIST_CODE_ID "$MSG" --label "WhitelistUpdatable" \
     --no-admin \
     --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
