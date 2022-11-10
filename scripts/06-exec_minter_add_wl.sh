@@ -3,7 +3,7 @@ KEY=$(starsd keys show $USER | jq -r .name)
 MSG=$(cat <<EOF
 {
   "add_whitelist": {
-    "address": "$WL"
+    "address": "$1"
   }
 }
 EOF
