@@ -50,6 +50,7 @@ pub enum SudoMsg {
     UpdateParams {
         trading_fee_bps: Option<u64>,
         min_price: Option<Uint128>,
+        ask_interval: Option<u64>,
     },
     /// Update the contract address of the name minter
     UpdateNameMinter { minter: String },
