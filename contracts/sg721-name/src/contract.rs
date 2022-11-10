@@ -102,65 +102,60 @@ pub fn execute_associate_address(
     name: String,
     address: Option<String>,
 ) -> Result<Response, ContractError> {
-    let sender = info.sender;
-    let mut token_uri_key: Option<Addr> = None;
-    let mut prev_token_id: Option<String> = None;
-    only_owner(deps.as_ref(), &sender, &name)?;
+    only_owner(deps.as_ref(), &info.sender, &name)?;
 
-    let token_uri = match address {
-        Some(address) => {
-            let addr = deps.api.addr_validate(&address)?;
-            token_uri_key = Some(addr.clone());
-            validate_address(deps.as_ref(), &sender, &addr)?;
-
-            Some(addr.to_string())
-        }
-        None => None,
-    };
+    let token_uri = address
+        .map(|address| {
+            deps.api
+                .addr_validate(&address)
+                .map(|addr| validate_address(deps.as_ref(), &info.sender, addr))?
+        })
+        .transpose()?;
 
     // 1. use reverse map to find previous name / token_id for address
-    if let Some(addr) = token_uri_key.as_ref() {
-        if REVERSE_MAP.has(deps.storage, addr) {
-            prev_token_id = Some(REVERSE_MAP.load(deps.storage, addr)?);
-            // 2. remove old token_uri from reverse map
-            REVERSE_MAP.remove(deps.storage, addr);
-        }
-    }
+    // 2. remove old token_uri from reverse map
+    let prev_token_id = token_uri
+        .clone()
+        .and_then(|addr| {
+            REVERSE_MAP.has(deps.storage, &addr).then(|| {
+                REVERSE_MAP.load(deps.storage, &addr).map(|token_id| {
+                    REVERSE_MAP.remove(deps.storage, &addr);
+                    token_id
+                })
+            })
+        })
+        .transpose()?;
 
     // 3. remove old token_uri / address from previous name
-    if let Some(token_id) = prev_token_id {
-        Sg721NameContract::default().tokens.update(
-            deps.storage,
-            &token_id,
-            |token| match token {
+    prev_token_id.map(|token_id| {
+        Sg721NameContract::default()
+            .tokens
+            .update(deps.storage, &token_id, |token| match token {
                 Some(mut token_info) => {
                     token_info.token_uri = None;
                     Ok(token_info)
                 }
                 None => Err(ContractError::NameNotFound {}),
-            },
-        )?;
-    }
+            })
+    });
 
     // 4. associate new token_uri / address with new name / token_id
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &name, |token| match token {
             Some(mut token_info) => {
-                token_info.token_uri = token_uri;
+                token_info.token_uri = token_uri.clone().map(|addr| addr.to_string());
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
 
     // 5. save new reverse map entry
-    if let Some(token_uri_key) = token_uri_key {
-        REVERSE_MAP.save(deps.storage, &token_uri_key, &name)?;
-    }
+    token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
     let event = Event::new("associate-address")
         .add_attribute("token_id", name)
-        .add_attribute("owner", sender);
+        .add_attribute("owner", info.sender);
 
     Ok(Response::new().add_event(event))
 }
@@ -585,14 +580,14 @@ pub fn transcode(address: &str) -> StdResult<String> {
     Ok(bech32::encode("stars", data))
 }
 
-fn validate_address(deps: Deps, sender: &Addr, addr: &Addr) -> Result<(), ContractError> {
+fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, ContractError> {
     // we have an EOA registration
-    if sender == addr {
-        return Ok(());
+    if sender == &addr {
+        return Ok(addr);
     }
 
     let ContractInfoResponse { admin, creator, .. } =
-        deps.querier.query_wasm_contract_info(addr)?;
+        deps.querier.query_wasm_contract_info(&addr)?;
 
     // If the sender is not the admin or creator, return an error
     if admin.map_or(true, |a| &a != sender) && &creator != sender {
@@ -600,5 +595,5 @@ fn validate_address(deps: Deps, sender: &Addr, addr: &Addr) -> Result<(), Contra
     }
 
     // we have a contract registration
-    Ok(())
+    Ok(addr)
 }
