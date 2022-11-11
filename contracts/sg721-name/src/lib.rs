@@ -35,7 +35,10 @@ pub mod entry {
         execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
         execute_update_text_record, query_name, query_name_marketplace, query_params,
     };
-    use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use cosmwasm_std::{
+        to_binary, Binary, ContractInfoResponse, Deps, DepsMut, Env, MessageInfo, StdResult,
+        WasmQuery,
+    };
     use cw_utils::maybe_addr;
     use sg721_base::ContractError as Sg721ContractError;
     use sg_std::Response;
@@ -48,6 +51,16 @@ pub mod entry {
         msg: InstantiateMsg,
     ) -> Result<Response, Sg721ContractError> {
         cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+        // check sender is a contract
+        let req = WasmQuery::ContractInfo {
+            contract_addr: info.clone().sender.into(),
+        }
+        .into();
+        let _res: ContractInfoResponse = deps
+            .querier
+            .query(&req)
+            .map_err(|_| Sg721ContractError::Unauthorized {})?;
 
         // Initialize max record count to 10, can be changed by sudo params
         SUDO_PARAMS.save(
