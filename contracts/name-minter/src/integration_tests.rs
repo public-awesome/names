@@ -306,13 +306,52 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 
 mod execute {
     use cw721::{NftInfoResponse, OperatorsResponse};
-    use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
+    use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
+    use sg721_name::msg::{
+        InstantiateMsg as Sg721NameInstantiateMsg, QueryMsg as Sg721NameQueryMsg,
+    };
     use sg_name::{Metadata, NameResponse};
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
 
     use super::*;
+
+    #[test]
+    fn check_contract_init() {
+        let mut app = instantiate_contracts(None, None, None);
+        let sg721_id = app.store_code(contract_collection());
+        let msg = Sg721NameInstantiateMsg {
+            verifier: None,
+            base_init_msg: {
+                Sg721InstantiateMsg {
+                    name: "Stargaze Collection".to_string(),
+                    symbol: "SYM".to_string(),
+                    minter: ADMIN.to_string(),
+                    collection_info: CollectionInfo {
+                        creator: ADMIN.to_string(),
+                        description: "Something's coming".to_string(),
+                        image: "ipfs://reallyhere".to_string(),
+                        external_link: None,
+                        explicit_content: None,
+                        start_trading_time: None,
+                        royalty_info: None,
+                    },
+                }
+            },
+        };
+
+        let res = app.instantiate_contract(
+            sg721_id,
+            Addr::unchecked(ADMIN),
+            &msg,
+            &[],
+            "sg721-only",
+            None,
+        );
+        // should not let create the contract.
+        assert!(res.is_err());
+    }
 
     #[test]
     fn check_approvals() {
