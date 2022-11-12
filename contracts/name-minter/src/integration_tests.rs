@@ -905,7 +905,7 @@ mod query {
         bid(&mut app, BIDDER, BID_AMOUNT);
         bid(&mut app, BIDDER2, BID_AMOUNT * 5);
 
-        let msg = MarketplaceQueryMsg::BidsBySeller {
+        let msg = MarketplaceQueryMsg::BidsForSeller {
             seller: USER.to_string(),
         };
         let res: BidsResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
