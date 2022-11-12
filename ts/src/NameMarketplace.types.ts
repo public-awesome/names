@@ -107,7 +107,7 @@ export type QueryMsg = {
     start_before?: BidOffset | null;
   };
 } | {
-  bids_by_seller: {
+  bids_for_seller: {
     seller: string;
   };
 } | {

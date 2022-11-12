@@ -1,6 +1,6 @@
 {
   "contract_name": "name-marketplace",
-  "contract_version": "0.17.0",
+  "contract_version": "0.18.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -607,10 +607,10 @@
         "description": "Get all bids for a specific account",
         "type": "object",
         "required": [
-          "bids_by_seller"
+          "bids_for_seller"
         ],
         "properties": {
-          "bids_by_seller": {
+          "bids_for_seller": {
             "type": "object",
             "required": [
               "seller"
@@ -1241,7 +1241,7 @@
         }
       }
     },
-    "bids_by_seller": {
+    "bids_for_seller": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "BidsResponse",
       "type": "object",

@@ -66,8 +66,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_before,
             limit,
         )?),
-        QueryMsg::BidsBySeller { seller } => {
-            to_binary(&query_bids_by_seller(deps, api.addr_validate(&seller)?)?)
+        QueryMsg::BidsForSeller { seller } => {
+            to_binary(&query_bids_for_seller(deps, api.addr_validate(&seller)?)?)
         }
         QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
@@ -219,7 +219,7 @@ pub fn query_bids_by_bidder(
     Ok(BidsResponse { bids })
 }
 
-pub fn query_bids_by_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse> {
+pub fn query_bids_for_seller(deps: Deps, seller: Addr) -> StdResult<BidsResponse> {
     let bids: Vec<_> = asks()
         .idx
         .seller

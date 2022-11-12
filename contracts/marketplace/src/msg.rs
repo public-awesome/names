@@ -164,7 +164,7 @@ pub enum QueryMsg {
     },
     /// Get all bids for a specific account
     #[returns(BidsResponse)]
-    BidsBySeller { seller: String },
+    BidsForSeller { seller: String },
     /// Get the highest bid for a name
     #[returns(BidResponse)]
     HighestBid { token_id: TokenId },
