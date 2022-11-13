@@ -129,10 +129,10 @@ pub fn execute_associate_address(
     let prev_token_info: TokenInfo<Metadata> = Sg721NameContract::default()
         .tokens
         .load(deps.storage, &name)?;
-    prev_token_info.token_uri.map(|address| {
+    if let Some(address) = prev_token_info.token_uri {
         let addr = deps.api.addr_validate(&address).unwrap();
         REVERSE_MAP.remove(deps.storage, &addr);
-    });
+    }
 
     // 3. remove old token_uri / address from previous name
     prev_token_id.map(|token_id| {
