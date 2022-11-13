@@ -112,8 +112,7 @@ pub fn execute_associate_address(
         })
         .transpose()?;
 
-    // 1. use reverse map to find previous name / token_id for address
-    // 2. remove old token_uri from reverse map
+    // 1. look up prev token_info from sg721
     let prev_token_id = token_uri
         .clone()
         .and_then(|addr| {
@@ -125,6 +124,15 @@ pub fn execute_associate_address(
             })
         })
         .transpose()?;
+
+    // 2. remove old token_uri from reverse map
+    let prev_token_info: TokenInfo<Metadata> = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &name)?;
+    prev_token_info.token_uri.map(|address| {
+        let addr = deps.api.addr_validate(&address).unwrap();
+        REVERSE_MAP.remove(deps.storage, &addr);
+    });
 
     // 3. remove old token_uri / address from previous name
     prev_token_id.map(|token_id| {

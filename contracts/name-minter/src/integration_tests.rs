@@ -305,6 +305,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 }
 
 mod execute {
+    use cosmwasm_std::StdError;
     use cw721::{NftInfoResponse, OperatorsResponse};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
     use sg_name::{Metadata, NameResponse};
@@ -568,6 +569,40 @@ mod execute {
             &[],
         );
         assert!(res.is_ok());
+
+        // confirm removed from nft info
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(
+                Addr::unchecked(COLLECTION),
+                &Sg721NameQueryMsg::NftInfo {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.token_uri, None);
+
+        // remove address
+        let msg = SgNameExecuteMsg::AssociateAddress {
+            name: name2.to_string(),
+            address: None,
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(user),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // confirm removed from reverse names map
+        let res: Result<NameResponse, StdError> = app.wrap().query_wasm_smart(
+            Addr::unchecked(COLLECTION),
+            &SgNameQueryMsg::Name {
+                address: user.to_string(),
+            },
+        );
+        assert!(res.is_err());
     }
 
     #[test]
