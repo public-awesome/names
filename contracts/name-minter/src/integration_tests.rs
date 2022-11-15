@@ -53,6 +53,16 @@ pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
     Box::new(contract)
 }
 
+//
+pub fn contract_nft() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        sg721_base::entry::execute,
+        sg721_base::entry::instantiate,
+        sg721_base::entry::query,
+    );
+    Box::new(contract)
+}
+
 const USER: &str = "user";
 const USER2: &str = "user2";
 const USER3: &str = "user3";
@@ -1025,7 +1035,7 @@ mod collection {
 
     use super::*;
 
-    fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
+    pub(crate) fn transfer(app: &mut StargazeApp, from: &str, to: &str) {
         let msg = Sg721NameExecuteMsg::TransferNft {
             recipient: to.to_string(),
             token_id: NAME.to_string(),
@@ -1818,5 +1828,59 @@ mod public_start_time {
         // mint succeeds w new mint start time
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
+    }
+}
+
+mod eoa_owner {
+    use super::*;
+
+    use collection::transfer;
+
+    use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
+
+    #[test]
+    fn transfer_to_eoa() {
+        let mut app = instantiate_contracts(
+            None,
+            Some(ADMIN.to_string()),
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
+        );
+
+        let nft_id = app.store_code(contract_nft());
+
+        let init_msg = Sg721InstantiateMsg {
+            name: "NFT".to_string(),
+            symbol: "NFT".to_string(),
+            minter: Addr::unchecked(MINTER).to_string(),
+            collection_info: CollectionInfo {
+                creator: ADMIN.to_string(),
+                description: "Stargaze Names".to_string(),
+                image: "ipfs://example.com".to_string(),
+                external_link: None,
+                explicit_content: None,
+                start_trading_time: None,
+                royalty_info: None,
+            },
+        };
+        let nft_addr = app
+            .instantiate_contract(
+                nft_id,
+                Addr::unchecked(MINTER),
+                &init_msg,
+                &[],
+                "NFT",
+                Some(ADMIN.to_string()),
+            )
+            .unwrap();
+
+        // mint and transfer to collection
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+        transfer(&mut app, USER, &nft_addr.to_string());
+        let owner = owner_of(&app, NAME.to_string());
+        assert_eq!(owner, nft_addr.to_string());
+        // transfer from collection back to personal wallet
+        transfer(&mut app, &nft_addr.to_string(), USER);
+        let owner = owner_of(&app, NAME.to_string());
+        assert_eq!(owner, USER.to_string());
     }
 }
