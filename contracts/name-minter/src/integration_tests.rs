@@ -1875,7 +1875,7 @@ mod eoa_owner {
 
         // mint and transfer to collection
         mint_and_list(&mut app, NAME, USER, None).unwrap();
-        transfer(&mut app, USER, &nft_addr.to_string());
+        transfer(&mut app, USER, nft_addr.as_ref());
         let owner = owner_of(&app, NAME.to_string());
         assert_eq!(owner, nft_addr.to_string());
 
@@ -1893,7 +1893,7 @@ mod eoa_owner {
         assert!(res.is_ok());
 
         // transfer from collection back to personal wallet
-        transfer(&mut app, &nft_addr.to_string(), USER);
+        transfer(&mut app, nft_addr.as_ref(), USER);
         let owner = owner_of(&app, NAME.to_string());
         assert_eq!(owner, USER.to_string());
     }
