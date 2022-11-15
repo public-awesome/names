@@ -1878,6 +1878,20 @@ mod eoa_owner {
         transfer(&mut app, USER, &nft_addr.to_string());
         let owner = owner_of(&app, NAME.to_string());
         assert_eq!(owner, nft_addr.to_string());
+
+        // associate contract
+        let msg = SgNameExecuteMsg::AssociateAddress {
+            name: NAME.to_string(),
+            address: Some(nft_addr.to_string()),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(nft_addr.clone()),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
         // transfer from collection back to personal wallet
         transfer(&mut app, &nft_addr.to_string(), USER);
         let owner = owner_of(&app, NAME.to_string());
