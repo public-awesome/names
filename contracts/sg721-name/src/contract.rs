@@ -104,6 +104,17 @@ pub fn execute_associate_address(
 ) -> Result<Response, ContractError> {
     only_owner(deps.as_ref(), &info.sender, &name)?;
 
+    // 1. remove old token_uri from reverse map if it exists
+    Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, &name)
+        .map(|prev_token_info| {
+            if let Some(address) = prev_token_info.token_uri {
+                REVERSE_MAP.remove(deps.storage, &Addr::unchecked(address));
+            }
+        })?;
+
+    // 2. validate the new address
     let token_uri = address
         .map(|address| {
             deps.api
@@ -112,29 +123,12 @@ pub fn execute_associate_address(
         })
         .transpose()?;
 
-    // 1. look up prev token_info from sg721
+    // 3. look up prev name if it exists
     let prev_token_id = token_uri
         .clone()
-        .and_then(|addr| {
-            REVERSE_MAP.has(deps.storage, &addr).then(|| {
-                REVERSE_MAP.load(deps.storage, &addr).map(|token_id| {
-                    REVERSE_MAP.remove(deps.storage, &addr);
-                    token_id
-                })
-            })
-        })
-        .transpose()?;
+        .and_then(|addr| REVERSE_MAP.may_load(deps.storage, &addr).unwrap_or(None));
 
-    // 2. remove old token_uri from reverse map
-    let prev_token_info: TokenInfo<Metadata> = Sg721NameContract::default()
-        .tokens
-        .load(deps.storage, &name)?;
-    if let Some(address) = prev_token_info.token_uri {
-        let addr = deps.api.addr_validate(&address).unwrap();
-        REVERSE_MAP.remove(deps.storage, &addr);
-    }
-
-    // 3. remove old token_uri / address from previous name
+    // 4. remove old token_uri / address from previous name
     prev_token_id.map(|token_id| {
         Sg721NameContract::default()
             .tokens
@@ -147,7 +141,7 @@ pub fn execute_associate_address(
             })
     });
 
-    // 4. associate new token_uri / address with new name / token_id
+    // 5. associate new token_uri / address with new name / token_id
     Sg721NameContract::default()
         .tokens
         .update(deps.storage, &name, |token| match token {
@@ -158,7 +152,7 @@ pub fn execute_associate_address(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    // 5. save new reverse map entry
+    // 6. save new reverse map entry
     token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
     let event = Event::new("associate-address")
