@@ -123,13 +123,13 @@ pub fn execute_associate_address(
         })
         .transpose()?;
 
-    // 3. look up prev name if it exists
-    let prev_token_id = token_uri
+    // 3. look up prev name if it exists for the new address
+    let old_name = token_uri
         .clone()
         .and_then(|addr| REVERSE_MAP.may_load(deps.storage, &addr).unwrap_or(None));
 
     // 4. remove old token_uri / address from previous name
-    prev_token_id.map(|token_id| {
+    old_name.map(|token_id| {
         Sg721NameContract::default()
             .tokens
             .update(deps.storage, &token_id, |token| match token {
