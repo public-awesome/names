@@ -2,7 +2,7 @@ MSG=$(cat <<EOF
 {
   "update_metadata": {
     "name": "$1",
-    "metadata": "$2"
+    "metadata": $2
 
   }
 }
