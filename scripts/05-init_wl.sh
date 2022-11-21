@@ -3,7 +3,7 @@ KEY=$(starsd keys show $USER | jq -r .name)
 MSG=$(cat <<EOF
 {
   "mint_discount_bps": 5000,  
-  "per_address_limit": 1000,
+  "per_address_limit": 1,
   "addresses": ["$ADMIN", "$USER"]
 }
 EOF
