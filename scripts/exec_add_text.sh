@@ -1,12 +1,12 @@
 MSG=$(cat <<EOF
 {
-	"add_text_record": {
-		"name": "$1",
-		"record": {
-			"name": "twitter",
-			"value": "something"
-		}
-	}
+  "update_text_record": {
+    "name": "$1",
+    "record": {
+      "name": "twitter",
+      "value": "something"
+    }
+  }
 }
 EOF
 )
