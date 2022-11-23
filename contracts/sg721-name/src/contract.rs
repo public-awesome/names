@@ -390,7 +390,8 @@ pub fn execute_add_text_record(
     let event = Event::new("add-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record.name);
+        .add_attribute("record_name", record.name)
+        .add_attribute("record_value", record.value);
     Ok(Response::new().add_event(event))
 }
 
@@ -421,7 +422,7 @@ pub fn execute_remove_text_record(
     let event = Event::new("remove-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record_name);
+        .add_attribute("record_name", record_name);
     Ok(Response::new().add_event(event))
 }
 
@@ -457,7 +458,8 @@ pub fn execute_update_text_record(
     let event = Event::new("update-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record.name);
+        .add_attribute("record_name", record.name)
+        .add_attribute("record_value", record.value);
     Ok(Response::new().add_event(event))
 }
 
