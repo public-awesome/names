@@ -92,7 +92,7 @@ pub fn execute_update_metadata(
 
     let mut event = Event::new("update-metadata")
         .add_attribute("token_id", token_id)
-        .add_attribute("ow;ner", info.sender);
+        .add_attribute("owner", info.sender);
 
     if let Some(metadata) = metadata_event_info {
         event = event.add_attribute("metadata", metadata);
