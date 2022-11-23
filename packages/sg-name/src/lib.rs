@@ -1,5 +1,3 @@
-use std::fmt;
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
@@ -36,17 +34,6 @@ impl TextRecord {
 pub struct Metadata {
     pub image_nft: Option<NFT>,
     pub records: Vec<TextRecord>,
-}
-
-impl fmt::Display for Metadata {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Customize so only `x` and `y` are denoted.
-        write!(
-            f,
-            "image_nft: {:?}, records: {:?}",
-            self.image_nft, self.records
-        )
-    }
 }
 
 #[cw_serde]
