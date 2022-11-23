@@ -75,7 +75,6 @@ pub fn execute_update_metadata(
             }
         };
     } else {
-        event = event.add_attribute("metadata", "");
         // reset metadata to empty
         token_info.extension = Metadata::default();
         Sg721NameContract::default()
@@ -355,8 +354,6 @@ pub fn execute_update_image_nft(
 
     if let Some(nft) = nft {
         event = event.add_attribute("image_nft", nft.into_json_string());
-    } else {
-        event = event.add_attribute("image_nft", "");
     }
 
     Ok(Response::new().add_event(event))
