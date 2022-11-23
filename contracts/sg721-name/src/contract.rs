@@ -32,7 +32,10 @@ pub fn execute_update_metadata(
     let token_id = name;
     let params = SUDO_PARAMS.load(deps.storage)?;
     let max_record_count = params.max_record_count;
-    let mut metadata_event_info: Option<String> = None;
+
+    let mut event = Event::new("update-metadata")
+        .add_attribute("token_id", token_id)
+        .add_attribute("owner", info.sender);
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -43,13 +46,12 @@ pub fn execute_update_metadata(
 
     // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
-        metadata_event_info = Some(metadata.to_string());
         // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
         }
 
-        // update records. If empty, do nothing.
+        // Update records. If empty, do nothing.
         if !metadata.records.is_empty() {
             for record in metadata.records.iter() {
                 // updated records should reset verified to None
@@ -72,12 +74,17 @@ pub fn execute_update_metadata(
                 });
             }
         };
+
+        event.add_attribute("metadata", metadata);
     } else {
         // reset metadata to empty
-        token_info.extension = Metadata::default();
+        let metadata = Metadata::default();
+        token_info.extension = metadata;
         Sg721NameContract::default()
             .tokens
             .save(deps.storage, &token_id, &token_info)?;
+
+        event.add_attribute("metadata", metadata);
     };
 
     Sg721NameContract::default()
@@ -89,14 +96,6 @@ pub fn execute_update_metadata(
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-
-    let mut event = Event::new("update-metadata")
-        .add_attribute("token_id", token_id)
-        .add_attribute("owner", info.sender);
-
-    if let Some(metadata) = metadata_event_info {
-        event = event.add_attribute("metadata", metadata);
-    }
 
     Ok(Response::new().add_event(event))
 }

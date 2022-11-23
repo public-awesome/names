@@ -40,7 +40,6 @@ pub struct Metadata {
 
 impl fmt::Display for Metadata {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Customize so only `x` and `y` are denoted.
         write!(
             f,
             "image_nft: {:?}, records: {:?}",
