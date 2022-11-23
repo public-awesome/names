@@ -116,6 +116,7 @@ pub fn execute_associate_address(
 
     // 2. validate the new address
     let token_uri = address
+        .clone()
         .map(|address| {
             deps.api
                 .addr_validate(&address)
@@ -156,8 +157,9 @@ pub fn execute_associate_address(
     token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
     let event = Event::new("associate-address")
-        .add_attribute("token_id", name)
+        .add_attribute("name", name)
         .add_attribute("owner", info.sender);
+    address.map(|addr| event.clone().add_attribute("address", addr));
 
     Ok(Response::new().add_event(event))
 }
