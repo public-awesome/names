@@ -12,6 +12,7 @@ use cosmwasm_std::{
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
+use schemars::_serde_json::json;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -338,7 +339,10 @@ pub fn execute_update_image_nft(
     name: String,
     nft: Option<NFT>,
 ) -> Result<Response, ContractError> {
-    let token_id = name;
+    let token_id = name.clone();
+    let mut event = Event::new("update_image_nft")
+        .add_attribute("owner", info.sender.to_string())
+        .add_attribute("token_id", name);
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -347,12 +351,17 @@ pub fn execute_update_image_nft(
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.image_nft = nft;
+                token_info.extension.image_nft = nft.clone();
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    if let Some(nft) = nft {
+        event = event.add_attribute("nft", json!(nft).to_string());
+    }
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_add_text_record(
