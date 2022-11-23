@@ -148,7 +148,11 @@ fn mint_and_update() {
         name: token_id.to_string(),
         metadata: Some(new_metadata.clone()),
     };
-    execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
+    let metadata_value = res.events[0].attributes[2].value.clone().into_bytes();
+    let metadata: Metadata = from_slice(&metadata_value).unwrap();
+    assert_eq!(metadata, new_metadata);
+
     let res = contract
         .parent
         .nft_info(deps.as_ref(), token_id.into())
