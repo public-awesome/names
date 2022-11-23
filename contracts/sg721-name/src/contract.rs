@@ -553,6 +553,8 @@ fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError
 
     if record.value.len() > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordValueTooLong {});
+    } else if record.value.is_empty() {
+        return Err(ContractError::RecordValueEmpty {});
     }
     Ok(())
 }
