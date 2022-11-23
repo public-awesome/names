@@ -937,7 +937,6 @@ dependencies = [
  "name-marketplace",
  "schemars",
  "serde",
- "serde_json",
  "sg-name",
  "sg-name-market",
  "sg-std",

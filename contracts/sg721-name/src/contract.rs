@@ -5,14 +5,13 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
+    to_binary, to_vec, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
     StdError, StdResult, WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::nonpayable;
 
-use serde_json::json;
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
@@ -46,7 +45,10 @@ pub fn execute_update_metadata(
 
     // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
-        event = event.add_attribute("metadata", json!(metadata).to_string());
+        event = event.add_attribute(
+            "metadata",
+            String::from_utf8(to_vec(&metadata).unwrap()).unwrap(),
+        );
         // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
@@ -352,7 +354,7 @@ pub fn execute_update_image_nft(
         })?;
 
     if let Some(nft) = nft {
-        event = event.add_attribute("nft", json!(nft).to_string());
+        event = event.add_attribute("nft", String::from_utf8(to_vec(&nft).unwrap()).unwrap());
     }
 
     Ok(Response::new().add_event(event))

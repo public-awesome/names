@@ -23,7 +23,6 @@ cw-utils          = "0.16.0"
 schemars          = "0.8.11"
 semver            = "1"
 serde             = { version = "1.0.145", default-features = false, features = ["derive"] }
-serde_json        = { version = "1.0.40" }
 sg1               = "0.21.1"
 sg721             = "0.21.1"
 sg721-base        = "0.21.1"

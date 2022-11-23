@@ -35,7 +35,6 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 sg-name = { path = "../../packages/sg-name" }
 sg-std = { workspace = true }
 sg721 = { workspace = true }
