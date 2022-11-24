@@ -42,7 +42,6 @@ pub fn execute_update_metadata(
         .tokens
         .load(deps.storage, &token_id)?;
 
-    // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
         let max_records = SUDO_PARAMS.load(deps.storage)?.max_record_count;
         if metadata.records.len() > max_records as usize {
@@ -51,21 +50,17 @@ pub fn execute_update_metadata(
 
         event = event.add_attribute("metadata", metadata.into_json_string());
 
-        // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
         }
 
-        // update records. If empty, do nothing.
         if !metadata.records.is_empty() {
             for record in metadata.records.iter() {
-                // updated records should reset verified to None
                 let mut updated_record = record.clone();
                 updated_record.verified = None;
 
-                validate_and_sanitize_record(&updated_record)?;
+                validate_record(&updated_record)?;
 
-                // update same record name
                 token_info
                     .extension
                     .records
@@ -74,22 +69,12 @@ pub fn execute_update_metadata(
             }
         };
     } else {
-        // reset metadata to empty
         token_info.extension = Metadata::default();
-        Sg721NameContract::default()
-            .tokens
-            .save(deps.storage, &token_id, &token_info)?;
     };
 
     Sg721NameContract::default()
         .tokens
-        .update(deps.storage, &token_id, |token| match token {
-            Some(mut new_token_info) => {
-                new_token_info = token_info;
-                Ok(new_token_info)
-            }
-            None => Err(ContractError::NameNotFound {}),
-        })?;
+        .save(deps.storage, &token_id, &token_info)?;
 
     Ok(Response::new().add_event(event))
 }
@@ -255,6 +240,7 @@ fn reset_token_metadata_and_reverse_map(deps: &mut DepsMut, token_id: &str) -> S
         .save(deps.storage, token_id, &token)?;
 
     remove_reverse_mapping(deps, token_id)?;
+
     Ok(())
 }
 
@@ -334,12 +320,13 @@ pub fn execute_update_image_nft(
     nft: Option<NFT>,
 ) -> Result<Response, ContractError> {
     let token_id = name.clone();
-    let mut event = Event::new("update_image_nft")
-        .add_attribute("owner", info.sender.to_string())
-        .add_attribute("token_id", name);
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
+
+    let mut event = Event::new("update_image_nft")
+        .add_attribute("owner", info.sender.to_string())
+        .add_attribute("token_id", name);
 
     Sg721NameContract::default()
         .tokens
@@ -373,7 +360,7 @@ pub fn execute_add_text_record(
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
-    validate_and_sanitize_record(&record)?;
+    validate_record(&record)?;
 
     Sg721NameContract::default()
         .tokens
@@ -449,7 +436,7 @@ pub fn execute_update_text_record(
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
-    validate_and_sanitize_record(&record)?;
+    validate_record(&record)?;
 
     Sg721NameContract::default()
         .tokens
@@ -543,7 +530,7 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
     Ok(owner)
 }
 
-fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError> {
+fn validate_record(record: &TextRecord) -> Result<(), ContractError> {
     if record.verified.is_some() {
         return Err(ContractError::UnauthorizedVerification {});
     }
