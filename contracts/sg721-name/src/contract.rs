@@ -30,14 +30,13 @@ pub fn execute_update_metadata(
     metadata: Option<Metadata>,
 ) -> Result<Response, ContractError> {
     let token_id = name;
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    let max_record_count = params.max_record_count;
-    let mut event = Event::new("update-metadata")
-        .add_attribute("token_id", token_id.clone())
-        .add_attribute("owner", info.sender.clone());
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
+
+    let mut event = Event::new("update-metadata")
+        .add_attribute("token_id", token_id.clone())
+        .add_attribute("owner", info.sender);
 
     let mut token_info = Sg721NameContract::default()
         .tokens
@@ -45,7 +44,13 @@ pub fn execute_update_metadata(
 
     // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
+        let max_records = SUDO_PARAMS.load(deps.storage)?.max_record_count;
+        if metadata.records.len() > max_records as usize {
+            return Err(ContractError::TooManyRecords { max: max_records });
+        }
+
         event = event.add_attribute("metadata", metadata.into_json_string());
+
         // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
@@ -66,12 +71,6 @@ pub fn execute_update_metadata(
                     .records
                     .retain(|r| r.name != updated_record.name);
                 token_info.extension.records.push(updated_record.clone());
-            }
-            // check record length
-            if token_info.extension.records.len() > max_record_count as usize {
-                return Err(ContractError::TooManyRecords {
-                    max: max_record_count,
-                });
             }
         };
     } else {
