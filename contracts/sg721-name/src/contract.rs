@@ -5,7 +5,7 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    to_binary, to_vec, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
+    to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
     StdError, StdResult, WasmMsg,
 };
 
@@ -45,10 +45,7 @@ pub fn execute_update_metadata(
 
     // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
-        event = event.add_attribute(
-            "metadata",
-            String::from_utf8(to_vec(&metadata).unwrap()).unwrap(),
-        );
+        event = event.add_attribute("metadata", metadata.into_json_string());
         // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
@@ -118,6 +115,7 @@ pub fn execute_associate_address(
 
     // 2. validate the new address
     let token_uri = address
+        .clone()
         .map(|address| {
             deps.api
                 .addr_validate(&address)
@@ -158,8 +156,9 @@ pub fn execute_associate_address(
     token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
     let event = Event::new("associate-address")
-        .add_attribute("token_id", name)
+        .add_attribute("name", name)
         .add_attribute("owner", info.sender);
+    address.map(|addr| event.clone().add_attribute("address", addr));
 
     Ok(Response::new().add_event(event))
 }
@@ -354,7 +353,7 @@ pub fn execute_update_image_nft(
         })?;
 
     if let Some(nft) = nft {
-        event = event.add_attribute("nft", String::from_utf8(to_vec(&nft).unwrap()).unwrap());
+        event = event.add_attribute("image_nft", nft.into_json_string());
     }
 
     Ok(Response::new().add_event(event))
