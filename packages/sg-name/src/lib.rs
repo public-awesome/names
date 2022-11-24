@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{to_vec, Addr};
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
 
@@ -9,6 +9,12 @@ pub type TokenId = String;
 pub struct NFT {
     pub collection: Addr,
     pub token_id: TokenId,
+}
+
+impl NFT {
+    pub fn into_json_string(self: &NFT) -> String {
+        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+    }
 }
 
 #[cw_serde]
@@ -34,6 +40,17 @@ impl TextRecord {
 pub struct Metadata {
     pub image_nft: Option<NFT>,
     pub records: Vec<TextRecord>,
+}
+
+impl Metadata {
+    // Yes this is rather ugly. It is used to convert metadata into a JSON
+    // string for use in emitting events. Events can only be strings, so
+    // serializing it into a JSON string allows the indexer to parse it
+    // and represent it as a type. Note that we have to use the CosmWasm fork
+    // of serde_json to avoid floats.
+    pub fn into_json_string(self: &Metadata) -> String {
+        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+    }
 }
 
 #[cw_serde]

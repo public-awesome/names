@@ -32,6 +32,9 @@ pub fn execute_update_metadata(
     let token_id = name;
     let params = SUDO_PARAMS.load(deps.storage)?;
     let max_record_count = params.max_record_count;
+    let mut event = Event::new("update-metadata")
+        .add_attribute("token_id", token_id.clone())
+        .add_attribute("owner", info.sender.clone());
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -42,6 +45,7 @@ pub fn execute_update_metadata(
 
     // Update to new metadata or current metadata
     if let Some(metadata) = metadata {
+        event = event.add_attribute("metadata", metadata.into_json_string());
         // update image nft
         if let Some(image_nft) = metadata.image_nft {
             token_info.extension.image_nft = Some(image_nft);
@@ -88,9 +92,6 @@ pub fn execute_update_metadata(
             None => Err(ContractError::NameNotFound {}),
         })?;
 
-    let event = Event::new("update-metadata")
-        .add_attribute("token_id", token_id)
-        .add_attribute("owner", info.sender);
     Ok(Response::new().add_event(event))
 }
 
@@ -114,6 +115,7 @@ pub fn execute_associate_address(
 
     // 2. validate the new address
     let token_uri = address
+        .clone()
         .map(|address| {
             deps.api
                 .addr_validate(&address)
@@ -154,8 +156,9 @@ pub fn execute_associate_address(
     token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
     let event = Event::new("associate-address")
-        .add_attribute("token_id", name)
+        .add_attribute("name", name)
         .add_attribute("owner", info.sender);
+    address.map(|addr| event.clone().add_attribute("address", addr));
 
     Ok(Response::new().add_event(event))
 }
@@ -331,7 +334,10 @@ pub fn execute_update_image_nft(
     name: String,
     nft: Option<NFT>,
 ) -> Result<Response, ContractError> {
-    let token_id = name;
+    let token_id = name.clone();
+    let mut event = Event::new("update_image_nft")
+        .add_attribute("owner", info.sender.to_string())
+        .add_attribute("token_id", name);
 
     nonpayable(&info)?;
     only_owner(deps.as_ref(), &info.sender, &token_id)?;
@@ -340,12 +346,17 @@ pub fn execute_update_image_nft(
         .tokens
         .update(deps.storage, &token_id, |token| match token {
             Some(mut token_info) => {
-                token_info.extension.image_nft = nft;
+                token_info.extension.image_nft = nft.clone();
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
         })?;
-    Ok(Response::new())
+
+    if let Some(nft) = nft {
+        event = event.add_attribute("image_nft", nft.into_json_string());
+    }
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_add_text_record(
@@ -390,7 +401,8 @@ pub fn execute_add_text_record(
     let event = Event::new("add-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record.name);
+        .add_attribute("record_name", record.name)
+        .add_attribute("record_value", record.value);
     Ok(Response::new().add_event(event))
 }
 
@@ -421,7 +433,7 @@ pub fn execute_remove_text_record(
     let event = Event::new("remove-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record_name);
+        .add_attribute("record_name", record_name);
     Ok(Response::new().add_event(event))
 }
 
@@ -457,7 +469,8 @@ pub fn execute_update_text_record(
     let event = Event::new("update-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record", record.name);
+        .add_attribute("record_name", record.name)
+        .add_attribute("record_value", record.value);
     Ok(Response::new().add_event(event))
 }
 
@@ -544,6 +557,8 @@ fn validate_and_sanitize_record(record: &TextRecord) -> Result<(), ContractError
 
     if record.value.len() > MAX_TEXT_LENGTH as usize {
         return Err(ContractError::RecordValueTooLong {});
+    } else if record.value.is_empty() {
+        return Err(ContractError::RecordValueEmpty {});
     }
     Ok(())
 }

@@ -35,6 +35,9 @@ pub enum ContractError {
     #[error("RecordValueTooLong")]
     RecordValueTooLong {},
 
+    #[error("RecordValueEmpty")]
+    RecordValueEmpty {},
+
     #[error("UnauthorizedVerification")]
     UnauthorizedVerification {},
 
