@@ -110,3 +110,66 @@ pub struct NameMarketplaceResponse {
 pub struct NameResponse {
     pub name: String,
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn encode_nft() {
+        let nft = NFT {
+            collection: Addr::unchecked("stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570"),
+            token_id: "1".to_string(),
+        };
+        let json = nft.into_json_string();
+        assert_eq!(
+            json,
+            r#"{"collection":"stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570","token_id":"1"}"#
+        );
+    }
+
+    #[test]
+    fn encode_text_record() {
+        let mut record = TextRecord::new("twitter", "shan3v");
+        let json = record.into_json_string();
+        assert_eq!(
+            json,
+            r#"{"name":"twitter","value":"shan3v","verified":null}"#
+        );
+
+        record.verified = Some(true);
+
+        let json = record.into_json_string();
+        assert_eq!(
+            json,
+            r#"{"name":"twitter","value":"shan3v","verified":true}"#
+        );
+
+        record.verified = Some(false);
+
+        let json = record.into_json_string();
+        assert_eq!(
+            json,
+            r#"{"name":"twitter","value":"shan3v","verified":false}"#
+        );
+    }
+
+    #[test]
+    fn encode_metadata() {
+        let image_nft = Some(NFT {
+            collection: Addr::unchecked("stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570"),
+            token_id: "1".to_string(),
+        });
+        let record_1 = TextRecord::new("twitter", "shan3v");
+        let mut record_2 = TextRecord::new("discord", "shan3v");
+        record_2.verified = Some(true);
+        let records = vec![record_1, record_2];
+        let metadata = Metadata { image_nft, records };
+
+        let json = metadata.into_json_string();
+        assert_eq!(
+            json,
+            r#"{"image_nft":{"collection":"stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570","token_id":"1"},"records":[{"name":"twitter","value":"shan3v","verified":null},{"name":"discord","value":"shan3v","verified":true}]}"#,
+        );
+    }
+}
