@@ -387,8 +387,7 @@ pub fn execute_add_text_record(
     let event = Event::new("add-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record_name", record.name)
-        .add_attribute("record_value", record.value);
+        .add_attribute("record", record.into_json_string());
     Ok(Response::new().add_event(event))
 }
 
@@ -455,8 +454,7 @@ pub fn execute_update_text_record(
     let event = Event::new("update-text-record")
         .add_attribute("sender", info.sender)
         .add_attribute("name", token_id)
-        .add_attribute("record_name", record.name)
-        .add_attribute("record_value", record.value);
+        .add_attribute("record", record.into_json_string());
     Ok(Response::new().add_event(event))
 }
 

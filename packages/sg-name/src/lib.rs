@@ -32,6 +32,10 @@ impl TextRecord {
             verified: None,
         }
     }
+
+    pub fn into_json_string(self: &TextRecord) -> String {
+        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+    }
 }
 
 /// Note that the address mapped to the name is stored in `token_uri`.
