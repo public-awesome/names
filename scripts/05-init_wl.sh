@@ -4,7 +4,7 @@ MSG=$(cat <<EOF
 {
   "mint_discount_bps": 5000,  
   "per_address_limit": 50,
-  "addresses": ["$ADMIN", "$FOUNDATION"]
+  "addresses": ["$ADMIN"]
 }
 EOF
 )

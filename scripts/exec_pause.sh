@@ -14,9 +14,9 @@ if [ "$ADMIN_MULTISIG" = true ] ; then
   starsd tx wasm execute $MINTER "$MSG" \
     --gas-prices 0.025ustars --gas 50000000 --gas-adjustment 1.9 \
     --from $ADMIN \
-    --generate-only > 3-unsignedTx.json
+    --generate-only > unsignedTx.json
 
-  starsd tx sign 3-unsignedTx.json \
+  starsd tx sign unsignedTx.json \
     --multisig=$ADMIN --from $USER --output-document=$KEY.json \
     --chain-id $CHAIN_ID
 else
