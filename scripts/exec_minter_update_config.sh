@@ -2,23 +2,18 @@ KEY=$(starsd keys show $USER | jq -r .name)
 
 MSG=$(cat <<EOF
 {
-  "collection_code_id": $COLLECTION_CODE_ID,
-  "admin": "$ADMIN",
-  "marketplace_addr": "$MKT",
-  "min_name_length": 3,
-  "max_name_length": 63,
-  "base_price": "100000000",
-  "fair_burn_bps": 6666,
-  "whitelists": ["$WL"],
-  "verifier": "$VERIFIER"
+  "update_config": {
+    "config": {
+        "public_mint_start_time": "1672185600000000000"
+    }
+  }
 }
 EOF
 )
 
 if [ "$ADMIN_MULTISIG" = true ] ; then
   echo 'Using multisig'
-  starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
-    --admin $ADMIN \
+  starsd tx wasm execute $MINTER "$MSG" \
     --gas-prices 0.025ustars --gas 50000000 --gas-adjustment 1.9 \
     --from $ADMIN \
     --generate-only > unsignedTx.json
@@ -28,8 +23,7 @@ if [ "$ADMIN_MULTISIG" = true ] ; then
     --chain-id $CHAIN_ID
 else
   echo 'Using single signer'
-  starsd tx wasm instantiate $MINTER_CODE_ID "$MSG" --label "NameMinter" \
-    --admin $ADMIN \
+  starsd tx wasm execute $MINTER "$MSG" \
     --gas-prices 0.025ustars --gas auto --gas-adjustment 1.9 \
     --from $ADMIN -y -b block -o json | jq .
 fi
