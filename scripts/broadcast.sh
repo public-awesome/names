@@ -1,3 +1,6 @@
-starsd tx multisign unsignedTx.json $MULTISIG_NAME $1 $2 $3 > signedTx.json
-
-starsd tx broadcast signedTx.json
+for i in {55..68}
+do
+    starsd tx multisign $i-unsignedTx.json $MULTISIG_NAME s$i.json $i.json > signedTx.json
+    starsd tx broadcast signedTx.json
+    sleep 66
+done
