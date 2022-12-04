@@ -14,7 +14,10 @@ use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, MAX_TEXT_LENGTH, NFT};
+use sg_name::{
+    AssociatedAddressResponse, Metadata, NameMarketplaceResponse, NameResponse, TextRecord,
+    MAX_TEXT_LENGTH, NFT,
+};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -569,6 +572,22 @@ pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
     let params = SUDO_PARAMS.load(deps.storage)?;
     Ok(ParamsResponse {
         max_record_count: params.max_record_count,
+    })
+}
+
+pub fn query_associated_address(deps: Deps, name: &str) -> StdResult<AssociatedAddressResponse> {
+    // query name for token info
+    let token_info = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, name)?;
+
+    let addr = token_info.token_uri.map_or_else(
+        // token uri holds associated address, throw err if it does not exist
+        || Err(StdError::generic_err("No associated address")),
+        Ok,
+    )?;
+    Ok(AssociatedAddressResponse {
+        associated_address: addr,
     })
 }
 

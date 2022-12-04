@@ -98,6 +98,8 @@ pub enum SgNameQueryMsg {
     Name { address: String },
     /// Returns NameMarketplaceResponse
     NameMarketplace {},
+    /// Returns associated address for name (`AssociatedAddressResponse`).
+    AssociatedAddress { name: String },
 }
 
 #[cw_serde]
@@ -109,6 +111,12 @@ pub struct NameMarketplaceResponse {
 #[cw_serde]
 pub struct NameResponse {
     pub name: String,
+}
+
+/// Returns `associated_address`
+#[cw_serde]
+pub struct AssociatedAddressResponse {
+    pub associated_address: String,
 }
 
 #[cfg(test)]

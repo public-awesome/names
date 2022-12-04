@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse, Nullable_String } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, AssociatedAddressResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse, Nullable_String } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   params: () => Promise<ParamsResponse>;
@@ -16,6 +16,11 @@ export interface Sg721NameReadOnlyInterface {
     address: string;
   }) => Promise<NameResponse>;
   nameMarketplace: () => Promise<NameMarketplaceResponse>;
+  associatedAddress: ({
+    name
+  }: {
+    name: string;
+  }) => Promise<AssociatedAddressResponse>;
   verifier: () => Promise<NullableString>;
   ownerOf: ({
     includeExpired,
@@ -94,6 +99,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.params = this.params.bind(this);
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
+    this.associatedAddress = this.associatedAddress.bind(this);
     this.verifier = this.verifier.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
     this.approval = this.approval.bind(this);
@@ -128,6 +134,17 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   nameMarketplace = async (): Promise<NameMarketplaceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name_marketplace: {}
+    });
+  };
+  associatedAddress = async ({
+    name
+  }: {
+    name: string;
+  }): Promise<AssociatedAddressResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      associated_address: {
+        name
+      }
     });
   };
   verifier = async (): Promise<NullableString> => {
