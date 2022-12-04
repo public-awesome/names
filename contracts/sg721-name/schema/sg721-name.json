@@ -916,6 +916,28 @@
         "additionalProperties": false
       },
       {
+        "description": "Returns the associated address for a name",
+        "type": "object",
+        "required": [
+          "associated_address"
+        ],
+        "properties": {
+          "associated_address": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
         "description": "Returns the verification oracle address",
         "type": "object",
         "required": [
@@ -1763,6 +1785,21 @@
           "type": "string"
         }
       }
+    },
+    "associated_address": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AssociatedAddressResponse",
+      "description": "Returns `associated_address`",
+      "type": "object",
+      "required": [
+        "associated_address"
+      ],
+      "properties": {
+        "associated_address": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "collection_info": {
       "$schema": "http://json-schema.org/draft-07/schema#",
