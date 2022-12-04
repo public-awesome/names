@@ -160,68 +160,22 @@ fn mint_and_update() {
     assert_eq!(res.extension, new_metadata);
 
     // trigger too many records error
+    let mut records = vec![];
+    for i in 1..=(max_record_count + 1) {
+        records.push(TextRecord {
+            name: format!("key{:?}", i),
+            value: "value".to_string(),
+            verified: None,
+        });
+    }
+    dbg!(records.clone());
+
     let new_metadata = Metadata {
         image_nft: Some(NFT {
             collection: Addr::unchecked("contract"),
             token_id: "token_id".to_string(),
         }),
-        records: vec![
-            TextRecord {
-                name: "key1".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key2".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key3".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key4".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key5".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key6".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key7".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key8".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key9".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key10".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-            TextRecord {
-                name: "key11".to_string(),
-                value: "value".to_string(),
-                verified: None,
-            },
-        ],
+        records,
     };
     let update_metadata_msg = ExecuteMsg::UpdateMetadata {
         name: token_id.to_string(),
