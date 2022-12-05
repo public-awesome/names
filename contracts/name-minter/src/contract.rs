@@ -158,8 +158,8 @@ pub fn execute_mint_and_list(
             .unwrap_or(false)
     });
 
-    // if no whitelists, check public mint start time
-    if whitelists.is_empty() && env.block.time < config.public_mint_start_time {
+    // if not on any whitelist, check public mint start time
+    if list.is_none() && env.block.time < config.public_mint_start_time {
         return Err(ContractError::MintingNotStarted {});
     }
 
