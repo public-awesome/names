@@ -33,7 +33,8 @@ pub mod entry {
         execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
         execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
         execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
-        execute_update_text_record, query_name, query_name_marketplace, query_params,
+        execute_update_text_record, query_associated_address, query_name, query_name_marketplace,
+        query_params,
     };
     use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
     use cw_utils::maybe_addr;
@@ -131,6 +132,9 @@ pub mod entry {
             QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
             QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
             QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
+            QueryMsg::AssociatedAddress { name } => {
+                to_binary(&query_associated_address(deps, &name)?)
+            }
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }

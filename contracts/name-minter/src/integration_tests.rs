@@ -318,7 +318,7 @@ mod execute {
     use cosmwasm_std::StdError;
     use cw721::{NftInfoResponse, OperatorsResponse};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
-    use sg_name::{Metadata, NameResponse};
+    use sg_name::{AssociatedAddressResponse, Metadata, NameResponse};
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
@@ -500,6 +500,16 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, user, None);
         assert!(res.is_ok());
 
+        // when no associated address, query should throw error
+        let res: Result<AssociatedAddressResponse, cosmwasm_std::StdError> =
+            app.wrap().query_wasm_smart(
+                COLLECTION,
+                &SgNameQueryMsg::AssociatedAddress {
+                    name: NAME.to_string(),
+                },
+            );
+        assert!(res.is_err());
+
         let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
             address: Some(user.to_string()),
@@ -511,6 +521,18 @@ mod execute {
             &[],
         );
         assert!(res.is_ok());
+
+        // query associated address should return user
+        let res: AssociatedAddressResponse = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &SgNameQueryMsg::AssociatedAddress {
+                    name: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert_eq!(res.associated_address, user.to_string());
 
         // added to get around rate limiting
         update_block_time(&mut app, 60);

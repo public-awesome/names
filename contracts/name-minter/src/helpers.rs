@@ -5,11 +5,11 @@ use sg_std::CosmosMsg;
 
 use crate::msg::{ExecuteMsg, QueryMsg};
 
-/// NameMintercontract is a wrapper around Addr that provides a lot of helpers
+/// NameMinterContract is a wrapper around Addr that provides a lot of helpers
 #[cw_serde]
-pub struct NameMintercontract(pub Addr);
+pub struct NameMinterContract(pub Addr);
 
-impl NameMintercontract {
+impl NameMinterContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }

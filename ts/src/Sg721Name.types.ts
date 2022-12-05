@@ -160,6 +160,10 @@ export type QueryMsg = {
 } | {
   name_marketplace: {};
 } | {
+  associated_address: {
+    name: string;
+  };
+} | {
   verifier: {};
 } | {
   owner_of: {
@@ -240,6 +244,9 @@ export interface ApprovalResponse {
 }
 export interface ApprovalsResponse {
   approvals: Approval[];
+}
+export interface AssociatedAddressResponse {
+  associated_address: string;
 }
 export interface CollectionInfoResponse {
   creator: string;

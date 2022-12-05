@@ -10,7 +10,9 @@ use sg721::{
     UpdateCollectionInfoMsg,
 };
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
-use sg_name::{Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT};
+use sg_name::{
+    AssociatedAddressResponse, Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -167,6 +169,9 @@ pub enum QueryMsg {
     /// Returns the marketplace contract address
     #[returns(NameMarketplaceResponse)]
     NameMarketplace {},
+    /// Returns the associated address for a name
+    #[returns(AssociatedAddressResponse)]
+    AssociatedAddress { name: String },
     /// Returns the verification oracle address
     #[returns(Option<String>)]
     Verifier {},
