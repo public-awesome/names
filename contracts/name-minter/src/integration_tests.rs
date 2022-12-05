@@ -501,16 +501,14 @@ mod execute {
         assert!(res.is_ok());
 
         // when no associated address, query should throw error
-        // TODO
-        // let res: StdError = app
-        //     .wrap()
-        //     .query_wasm_smart(
-        //         COLLECTION,
-        //         &SgNameQueryMsg::AssociatedAddress {
-        //             name: NAME.to_string(),
-        //         },
-        //     )
-        //     .unwrap_err();
+        let res: Result<AssociatedAddressResponse, cosmwasm_std::StdError> =
+            app.wrap().query_wasm_smart(
+                COLLECTION,
+                &SgNameQueryMsg::AssociatedAddress {
+                    name: NAME.to_string(),
+                },
+            );
+        assert!(res.is_err());
 
         let msg = SgNameExecuteMsg::AssociateAddress {
             name: NAME.to_string(),
