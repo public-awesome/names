@@ -1776,9 +1776,6 @@ mod whitelist {
         let res = mint_and_list(&mut app, NAME, USER3, None);
         assert!(res.is_ok());
     }
-    /// test large mint counts
-    #[test]
-    fn gas_usage() {}
 }
 
 mod public_start_time {
@@ -1796,6 +1793,13 @@ mod public_start_time {
             Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
+        // try pub mint with whitelists before start time
+        // 1a. on whitelist and mints with whitelist price
+        mint_and_list(&mut app, "some-name", USER, None).unwrap();
+        // 1b. USER2 not on whitelist and errors
+        let res = mint_and_list(&mut app, NAME, USER2, None);
+        assert!(res.is_err());
+
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
@@ -1803,6 +1807,7 @@ mod public_start_time {
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
 
+        // try pub mint before start time
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_err());
     }
