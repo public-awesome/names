@@ -35,6 +35,7 @@ cw721 = { workspace = true }
 cw721-base = { workspace = true, features = ["library"] }
 name-marketplace = { path = "../marketplace", features = ["library"] }
 schemars = { workspace = true }
+semver = "1"
 serde = { workspace = true }
 sg-name = { path = "../../packages/sg-name" }
 sg721 = { workspace = true }
