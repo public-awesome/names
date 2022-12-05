@@ -3,12 +3,14 @@ use std::vec;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, Decimal, DepsMut, Env, Event, MessageInfo, Reply, Uint128, WasmMsg,
+    coin, to_binary, Addr, Coin, Decimal, DepsMut, Empty, Env, Event, MessageInfo, Reply, StdError,
+    Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use semver::Version;
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
@@ -158,8 +160,8 @@ pub fn execute_mint_and_list(
             .unwrap_or(false)
     });
 
-    // if no whitelists, check public mint start time
-    if whitelists.is_empty() && env.block.time < config.public_mint_start_time {
+    // if not on any whitelist, check public mint start time
+    if list.is_none() && env.block.time < config.public_mint_start_time {
         return Err(ContractError::MintingNotStarted {});
     }
 
@@ -371,6 +373,33 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         }
         Err(_) => Err(ContractError::ReplyOnSuccess {}),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+    let current_version = cw2::get_contract_version(deps.storage)?;
+    if current_version.contract != CONTRACT_NAME {
+        return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
+    }
+    let version: Version = current_version
+        .version
+        .parse()
+        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
+    let new_version: Version = CONTRACT_VERSION
+        .parse()
+        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
+
+    if version > new_version {
+        return Err(StdError::generic_err("Cannot upgrade to a previous contract version").into());
+    }
+    // if same version return
+    if version == new_version {
+        return Ok(Response::new());
+    }
+
+    // set new contract version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new())
 }
 
 #[cfg(test)]
