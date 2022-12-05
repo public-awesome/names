@@ -1,6 +1,7 @@
 pub use crate::error::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+use semver::Version;
 use sg_name::Metadata;
 
 pub mod contract;
@@ -35,7 +36,10 @@ pub mod entry {
         execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
         execute_update_text_record, query_name, query_name_marketplace, query_params,
     };
-    use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, StdResult};
+    use cosmwasm_std::{
+        to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, StdError, StdResult,
+    };
+    use cw2::set_contract_version;
     use cw_utils::maybe_addr;
     use sg721_base::ContractError as Sg721ContractError;
     use sg_std::Response;
@@ -133,5 +137,34 @@ pub mod entry {
             QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
+    }
+
+    #[cfg_attr(not(feature = "library"), entry_point)]
+    pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
+        let current_version = cw2::get_contract_version(deps.storage)?;
+        if current_version.contract != CONTRACT_NAME {
+            return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
+        }
+        let version: Version = current_version
+            .version
+            .parse()
+            .map_err(|_| StdError::generic_err("Invalid contract version"))?;
+        let new_version: Version = CONTRACT_VERSION
+            .parse()
+            .map_err(|_| StdError::generic_err("Invalid contract version"))?;
+
+        if version > new_version {
+            return Err(
+                StdError::generic_err("Cannot upgrade to a previous contract version").into(),
+            );
+        }
+        // if same version return
+        if version == new_version {
+            return Ok(Response::new());
+        }
+
+        // set new contract version
+        set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+        Ok(Response::new())
     }
 }
