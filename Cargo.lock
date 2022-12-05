@@ -571,6 +571,7 @@ dependencies = [
  "cw721-base",
  "name-marketplace",
  "schemars",
+ "semver",
  "serde",
  "sg-multi-test",
  "sg-name",
