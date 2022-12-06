@@ -34,37 +34,22 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(ConfigResponse)]
+    #[returns(Config)]
     Config {},
     #[returns(bool)]
     IncludesAddress { address: String },
     #[returns(u64)]
     MintCount { address: String },
     /// Avoid processing addresses that will fail. Includes address and under per address limit
-    #[returns(IsProcessableResponse)]
+    #[returns(bool)]
     IsProcessable { address: String },
     #[returns(cw_controllers::AdminResponse)]
     Admin {},
     #[returns(u64)]
     AddressCount {},
-    #[returns(PerAddressLimitResponse)]
+    #[returns(u64)]
     PerAddressLimit {},
     // Mint discount converts bps to decimal percentage
     #[returns(Decimal)]
     MintDiscountPercent {},
-}
-
-#[cw_serde]
-pub struct ConfigResponse {
-    pub config: Config,
-}
-
-#[cw_serde]
-pub struct PerAddressLimitResponse {
-    pub limit: u64,
-}
-
-#[cw_serde]
-pub struct IsProcessableResponse {
-    pub processable: bool,
 }

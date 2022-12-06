@@ -8,7 +8,7 @@ use cw2::set_contract_version;
 use sg_name_minter::SgNameMinterQueryMsg;
 
 use crate::error::ContractError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cw_utils::nonpayable;
 use sg_std::Response;
 
@@ -256,9 +256,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = CONFIG.load(deps.storage)?;
-    Ok(ConfigResponse { config })
+pub fn query_config(deps: Deps) -> StdResult<Config> {
+    CONFIG.load(deps.storage)
 }
 
 pub fn query_includes_address(deps: Deps, address: String) -> StdResult<bool> {

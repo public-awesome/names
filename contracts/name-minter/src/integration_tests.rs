@@ -780,7 +780,7 @@ mod execute {
 }
 
 mod admin {
-    use whitelist_updatable::msg::ConfigResponse;
+    use whitelist_updatable::state::Config;
 
     use crate::msg::QueryMsg;
 
@@ -819,8 +819,8 @@ mod admin {
         assert_eq!(whitelists.len(), 1);
 
         let msg = WhitelistQueryMsg::Config {};
-        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.config.admin, ADMIN2.to_string());
+        let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.admin, ADMIN2.to_string());
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
@@ -1589,7 +1589,7 @@ mod collection {
 
 mod whitelist {
     use crate::msg::QueryMsg;
-    use whitelist_updatable::msg::{ConfigResponse, QueryMsg as WhitelistQueryMsg};
+    use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;
 
@@ -1780,8 +1780,8 @@ mod whitelist {
         assert!(res.is_ok());
 
         let msg = WhitelistQueryMsg::Config {};
-        let res: ConfigResponse = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.config.admin, ADMIN2.to_string());
+        let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.admin, ADMIN2.to_string());
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
