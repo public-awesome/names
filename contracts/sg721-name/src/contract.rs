@@ -1,7 +1,6 @@
 use crate::{
     error::ContractError,
-    msg::ParamsResponse,
-    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
+    state::{SudoParams, NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
 };
 
 use cosmwasm_std::{
@@ -559,11 +558,8 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<String> {
     REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)
 }
 
-pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    Ok(ParamsResponse {
-        max_record_count: params.max_record_count,
-    })
+pub fn query_params(deps: Deps) -> StdResult<SudoParams> {
+    SUDO_PARAMS.load(deps.storage)
 }
 
 pub fn query_associated_address(deps: Deps, name: &str) -> StdResult<String> {

@@ -1085,7 +1085,7 @@ mod collection {
     use cosmwasm_std::{to_binary, StdResult};
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
-    use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
+    use sg721_name::{msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams};
     use sg_name::{Metadata, TextRecord};
 
     use super::*;
@@ -1568,7 +1568,7 @@ mod collection {
     #[test]
     fn sudo_update() {
         let mut app = instantiate_contracts(None, None, None);
-        let params: ParamsResponse = app
+        let params: SudoParams = app
             .wrap()
             .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
             .unwrap();
@@ -1579,7 +1579,7 @@ mod collection {
         };
         let res = app.wasm_sudo(Addr::unchecked(COLLECTION), &msg);
         assert!(res.is_ok());
-        let params: ParamsResponse = app
+        let params: SudoParams = app
             .wrap()
             .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
             .unwrap();

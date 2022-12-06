@@ -12,6 +12,8 @@ use sg721::{
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
 use sg_name::{Metadata, TextRecord, NFT};
 
+use crate::state::SudoParams;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub verifier: Option<String>,
@@ -159,7 +161,7 @@ pub enum SudoMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Returns sudo params
-    #[returns(ParamsResponse)]
+    #[returns(SudoParams)]
     Params {},
     /// Reverse lookup of name for address
     #[returns(String)]
@@ -289,9 +291,4 @@ impl From<QueryMsg> for Sg721QueryMsg {
             _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub max_record_count: u32,
 }
