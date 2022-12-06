@@ -54,6 +54,18 @@ echo "accept bid";
 bidder_addr=$(starsd keys show $BIDDER | jq -r '.address')
 ./exec_accept_bid.sh $name $bidder_addr
 
+# move public time to the future
+echo "move public time to the future";
+TIME=$(date -v+1000S +%s)
+./exec_update_public_time.sh "$(echo $TIME)000000000"
+
+sleep 1
+
+# mint a new token even though not on whitelist and public mint hasn't started yet
+name=$(openssl rand -hex 20);
+echo "mint a new token even though not on whitelist and public mint has not started yet $name";
+./exec_mint_specific_user.sh $name $BIDDER 100000000
+
 # make new whitelist
 echo "make new whitelist";
 WL2=$(bash 05-init_wl.sh | jq -r '.logs[0].events[0].attributes[0].value')
@@ -62,23 +74,30 @@ WL2=$(bash 05-init_wl.sh | jq -r '.logs[0].events[0].attributes[0].value')
 echo "add address to whitelist";
 ./exec_wl_add_addrs.sh "[\"$BIDDER\"]"
 
+
+
 # add wl to minter
 echo "add wl to minter";
+sleep 5
 ./06-exec_minter_add_wl.sh $WL2
 
+
+
 # wl mint
+sleep 5
 echo "wl mint";
 name=$(openssl rand -hex 20);
+sleep 60
 ./exec_mint_specific_user.sh $name $BIDDER 50000000
 
 # update public time
+sleep 5
 echo "update public time";
-TIME=$(date -v+1S +%s)
+TIME=$(date -v+1000S +%s)
 ./exec_update_public_time.sh "$(echo $TIME)000000000"
 
-sleep 1
-
 # test public mint and whitelist mint
+sleep 5
 echo "test public mint and whitelist mint";
 name=$(openssl rand -hex 20);
 ./exec_mint_specific_user.sh $name $USER2 100000000
