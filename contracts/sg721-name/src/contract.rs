@@ -548,7 +548,7 @@ fn validate_record(record: &TextRecord) -> Result<(), ContractError> {
 }
 
 pub fn query_name_marketplace(deps: Deps) -> StdResult<Addr> {
-    Ok(NAME_MARKETPLACE.load(deps.storage)?)
+    NAME_MARKETPLACE.load(deps.storage)
 }
 
 pub fn query_name(deps: Deps, mut address: String) -> StdResult<String> {
@@ -556,7 +556,7 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<String> {
         address = transcode(&address)?;
     }
 
-    Ok(REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?)
+    REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)
 }
 
 pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {

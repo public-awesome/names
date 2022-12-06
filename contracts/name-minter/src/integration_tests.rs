@@ -1799,7 +1799,7 @@ mod whitelist {
 }
 
 mod public_start_time {
-    use sg_name_minter::{Config, ConfigResponse};
+    use sg_name_minter::Config;
 
     use crate::msg::QueryMsg;
 
@@ -1849,9 +1849,9 @@ mod public_start_time {
 
         // default start time is PUBLIC_MINT_START_TIME_IN_SECONDS
         let msg = QueryMsg::Config {};
-        let res: ConfigResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        let res: Config = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
         assert_eq!(
-            res.config.public_mint_start_time,
+            res.public_mint_start_time,
             PUBLIC_MINT_START_TIME_IN_SECONDS
         );
 
@@ -1866,9 +1866,9 @@ mod public_start_time {
 
         // check start time
         let msg = QueryMsg::Config {};
-        let res: ConfigResponse = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        let res: Config = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
         assert_eq!(
-            res.config.public_mint_start_time,
+            res.public_mint_start_time,
             PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)
         );
 
