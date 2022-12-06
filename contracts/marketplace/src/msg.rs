@@ -109,64 +109,64 @@ impl BidOffset {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Get the current ask for specific name
-    #[returns(AskResponse)]
+    #[returns(Option<Ask>)]
     Ask { token_id: TokenId },
     /// Get all asks for a collection
-    #[returns(AsksResponse)]
+    #[returns(Vec<Ask>)]
     Asks {
         start_after: Option<Id>,
         limit: Option<u32>,
     },
     /// Get all asks in reverse
-    #[returns(AsksResponse)]
+    #[returns(Vec<Ask>)]
     ReverseAsks {
         start_before: Option<Id>,
         limit: Option<u32>,
     },
     /// Count of all asks
-    #[returns(AskCountResponse)]
+    #[returns(u64)]
     AskCount {},
     /// Get all asks by seller
-    #[returns(AsksResponse)]
+    #[returns(Vec<Ask>)]
     AsksBySeller {
         seller: Seller,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get data for a specific bid
-    #[returns(BidResponse)]
+    #[returns(Option<Bid>)]
     Bid { token_id: TokenId, bidder: Bidder },
     /// Get all bids by a bidder
-    #[returns(BidsResponse)]
+    #[returns(Vec<Bid>)]
     BidsByBidder {
         bidder: Bidder,
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
     /// Get all bids for a specific NFT
-    #[returns(BidsResponse)]
+    #[returns(Vec<Bid>)]
     Bids {
         token_id: TokenId,
         start_after: Option<Bidder>,
         limit: Option<u32>,
     },
     /// Get all bids for a collection, sorted by price
-    #[returns(BidsResponse)]
+    #[returns(Vec<Bid>)]
     BidsSortedByPrice {
         start_after: Option<BidOffset>,
         limit: Option<u32>,
     },
     /// Get all bids for a collection, sorted by price in reverse
-    #[returns(BidsResponse)]
+    #[returns(Vec<Bid>)]
     ReverseBidsSortedByPrice {
         start_before: Option<BidOffset>,
         limit: Option<u32>,
     },
     /// Get all bids for a specific account
-    #[returns(BidsResponse)]
+    #[returns(Vec<Bid>)]
     BidsForSeller { seller: String },
     /// Get the highest bid for a name
-    #[returns(BidResponse)]
+    #[returns(Option<Bid>)]
     HighestBid { token_id: TokenId },
     /// Show all registered ask hooks
     #[returns(HooksResponse)]
@@ -178,10 +178,10 @@ pub enum QueryMsg {
     #[returns(HooksResponse)]
     SaleHooks {},
     /// Get the config for the contract
-    #[returns(ParamsResponse)]
+    #[returns(SudoParams)]
     Params {},
     /// Get the renewal queue for a specific time
-    #[returns(AsksResponse)]
+    #[returns(Vec<Ask>)]
     RenewalQueue { time: Timestamp },
     /// Get the minter and collection
     #[returns(ConfigResponse)]
@@ -192,36 +192,6 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub minter: Addr,
     pub collection: Addr,
-}
-
-#[cw_serde]
-pub struct AskResponse {
-    pub ask: Option<Ask>,
-}
-
-#[cw_serde]
-pub struct AsksResponse {
-    pub asks: Vec<Ask>,
-}
-
-#[cw_serde]
-pub struct AskCountResponse {
-    pub count: u32,
-}
-
-#[cw_serde]
-pub struct BidResponse {
-    pub bid: Option<Bid>,
-}
-
-#[cw_serde]
-pub struct BidsResponse {
-    pub bids: Vec<Bid>,
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub params: SudoParams,
 }
 
 #[cw_serde]

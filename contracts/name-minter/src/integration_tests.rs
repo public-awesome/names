@@ -8,9 +8,10 @@ use cw_multi_test::{
     AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg,
 };
 use name_marketplace::msg::{
-    AskResponse, BidResponse, ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
+    ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
     SudoMsg as MarketplaceSudoMsg,
 };
+use name_marketplace::state::Bid;
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{SgNameExecuteMsg, SgNameQueryMsg};
@@ -298,7 +299,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
     assert!(res.is_ok());
 
     // query if bid exists
-    let res: BidResponse = app
+    let res: Option<Bid> = app
         .wrap()
         .query_wasm_smart(
             MKT,
@@ -308,7 +309,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
             },
         )
         .unwrap();
-    let bid = res.bid.unwrap();
+    let bid = res.unwrap();
     assert_eq!(bid.token_id, NAME.to_string());
     assert_eq!(bid.bidder, bidder.to_string());
     assert_eq!(bid.amount, amount[0].amount);
@@ -317,6 +318,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 mod execute {
     use cosmwasm_std::StdError;
     use cw721::{NftInfoResponse, OperatorsResponse};
+    use name_marketplace::state::{Ask, SudoParams};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
     use sg_name::Metadata;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
@@ -356,7 +358,7 @@ mod execute {
         assert!(res.is_ok());
 
         // check if name is listed in marketplace
-        let res: AskResponse = app
+        let res: Option<Ask> = app
             .wrap()
             .query_wasm_smart(
                 MKT,
@@ -365,7 +367,7 @@ mod execute {
                 },
             )
             .unwrap();
-        assert_eq!(res.ask.unwrap().token_id, NAME);
+        assert_eq!(res.unwrap().token_id, NAME);
 
         // check if token minted
         let _res: NumTokensResponse = app
@@ -412,7 +414,7 @@ mod execute {
         assert!(res.is_ok());
 
         // check if bid is removed
-        let res: BidResponse = app
+        let res: Option<Bid> = app
             .wrap()
             .query_wasm_smart(
                 MKT,
@@ -422,7 +424,7 @@ mod execute {
                 },
             )
             .unwrap();
-        assert!(res.bid.is_none());
+        assert!(res.is_none());
 
         // verify that the bidder is the new owner
         assert_eq!(owner_of(&app, NAME.to_string()), BIDDER.to_string());
@@ -436,7 +438,7 @@ mod execute {
         assert_eq!(res.amount, Uint128::from(BID_AMOUNT - protocol_fee));
 
         // confirm that a new ask was created
-        let res: AskResponse = app
+        let res: Option<Ask> = app
             .wrap()
             .query_wasm_smart(
                 MKT,
@@ -445,7 +447,7 @@ mod execute {
                 },
             )
             .unwrap();
-        let ask = res.ask.unwrap();
+        let ask = res.unwrap();
         assert_eq!(ask.token_id, NAME);
         assert_eq!(ask.seller, BIDDER.to_string());
     }
@@ -767,11 +769,11 @@ mod execute {
         let res = app.wasm_sudo(Addr::unchecked(MKT), &msg);
         assert!(res.is_ok());
 
-        let res: name_marketplace::msg::ParamsResponse = app
+        let res: SudoParams = app
             .wrap()
             .query_wasm_smart(Addr::unchecked(MKT), &QueryMsg::Params {})
             .unwrap();
-        let params = res.params;
+        let params = res;
 
         assert_eq!(params.trading_fee_percent, Decimal::percent(10));
         assert_eq!(params.min_price, Uint128::from(1000u128));
@@ -851,7 +853,7 @@ mod admin {
 
 mod query {
     use cosmwasm_std::StdResult;
-    use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
+    use name_marketplace::state::Ask;
     use sg721_base::msg::CollectionInfoResponse;
     use sg721_base::msg::QueryMsg as Sg721QueryMsg;
 
@@ -867,8 +869,8 @@ mod query {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.ask.unwrap().token_id, NAME.to_string());
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.unwrap().token_id, NAME.to_string());
     }
 
     #[test]
@@ -885,8 +887,8 @@ mod query {
             start_after: None,
             limit: None,
         };
-        let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.asks[0].id, 1);
+        let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res[0].id, 1);
     }
 
     #[test]
@@ -903,8 +905,8 @@ mod query {
             start_before: None,
             limit: None,
         };
-        let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.asks[0].id, 2);
+        let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res[0].id, 2);
     }
 
     #[test]
@@ -922,8 +924,8 @@ mod query {
             start_after: None,
             limit: None,
         };
-        let res: AsksResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.asks.len(), 1);
+        let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.len(), 1);
     }
 
     #[test]
@@ -937,8 +939,8 @@ mod query {
         assert!(res.is_ok());
 
         let msg = MarketplaceQueryMsg::AskCount {};
-        let res: AskCountResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.count, 2);
+        let res: u64 = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res, 2);
     }
 
     #[test]
@@ -955,9 +957,9 @@ mod query {
             start_before: None,
             limit: None,
         };
-        let res: BidsResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.bids.len(), 2);
-        assert_eq!(res.bids[0].amount.u128(), BID_AMOUNT * 5);
+        let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0].amount.u128(), BID_AMOUNT * 5);
     }
 
     #[test]
@@ -973,9 +975,9 @@ mod query {
         let msg = MarketplaceQueryMsg::BidsForSeller {
             seller: USER.to_string(),
         };
-        let res: BidsResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.bids.len(), 2);
-        assert_eq!(res.bids[0].amount.u128(), BID_AMOUNT);
+        let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[0].amount.u128(), BID_AMOUNT);
     }
 
     #[test]
@@ -991,8 +993,8 @@ mod query {
         let msg = MarketplaceQueryMsg::HighestBid {
             token_id: NAME.to_string(),
         };
-        let res: BidResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.bid.unwrap().amount.u128(), BID_AMOUNT * 5);
+        let res: Option<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.unwrap().amount.u128(), BID_AMOUNT * 5);
     }
 
     #[test]
@@ -1005,7 +1007,7 @@ mod query {
         let res = mint_and_list(&mut app, "hack", ADMIN2, None);
         assert!(res.is_ok());
 
-        let res: AsksResponse = app
+        let res: Vec<Ask> = app
             .wrap()
             .query_wasm_smart(
                 MKT,
@@ -1014,8 +1016,8 @@ mod query {
                 },
             )
             .unwrap();
-        assert_eq!(res.asks.len(), 2);
-        assert_eq!(res.asks[1].token_id, "hack".to_string());
+        assert_eq!(res.len(), 2);
+        assert_eq!(res[1].token_id, "hack".to_string());
     }
 
     #[test]
@@ -1085,6 +1087,7 @@ mod collection {
     use cosmwasm_std::{to_binary, StdResult};
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
+    use name_marketplace::state::Ask;
     use sg721_name::{msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams};
     use sg_name::{Metadata, TextRecord};
 
@@ -1106,8 +1109,8 @@ mod collection {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.unwrap().seller.to_string(), to.to_string());
     }
 
     fn send(app: &mut StargazeApp, from: &str, to: &str) {
@@ -1129,8 +1132,8 @@ mod collection {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res.ask.unwrap().seller.to_string(), to.to_string());
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert_eq!(res.unwrap().seller.to_string(), to.to_string());
     }
 
     #[test]
@@ -1480,8 +1483,8 @@ mod collection {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_some());
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert!(res.is_some());
     }
 
     // test that burn nft currently does nothing. this is a placeholder for future functionality
@@ -1508,8 +1511,8 @@ mod collection {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        let ask = res.ask.unwrap();
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        let ask = res.unwrap();
         assert_eq!(ask.seller.to_string(), USER.to_string());
     }
 
@@ -1555,8 +1558,8 @@ mod collection {
         let msg = MarketplaceQueryMsg::Ask {
             token_id: NAME.to_string(),
         };
-        let res: AskResponse = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert!(res.ask.is_some());
+        let res: Option<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        assert!(res.is_some());
 
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),

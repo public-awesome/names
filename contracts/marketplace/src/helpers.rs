@@ -1,5 +1,5 @@
 use crate::{
-    msg::{BidResponse, ExecuteMsg, QueryMsg},
+    msg::{ExecuteMsg, QueryMsg},
     state::Bid,
 };
 use cosmwasm_schema::cw_serde;
@@ -34,14 +34,14 @@ impl NameMarketplaceContract {
     }
 
     pub fn highest_bid(&self, querier: &QuerierWrapper, token_id: &str) -> StdResult<Option<Bid>> {
-        let res: BidResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        let res: Option<Bid> = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::HighestBid {
                 token_id: token_id.to_string(),
             })?,
         }))?;
 
-        Ok(res.bid)
+        Ok(res)
     }
 
     // contract needs approval from nft owner before accepting bid
