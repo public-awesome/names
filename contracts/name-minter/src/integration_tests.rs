@@ -13,7 +13,7 @@ use name_marketplace::msg::{
 };
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
-use sg_name::{NameMarketplaceResponse, SgNameExecuteMsg, SgNameQueryMsg};
+use sg_name::{SgNameExecuteMsg, SgNameQueryMsg};
 use sg_name_common::SECONDS_PER_YEAR;
 use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
@@ -168,11 +168,11 @@ fn instantiate_contracts(
     );
     assert!(res.is_ok());
 
-    let res: NameMarketplaceResponse = app
+    let res: Addr = app
         .wrap()
         .query_wasm_smart(COLLECTION, &SgNameQueryMsg::NameMarketplace {})
         .unwrap();
-    assert_eq!(res.address, marketplace.to_string());
+    assert_eq!(res, marketplace.to_string());
 
     // 4. Instantiate Whitelist
     let msg = whitelist_updatable::msg::InstantiateMsg {
@@ -318,7 +318,7 @@ mod execute {
     use cosmwasm_std::StdError;
     use cw721::{NftInfoResponse, OperatorsResponse};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
-    use sg_name::{AssociatedAddressResponse, Metadata, NameResponse};
+    use sg_name::Metadata;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
@@ -501,13 +501,12 @@ mod execute {
         assert!(res.is_ok());
 
         // when no associated address, query should throw error
-        let res: Result<AssociatedAddressResponse, cosmwasm_std::StdError> =
-            app.wrap().query_wasm_smart(
-                COLLECTION,
-                &SgNameQueryMsg::AssociatedAddress {
-                    name: NAME.to_string(),
-                },
-            );
+        let res: Result<String, cosmwasm_std::StdError> = app.wrap().query_wasm_smart(
+            COLLECTION,
+            &SgNameQueryMsg::AssociatedAddress {
+                name: NAME.to_string(),
+            },
+        );
         assert!(res.is_err());
 
         let msg = SgNameExecuteMsg::AssociateAddress {
@@ -523,7 +522,7 @@ mod execute {
         assert!(res.is_ok());
 
         // query associated address should return user
-        let res: AssociatedAddressResponse = app
+        let res: String = app
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
@@ -532,7 +531,7 @@ mod execute {
                 },
             )
             .unwrap();
-        assert_eq!(res.associated_address, user.to_string());
+        assert_eq!(res, user.to_string());
 
         // added to get around rate limiting
         update_block_time(&mut app, 60);
@@ -554,7 +553,7 @@ mod execute {
         );
         assert!(res.is_ok());
 
-        let res: NameResponse = app
+        let res: String = app
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
@@ -563,7 +562,7 @@ mod execute {
                 },
             )
             .unwrap();
-        assert_eq!(res.name, name2.to_string());
+        assert_eq!(res, name2.to_string());
 
         // prev token_id should reset token_uri to None
         let res: NftInfoResponse<Metadata> = app
@@ -628,7 +627,7 @@ mod execute {
         assert!(res.is_ok());
 
         // confirm removed from reverse names map
-        let res: Result<NameResponse, StdError> = app.wrap().query_wasm_smart(
+        let res: Result<String, StdError> = app.wrap().query_wasm_smart(
             Addr::unchecked(COLLECTION),
             &SgNameQueryMsg::Name {
                 address: user.to_string(),
@@ -855,7 +854,6 @@ mod query {
     use name_marketplace::msg::{AskCountResponse, AsksResponse, BidsResponse};
     use sg721_base::msg::CollectionInfoResponse;
     use sg721_base::msg::QueryMsg as Sg721QueryMsg;
-    use sg_name::NameResponse;
 
     use super::*;
 
@@ -1028,7 +1026,7 @@ mod query {
         assert!(res.is_ok());
 
         // fails with "user" string, has to be a bech32 address
-        let res: StdResult<NameResponse> = app.wrap().query_wasm_smart(
+        let res: StdResult<String> = app.wrap().query_wasm_smart(
             COLLECTION,
             &SgNameQueryMsg::Name {
                 address: USER.to_string(),
@@ -1054,7 +1052,7 @@ mod query {
         );
         assert!(res.is_ok());
 
-        let res: NameResponse = app
+        let res: String = app
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
@@ -1063,7 +1061,7 @@ mod query {
                 },
             )
             .unwrap();
-        assert_eq!(res.name, "yoyo".to_string());
+        assert_eq!(res, "yoyo".to_string());
     }
 
     #[test]
@@ -1088,7 +1086,7 @@ mod collection {
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
     use sg721_name::msg::{ParamsResponse, QueryMsg as Sg721NameQueryMsg};
-    use sg_name::{Metadata, NameResponse, TextRecord};
+    use sg_name::{Metadata, TextRecord};
 
     use super::*;
 
@@ -1442,21 +1440,21 @@ mod collection {
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),
         };
-        let res: NameResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
-        assert_eq!(res.name, NAME.to_string());
+        let res: String = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(res, NAME.to_string());
 
         transfer(&mut app, user, user2);
 
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),
         };
-        let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        let err: StdResult<String> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(err.is_err());
 
         let msg = SgNameQueryMsg::Name {
             address: user2.to_string(),
         };
-        let err: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        let err: StdResult<String> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(err.is_err());
     }
 
@@ -1540,8 +1538,8 @@ mod collection {
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),
         };
-        let res: NameResponse = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
-        assert_eq!(res.name, NAME.to_string());
+        let res: String = app.wrap().query_wasm_smart(COLLECTION, &msg).unwrap();
+        assert_eq!(res, NAME.to_string());
 
         let msg = Sg721NameExecuteMsg::Burn {
             token_id: NAME.to_string(),
@@ -1563,7 +1561,7 @@ mod collection {
         let msg = SgNameQueryMsg::Name {
             address: user.to_string(),
         };
-        let res: StdResult<NameResponse> = app.wrap().query_wasm_smart(COLLECTION, &msg);
+        let res: StdResult<String> = app.wrap().query_wasm_smart(COLLECTION, &msg);
         assert!(res.is_ok());
     }
 
