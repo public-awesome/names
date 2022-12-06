@@ -50,15 +50,16 @@ cw-controllers = { workspace = true }
 cw2 = { workspace = true }
 cw-utils = { workspace = true }
 schemars = { workspace = true }
+semver = { workspace = true }
 serde = { workspace = true }
-thiserror = { workspace = true }
-sg-whitelist-basic = { path = "../../packages/sg-whitelist-basic" }
 sg-name-minter = { path = "../../packages/sg-name-minter" }
 sg-std = { workspace = true }
+sg-whitelist-basic = { path = "../../packages/sg-whitelist-basic" }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = { workspace = true }
+name-minter = { path = "../name-minter", features = ["library"] }
 sg-name = { path = "../../packages/sg-name" }
 sg-multi-test = { workspace = true }
 sg721-name = { path = "../sg721-name" }
-name-minter = { path = "../name-minter", features = ["library"] }
