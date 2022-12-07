@@ -1,11 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, StdResult};
-use sg_name_minter::{CollectionResponse, ConfigResponse, ParamsResponse};
+use sg_name_minter::{Config, SudoParams};
 
 use crate::{
     msg::QueryMsg,
-    state::{ADMIN, NAME_COLLECTION, SUDO_PARAMS, WHITELISTS},
+    state::{ADMIN, CONFIG, NAME_COLLECTION, SUDO_PARAMS, WHITELISTS},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -24,21 +24,14 @@ fn query_whitelists(deps: Deps) -> StdResult<Vec<Addr>> {
     Ok(whitelists.iter().map(|w| w.addr()).collect())
 }
 
-fn query_collection(deps: Deps) -> StdResult<CollectionResponse> {
-    let collection = NAME_COLLECTION.load(deps.storage)?;
-    Ok(CollectionResponse {
-        collection: collection.to_string(),
-    })
+fn query_collection(deps: Deps) -> StdResult<Addr> {
+    NAME_COLLECTION.load(deps.storage)
 }
 
-fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
-    let params = SUDO_PARAMS.load(deps.storage)?;
-
-    Ok(ParamsResponse { params })
+fn query_params(deps: Deps) -> StdResult<SudoParams> {
+    SUDO_PARAMS.load(deps.storage)
 }
 
-fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = crate::state::CONFIG.load(deps.storage)?;
-
-    Ok(ConfigResponse { config })
+fn query_config(deps: Deps) -> StdResult<Config> {
+    CONFIG.load(deps.storage)
 }

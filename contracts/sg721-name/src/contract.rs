@@ -1,7 +1,6 @@
 use crate::{
     error::ContractError,
-    msg::ParamsResponse,
-    state::{NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
+    state::{SudoParams, NAME_MARKETPLACE, REVERSE_MAP, SUDO_PARAMS, VERIFIER},
 };
 
 use cosmwasm_std::{
@@ -14,10 +13,7 @@ use cw_utils::nonpayable;
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
-use sg_name::{
-    AssociatedAddressResponse, Metadata, NameMarketplaceResponse, NameResponse, TextRecord,
-    MAX_TEXT_LENGTH, NFT,
-};
+use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
 use sg_std::Response;
 
@@ -550,45 +546,28 @@ fn validate_record(record: &TextRecord) -> Result<(), ContractError> {
     Ok(())
 }
 
-pub fn query_name_marketplace(deps: Deps) -> StdResult<NameMarketplaceResponse> {
-    let address = NAME_MARKETPLACE.load(deps.storage)?;
-
-    Ok(NameMarketplaceResponse {
-        address: address.to_string(),
-    })
+pub fn query_name_marketplace(deps: Deps) -> StdResult<Addr> {
+    NAME_MARKETPLACE.load(deps.storage)
 }
 
-pub fn query_name(deps: Deps, mut address: String) -> StdResult<NameResponse> {
+pub fn query_name(deps: Deps, mut address: String) -> StdResult<String> {
     if !address.starts_with("stars") {
         address = transcode(&address)?;
     }
 
-    let name = REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)?;
-
-    Ok(NameResponse { name })
+    REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)
 }
 
-pub fn query_params(deps: Deps) -> StdResult<ParamsResponse> {
-    let params = SUDO_PARAMS.load(deps.storage)?;
-    Ok(ParamsResponse {
-        max_record_count: params.max_record_count,
-    })
+pub fn query_params(deps: Deps) -> StdResult<SudoParams> {
+    SUDO_PARAMS.load(deps.storage)
 }
 
-pub fn query_associated_address(deps: Deps, name: &str) -> StdResult<AssociatedAddressResponse> {
-    // query name for token info
-    let token_info = Sg721NameContract::default()
+pub fn query_associated_address(deps: Deps, name: &str) -> StdResult<String> {
+    Sg721NameContract::default()
         .tokens
-        .load(deps.storage, name)?;
-
-    let addr = token_info.token_uri.map_or_else(
-        // token uri holds associated address, throw err if it does not exist
-        || Err(StdError::generic_err("No associated address")),
-        Ok,
-    )?;
-    Ok(AssociatedAddressResponse {
-        associated_address: addr,
-    })
+        .load(deps.storage, name)?
+        .token_uri
+        .ok_or_else(|| StdError::generic_err("No associated address"))
 }
 
 pub fn transcode(address: &str) -> StdResult<String> {

@@ -60,21 +60,12 @@ export type QueryMsg = {
 export interface AdminResponse {
   admin?: string | null;
 }
-export interface CollectionResponse {
-  collection: string;
-}
-export interface ConfigResponse {
-  config: Config;
-}
+export type Addr = string;
 export type Decimal = string;
-export interface ParamsResponse {
-  params: SudoParams;
-}
 export interface SudoParams {
   base_price: Uint128;
   fair_burn_percent: Decimal;
   max_name_length: number;
   min_name_length: number;
 }
-export type Addr = string;
 export type ArrayOfAddr = Addr[];

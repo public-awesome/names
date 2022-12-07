@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::msg::*;
+    use crate::{msg::*, state::Config};
 
     use cosmwasm_std::Addr;
     use name_minter::msg::InstantiateMsg as NameMinterInstantiateMsg;
@@ -393,11 +393,11 @@ mod tests {
         assert!(!res);
 
         // query config
-        let res: ConfigResponse = app
+        let res: Config = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
             .unwrap();
-        assert_eq!(res.config.admin, Addr::unchecked(OTHER_ADMIN).to_string());
-        assert_eq!(res.config.per_address_limit, new_per_address_limit);
+        assert_eq!(res.admin, Addr::unchecked(OTHER_ADMIN).to_string());
+        assert_eq!(res.per_address_limit, new_per_address_limit);
     }
 }

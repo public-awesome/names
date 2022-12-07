@@ -48,8 +48,8 @@ fn ask_indexed_map() {
     assert_eq!(res.unwrap(), ask);
 
     let res = query_asks_by_seller(deps.as_ref(), seller, None, None).unwrap();
-    assert_eq!(res.asks.len(), 2);
-    assert_eq!(res.asks[0], ask);
+    assert_eq!(res.len(), 2);
+    assert_eq!(res[0], ask);
 }
 
 #[test]
@@ -81,8 +81,8 @@ fn bid_indexed_map() {
     assert_eq!(res.unwrap(), bid);
 
     let res = query_bids_by_bidder(deps.as_ref(), bidder, None, None).unwrap();
-    assert_eq!(res.bids.len(), 2);
-    assert_eq!(res.bids[0], bid);
+    assert_eq!(res.len(), 2);
+    assert_eq!(res[0], bid);
 }
 
 fn setup_contract(deps: DepsMut) {

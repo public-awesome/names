@@ -135,9 +135,7 @@ export interface BidOffset {
   price: Uint128;
   token_id: string;
 }
-export interface AskResponse {
-  ask?: Ask | null;
-}
+export type NullableAsk = Ask | null;
 export interface Ask {
   id: number;
   renewal_fund: Uint128;
@@ -145,35 +143,23 @@ export interface Ask {
   seller: Addr;
   token_id: string;
 }
-export interface AskCountResponse {
-  count: number;
-}
 export interface HooksResponse {
   hooks: string[];
 }
-export interface AsksResponse {
-  asks: Ask[];
-}
-export interface BidResponse {
-  bid?: Bid | null;
-}
+export type ArrayOfAsk = Ask[];
+export type NullableBid = Bid | null;
 export interface Bid {
   amount: Uint128;
   bidder: Addr;
   created_time: Timestamp;
   token_id: string;
 }
-export interface BidsResponse {
-  bids: Bid[];
-}
+export type ArrayOfBid = Bid[];
 export interface ConfigResponse {
   collection: Addr;
   minter: Addr;
 }
 export type Decimal = string;
-export interface ParamsResponse {
-  params: SudoParams;
-}
 export interface SudoParams {
   ask_interval: number;
   min_price: Uint128;

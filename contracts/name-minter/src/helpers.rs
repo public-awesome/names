@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery};
-use sg_name_minter::{ParamsResponse, SudoParams};
+use sg_name_minter::SudoParams;
 use sg_std::CosmosMsg;
 
 use crate::msg::{ExecuteMsg, QueryMsg};
@@ -25,11 +25,11 @@ impl NameMinterContract {
     }
 
     pub fn params(&self, querier: &QuerierWrapper) -> StdResult<SudoParams> {
-        let res: ParamsResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        let res: SudoParams = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::Params {})?,
         }))?;
 
-        Ok(res.params)
+        Ok(res)
     }
 }

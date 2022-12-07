@@ -15,6 +15,11 @@ pub struct SudoParams {
 }
 
 #[cw_serde]
+pub struct Config {
+    pub public_mint_start_time: Timestamp,
+}
+
+#[cw_serde]
 pub enum SgNameMinterExecuteMsg {
     /// Mint a name and list on Stargaze Name Marketplace
     MintAndList { name: String },
@@ -37,28 +42,10 @@ pub enum SgNameMinterQueryMsg {
     Admin {},
     #[returns(Vec<Addr>)]
     Whitelists {},
-    #[returns(CollectionResponse)]
+    #[returns(Addr)]
     Collection {},
-    #[returns(ParamsResponse)]
+    #[returns(SudoParams)]
     Params {},
-}
-
-#[cw_serde]
-pub struct CollectionResponse {
-    pub collection: String,
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub params: SudoParams,
-}
-
-#[cw_serde]
-pub struct Config {
-    pub public_mint_start_time: Timestamp,
-}
-
-#[cw_serde]
-pub struct ConfigResponse {
-    pub config: Config,
+    #[returns(Config)]
+    Config {},
 }

@@ -6,21 +6,21 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, AssociatedAddressResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, NameResponse, NameMarketplaceResponse, NumTokensResponse, ParamsResponse, NullableString } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, String, NumTokensResponse, SudoParams, NullableString } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
-  params: () => Promise<ParamsResponse>;
+  params: () => Promise<SudoParams>;
   name: ({
     address
   }: {
     address: string;
-  }) => Promise<NameResponse>;
-  nameMarketplace: () => Promise<NameMarketplaceResponse>;
+  }) => Promise<String>;
+  nameMarketplace: () => Promise<Addr>;
   associatedAddress: ({
     name
   }: {
     name: string;
-  }) => Promise<AssociatedAddressResponse>;
+  }) => Promise<Addr>;
   verifier: () => Promise<NullableString>;
   ownerOf: ({
     includeExpired,
@@ -115,7 +115,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.collectionInfo = this.collectionInfo.bind(this);
   }
 
-  params = async (): Promise<ParamsResponse> => {
+  params = async (): Promise<SudoParams> => {
     return this.client.queryContractSmart(this.contractAddress, {
       params: {}
     });
@@ -124,14 +124,14 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     address
   }: {
     address: string;
-  }): Promise<NameResponse> => {
+  }): Promise<String> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name: {
         address
       }
     });
   };
-  nameMarketplace = async (): Promise<NameMarketplaceResponse> => {
+  nameMarketplace = async (): Promise<Addr> => {
     return this.client.queryContractSmart(this.contractAddress, {
       name_marketplace: {}
     });
@@ -140,7 +140,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     name
   }: {
     name: string;
-  }): Promise<AssociatedAddressResponse> => {
+  }): Promise<Addr> => {
     return this.client.queryContractSmart(this.contractAddress, {
       associated_address: {
         name

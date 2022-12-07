@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, QueryMsg, Addr, BidOffset, AskResponse, Ask, AskCountResponse, HooksResponse, AsksResponse, BidResponse, Bid, BidsResponse, ConfigResponse, Decimal, ParamsResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, QueryMsg, Addr, BidOffset, NullableAsk, Ask, HooksResponse, ArrayOfAsk, NullableBid, Bid, ArrayOfBid, ConfigResponse, Decimal, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;

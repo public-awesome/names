@@ -1788,18 +1788,9 @@
     },
     "associated_address": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AssociatedAddressResponse",
-      "description": "Returns `associated_address`",
-      "type": "object",
-      "required": [
-        "associated_address"
-      ],
-      "properties": {
-        "associated_address": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
+      "title": "Addr",
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
     },
     "collection_info": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1924,32 +1915,14 @@
     },
     "name": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "NameResponse",
-      "description": "Returns the `token_id`",
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
+      "title": "String",
+      "type": "string"
     },
     "name_marketplace": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "NameMarketplaceResponse",
-      "type": "object",
-      "required": [
-        "address"
-      ],
-      "properties": {
-        "address": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
+      "title": "Addr",
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
     },
     "nft_info": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -2171,7 +2144,7 @@
     },
     "params": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ParamsResponse",
+      "title": "SudoParams",
       "type": "object",
       "required": [
         "max_record_count"

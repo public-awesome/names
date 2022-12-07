@@ -1,4 +1,4 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{to_vec, Addr};
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
@@ -91,32 +91,18 @@ pub enum SgNameExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum SgNameQueryMsg {
-    /// Returns the name for the given address (`NameResponse`).
     /// `address` can be any Bech32 encoded address. It will be
     /// converted to a stars address for internal mapping.
+    #[returns(String)]
     Name { address: String },
-    /// Returns NameMarketplaceResponse
+
+    #[returns(Addr)]
     NameMarketplace {},
-    /// Returns associated address for name (`AssociatedAddressResponse`).
+
+    #[returns(String)]
     AssociatedAddress { name: String },
-}
-
-#[cw_serde]
-pub struct NameMarketplaceResponse {
-    pub address: String,
-}
-
-/// Returns the `token_id`
-#[cw_serde]
-pub struct NameResponse {
-    pub name: String,
-}
-
-/// Returns `associated_address`
-#[cw_serde]
-pub struct AssociatedAddressResponse {
-    pub associated_address: String,
 }
 
 #[cfg(test)]

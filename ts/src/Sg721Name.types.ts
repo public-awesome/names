@@ -245,9 +245,6 @@ export interface ApprovalResponse {
 export interface ApprovalsResponse {
   approvals: Approval[];
 }
-export interface AssociatedAddressResponse {
-  associated_address: string;
-}
 export interface CollectionInfoResponse {
   creator: string;
   description: string;
@@ -264,16 +261,11 @@ export interface ContractInfoResponse {
 export interface MinterResponse {
   minter: string;
 }
-export interface NameResponse {
-  name: string;
-}
-export interface NameMarketplaceResponse {
-  address: string;
-}
+export type String = string;
 export interface NumTokensResponse {
   count: number;
 }
-export interface ParamsResponse {
+export interface SudoParams {
   max_record_count: number;
 }
 export type NullableString = string | null;

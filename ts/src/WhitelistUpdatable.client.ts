@@ -6,10 +6,10 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { InstantiateMsg, ExecuteMsg, QueryMsg, Uint64, AdminResponse, Addr, ConfigResponse, Config, Boolean, IsProcessableResponse, Decimal, PerAddressLimitResponse } from "./WhitelistUpdatable.types";
+import { InstantiateMsg, ExecuteMsg, QueryMsg, Uint64, AdminResponse, Addr, Config, Boolean, Decimal } from "./WhitelistUpdatable.types";
 export interface WhitelistUpdatableReadOnlyInterface {
   contractAddress: string;
-  config: () => Promise<ConfigResponse>;
+  config: () => Promise<Config>;
   includesAddress: ({
     address
   }: {
@@ -24,10 +24,10 @@ export interface WhitelistUpdatableReadOnlyInterface {
     address
   }: {
     address: string;
-  }) => Promise<IsProcessableResponse>;
+  }) => Promise<Boolean>;
   admin: () => Promise<AdminResponse>;
   addressCount: () => Promise<Uint64>;
-  perAddressLimit: () => Promise<PerAddressLimitResponse>;
+  perAddressLimit: () => Promise<Uint64>;
   mintDiscountPercent: () => Promise<Decimal>;
 }
 export class WhitelistUpdatableQueryClient implements WhitelistUpdatableReadOnlyInterface {
@@ -47,7 +47,7 @@ export class WhitelistUpdatableQueryClient implements WhitelistUpdatableReadOnly
     this.mintDiscountPercent = this.mintDiscountPercent.bind(this);
   }
 
-  config = async (): Promise<ConfigResponse> => {
+  config = async (): Promise<Config> => {
     return this.client.queryContractSmart(this.contractAddress, {
       config: {}
     });
@@ -78,7 +78,7 @@ export class WhitelistUpdatableQueryClient implements WhitelistUpdatableReadOnly
     address
   }: {
     address: string;
-  }): Promise<IsProcessableResponse> => {
+  }): Promise<Boolean> => {
     return this.client.queryContractSmart(this.contractAddress, {
       is_processable: {
         address
@@ -95,7 +95,7 @@ export class WhitelistUpdatableQueryClient implements WhitelistUpdatableReadOnly
       address_count: {}
     });
   };
-  perAddressLimit = async (): Promise<PerAddressLimitResponse> => {
+  perAddressLimit = async (): Promise<Uint64> => {
     return this.client.queryContractSmart(this.contractAddress, {
       per_address_limit: {}
     });

@@ -1,4 +1,5 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 
 #[cw_serde]
 pub enum SgWhitelistExecuteMsg {
@@ -16,36 +17,21 @@ pub enum SgWhitelistExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum SgWhitelistQueryMsg {
     /// Query the current contract admin
+    #[returns(Addr)]
     Admin {},
     /// Query the number of addresses
+    #[returns(u64)]
     AddressCount {},
     /// Query the per address limit
+    #[returns(u64)]
     PerAddressLimit { limit: u64 },
     /// Query if address is included
+    #[returns(bool)]
     IncludesAddress { address: String },
     /// Query if address is included and under per address limit
+    #[returns(bool)]
     IsProcessable { address: String },
-}
-
-#[cw_serde]
-pub struct CountResponse {
-    pub count: u64,
-}
-
-#[cw_serde]
-pub struct PerAddressLimitResponse {
-    pub limit: u64,
-}
-
-#[cw_serde]
-pub struct IncludesAddressResponse {
-    /// Whether the address is included in the whitelist
-    pub included: bool,
-}
-
-#[cw_serde]
-pub struct IsProcessableResponse {
-    pub processable: bool,
 }

@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Timestamp};
+use cosmwasm_std::{Addr, Binary, Timestamp};
 use cw721::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, Expiration,
     NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
@@ -10,9 +10,9 @@ use sg721::{
     UpdateCollectionInfoMsg,
 };
 use sg721_base::msg::{CollectionInfoResponse, QueryMsg as Sg721QueryMsg};
-use sg_name::{
-    AssociatedAddressResponse, Metadata, NameMarketplaceResponse, NameResponse, TextRecord, NFT,
-};
+use sg_name::{Metadata, TextRecord, NFT};
+
+use crate::state::SudoParams;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -161,16 +161,16 @@ pub enum SudoMsg {
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Returns sudo params
-    #[returns(ParamsResponse)]
+    #[returns(SudoParams)]
     Params {},
     /// Reverse lookup of name for address
-    #[returns(NameResponse)]
+    #[returns(String)]
     Name { address: String },
     /// Returns the marketplace contract address
-    #[returns(NameMarketplaceResponse)]
+    #[returns(Addr)]
     NameMarketplace {},
     /// Returns the associated address for a name
-    #[returns(AssociatedAddressResponse)]
+    #[returns(Addr)]
     AssociatedAddress { name: String },
     /// Returns the verification oracle address
     #[returns(Option<String>)]
@@ -291,9 +291,4 @@ impl From<QueryMsg> for Sg721QueryMsg {
             _ => unreachable!("cannot convert {:?} to Cw721QueryMsg", msg),
         }
     }
-}
-
-#[cw_serde]
-pub struct ParamsResponse {
-    pub max_record_count: u32,
 }

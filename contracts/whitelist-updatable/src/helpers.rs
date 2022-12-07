@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use sg_std::CosmosMsg;
 
 use crate::{
-    msg::{ConfigResponse, ExecuteMsg, QueryMsg},
+    msg::{ExecuteMsg, QueryMsg},
     state::Config,
 };
 
@@ -43,12 +43,12 @@ impl WhitelistUpdatableContract {
     }
 
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<Config> {
-        let res: ConfigResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        let res: Config = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::Config {})?,
         }))?;
 
-        Ok(res.config)
+        Ok(res)
     }
 
     pub fn mint_discount_percent(&self, querier: &QuerierWrapper) -> StdResult<Option<Decimal>> {

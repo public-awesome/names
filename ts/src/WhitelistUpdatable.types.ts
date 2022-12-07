@@ -60,19 +60,10 @@ export interface AdminResponse {
   admin?: string | null;
 }
 export type Addr = string;
-export interface ConfigResponse {
-  config: Config;
-}
 export interface Config {
   admin: Addr;
   mint_discount_bps?: number | null;
   per_address_limit: number;
 }
 export type Boolean = boolean;
-export interface IsProcessableResponse {
-  processable: boolean;
-}
 export type Decimal = string;
-export interface PerAddressLimitResponse {
-  limit: number;
-}

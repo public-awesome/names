@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { InstantiateMsg, ExecuteMsg, QueryMsg, Uint64, AdminResponse, Addr, ConfigResponse, Config, Boolean, IsProcessableResponse, Decimal, PerAddressLimitResponse } from "./WhitelistUpdatable.types";
+import { InstantiateMsg, ExecuteMsg, QueryMsg, Uint64, AdminResponse, Addr, Config, Boolean, Decimal } from "./WhitelistUpdatable.types";
 export interface WhitelistUpdatableMessage {
   contractAddress: string;
   sender: string;

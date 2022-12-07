@@ -6,14 +6,14 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, Config, QueryMsg, AdminResponse, CollectionResponse, ConfigResponse, Decimal, ParamsResponse, SudoParams, Addr, ArrayOfAddr } from "./NameMinter.types";
+import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, Config, QueryMsg, AdminResponse, Addr, Decimal, SudoParams, ArrayOfAddr } from "./NameMinter.types";
 export interface NameMinterReadOnlyInterface {
   contractAddress: string;
   admin: () => Promise<AdminResponse>;
   whitelists: () => Promise<ArrayOfAddr>;
-  collection: () => Promise<CollectionResponse>;
-  params: () => Promise<ParamsResponse>;
-  config: () => Promise<ConfigResponse>;
+  collection: () => Promise<Addr>;
+  params: () => Promise<SudoParams>;
+  config: () => Promise<Config>;
 }
 export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
   client: CosmWasmClient;
@@ -39,17 +39,17 @@ export class NameMinterQueryClient implements NameMinterReadOnlyInterface {
       whitelists: {}
     });
   };
-  collection = async (): Promise<CollectionResponse> => {
+  collection = async (): Promise<Addr> => {
     return this.client.queryContractSmart(this.contractAddress, {
       collection: {}
     });
   };
-  params = async (): Promise<ParamsResponse> => {
+  params = async (): Promise<SudoParams> => {
     return this.client.queryContractSmart(this.contractAddress, {
       params: {}
     });
   };
-  config = async (): Promise<ConfigResponse> => {
+  config = async (): Promise<Config> => {
     return this.client.queryContractSmart(this.contractAddress, {
       config: {}
     });
