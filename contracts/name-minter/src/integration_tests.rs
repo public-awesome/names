@@ -316,7 +316,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
 }
 
 mod execute {
-    use cosmwasm_std::StdError;
+    use cosmwasm_std::{attr, StdError};
     use cw721::{NftInfoResponse, OperatorsResponse};
     use name_marketplace::state::{Ask, SudoParams};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
@@ -656,6 +656,14 @@ mod execute {
             &[],
         );
         assert!(res.is_ok());
+
+        res.unwrap().events.iter().for_each(|e| {
+            if e.ty == "wasm-associate-address" {
+                assert_eq!(e.attributes[1], attr("name", NAME));
+                assert_eq!(e.attributes[2], attr("owner", ADMIN2));
+                assert_eq!(e.attributes[3], attr("address", MINTER));
+            }
+        });
     }
 
     #[test]
