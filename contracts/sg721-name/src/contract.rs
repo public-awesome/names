@@ -138,10 +138,13 @@ pub fn execute_associate_address(
     // 6. save new reverse map entry
     token_uri.map(|addr| REVERSE_MAP.save(deps.storage, &addr, &name));
 
-    let event = Event::new("associate-address")
+    let mut event = Event::new("associate-address")
         .add_attribute("name", name)
         .add_attribute("owner", info.sender);
-    address.map(|addr| event.clone().add_attribute("address", addr));
+
+    if let Some(address) = address {
+        event = event.add_attribute("address", address);
+    }
 
     Ok(Response::new().add_event(event))
 }
