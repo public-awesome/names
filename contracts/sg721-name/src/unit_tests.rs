@@ -1,7 +1,8 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
+    OwnedDeps, Querier, QuerierResult, QueryRequest, StdError, SystemError, SystemResult,
+    WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
@@ -10,7 +11,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
-use crate::contract::transcode;
+use crate::contract::{query_name, transcode};
 use crate::entry::{execute, instantiate, query};
 use crate::msg::InstantiateMsg;
 use crate::state::SudoParams;
@@ -290,6 +291,20 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension.records.len(), 1);
+}
+
+#[test]
+fn query_names() {
+    let deps = mock_deps();
+    let address = "stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570".to_string();
+    let err = query_name(deps.as_ref(), address.clone()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        StdError::GenericErr {
+            msg: format!("No name associated with address {}", address)
+        }
+        .to_string()
+    );
 }
 
 #[test]
