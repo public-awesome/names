@@ -21,63 +21,6 @@ use subtle_encoding::bech32;
 
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 
-pub fn execute_update_metadata(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    name: String,
-    metadata: Option<Metadata>,
-) -> Result<Response, ContractError> {
-    let token_id = name;
-
-    nonpayable(&info)?;
-    only_owner(deps.as_ref(), &info.sender, &token_id)?;
-
-    let mut event = Event::new("update-metadata")
-        .add_attribute("token_id", token_id.clone())
-        .add_attribute("owner", info.sender);
-
-    let mut token_info = Sg721NameContract::default()
-        .tokens
-        .load(deps.storage, &token_id)?;
-
-    if let Some(metadata) = metadata {
-        let max_records = SUDO_PARAMS.load(deps.storage)?.max_record_count;
-        if metadata.records.len() > max_records as usize {
-            return Err(ContractError::TooManyRecords { max: max_records });
-        }
-
-        event = event.add_attribute("metadata", metadata.into_json_string());
-
-        if let Some(image_nft) = metadata.image_nft {
-            token_info.extension.image_nft = Some(image_nft);
-        }
-
-        if !metadata.records.is_empty() {
-            for record in metadata.records.iter() {
-                let mut updated_record = record.clone();
-                updated_record.verified = None;
-
-                validate_record(&updated_record)?;
-
-                token_info
-                    .extension
-                    .records
-                    .retain(|r| r.name != updated_record.name);
-                token_info.extension.records.push(updated_record.clone());
-            }
-        };
-    } else {
-        token_info.extension = Metadata::default();
-    };
-
-    Sg721NameContract::default()
-        .tokens
-        .save(deps.storage, &token_id, &token_info)?;
-
-    Ok(Response::new().add_event(event))
-}
-
 pub fn execute_associate_address(
     deps: DepsMut,
     info: MessageInfo,
@@ -431,6 +374,8 @@ pub fn execute_update_text_record(
     mut record: TextRecord,
 ) -> Result<Response, ContractError> {
     let token_id = name;
+    let params = SUDO_PARAMS.load(deps.storage)?;
+    let max_record_count = params.max_record_count;
 
     // updated records should reset verified to None
     record.verified = None;
@@ -448,6 +393,12 @@ pub fn execute_update_text_record(
                     .records
                     .retain(|r| r.name != record.name);
                 token_info.extension.records.push(record.clone());
+                // check record length
+                if token_info.extension.records.len() > max_record_count as usize {
+                    return Err(ContractError::TooManyRecords {
+                        max: max_record_count,
+                    });
+                }
                 Ok(token_info)
             }
             None => Err(ContractError::NameNotFound {}),
