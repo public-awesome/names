@@ -32,11 +32,6 @@ pub enum ExecuteMsg<T> {
         name: String,
         address: Option<String>,
     },
-    /// Update metadata
-    UpdateMetadata {
-        name: String,
-        metadata: Option<Metadata>,
-    },
     /// Update image NFT
     UpdateImageNft { name: String, nft: Option<NFT> },
     /// Add text record ex: twitter handle, discord name, etc
