@@ -215,9 +215,8 @@ pub fn query_bids_for_seller(
     // Query seller asks, then collect bids starting after token_id
     // Limitation: Can not collect bids in the middle using `start_after: token_id` pattern
     // This leads to imprecise pagination based on token id and not bid count
-    let start_token_id = start_after
-        .clone()
-        .map(|start| Bound::<AskKey>::exclusive(ask_key(&start.token_id)));
+    let start_token_id =
+        start_after.map(|start| Bound::<AskKey>::exclusive(ask_key(&start.token_id)));
 
     let bids = asks()
         .idx

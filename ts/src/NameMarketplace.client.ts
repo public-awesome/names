@@ -78,9 +78,13 @@ export interface NameMarketplaceReadOnlyInterface {
     startBefore?: BidOffset;
   }) => Promise<ArrayOfBid>;
   bidsForSeller: ({
-    seller
+    limit,
+    seller,
+    startAfter
   }: {
+    limit?: number;
     seller: string;
+    startAfter?: BidOffset;
   }) => Promise<ArrayOfBid>;
   highestBid: ({
     tokenId
@@ -263,13 +267,19 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     });
   };
   bidsForSeller = async ({
-    seller
+    limit,
+    seller,
+    startAfter
   }: {
+    limit?: number;
     seller: string;
+    startAfter?: BidOffset;
   }): Promise<ArrayOfBid> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bids_for_seller: {
-        seller
+        limit,
+        seller,
+        start_after: startAfter
       }
     });
   };
