@@ -108,7 +108,6 @@ fn mint_and_update() {
     let params: SudoParams =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
     let max_record_count = params.max_record_count;
-    dbg!(max_record_count);
 
     // mint token
     let token_id = "Enterprise";
