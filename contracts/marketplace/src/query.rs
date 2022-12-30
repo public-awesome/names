@@ -212,7 +212,9 @@ pub fn query_bids_for_seller(
     limit: Option<u32>,
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-    // query seller asks, then collect bids after token_id and bidder
+    // Query seller asks, then collect bids starting after token_id
+    // Limitation: Can not collect bids in the middle using `start_after: token_id` pattern
+    // This leads to imprecise pagination based on token id and not bid count
     let start_token_id = start_after
         .clone()
         .map(|start| Bound::<AskKey>::exclusive(ask_key(&start.token_id)));
@@ -222,23 +224,15 @@ pub fn query_bids_for_seller(
         .seller
         .prefix(seller)
         .range(deps.storage, start_token_id, None, Order::Ascending)
+        .take(limit)
         .map(|res| res.map(|item| item.0).unwrap())
         .flat_map(|token_id| {
-            // if token_id is bid offset token id, use bidder as start
-            let start_bidder = match start_after.clone() {
-                Some(start_after) if token_id == start_after.token_id => {
-                    Some(Bound::<Addr>::exclusive(start_after.clone().bidder))
-                }
-                _ => None,
-            };
-
             bids()
                 .prefix(token_id)
-                .range(deps.storage, start_bidder, None, Order::Ascending)
+                .range(deps.storage, None, None, Order::Ascending)
                 .flat_map(|item| item.map(|(_, b)| b))
                 .collect::<Vec<_>>()
         })
-        .take(limit)
         .collect();
 
     Ok(bids)
