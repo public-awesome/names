@@ -982,6 +982,8 @@ mod query {
 
         let msg = MarketplaceQueryMsg::BidsForSeller {
             seller: USER.to_string(),
+            start_after: None,
+            limit: None,
         };
         let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.len(), 2);

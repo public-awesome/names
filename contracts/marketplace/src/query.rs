@@ -1,7 +1,7 @@
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, BidKey, Id, SudoParams, TokenId, ASK_HOOKS, BID_HOOKS,
-    NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_HOOKS,
+    BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -63,9 +63,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_before,
             limit,
         )?),
-        QueryMsg::BidsForSeller { seller } => {
-            to_binary(&query_bids_for_seller(deps, api.addr_validate(&seller)?)?)
-        }
+        QueryMsg::BidsForSeller {
+            seller,
+            start_after,
+            limit,
+        } => to_binary(&query_bids_for_seller(
+            deps,
+            api.addr_validate(&seller)?,
+            start_after,
+            limit,
+        )?),
         QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
         QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
@@ -186,7 +193,7 @@ pub fn query_bids_by_bidder(
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start = start_after.map(|start| Bound::exclusive(bid_key(&start, &bidder)));
+    let start = start_after.map(|start| Bound::exclusive((start, bidder.clone())));
 
     bids()
         .idx
@@ -198,20 +205,40 @@ pub fn query_bids_by_bidder(
         .collect::<StdResult<Vec<_>>>()
 }
 
-pub fn query_bids_for_seller(deps: Deps, seller: Addr) -> StdResult<Vec<Bid>> {
-    let bids: Vec<_> = asks()
+pub fn query_bids_for_seller(
+    deps: Deps,
+    seller: Addr,
+    start_after: Option<BidOffset>,
+    limit: Option<u32>,
+) -> StdResult<Vec<Bid>> {
+    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
+    // query seller asks, then collect bids after token_id and bidder
+    let start_token_id = start_after
+        .clone()
+        .map(|start| Bound::<AskKey>::exclusive(ask_key(&start.token_id)));
+
+    let bids = asks()
         .idx
         .seller
         .prefix(seller)
-        .range(deps.storage, None, None, Order::Ascending)
+        .range(deps.storage, start_token_id, None, Order::Ascending)
         .map(|res| res.map(|item| item.0).unwrap())
         .flat_map(|token_id| {
+            // if token_id is bid offset token id, use bidder as start
+            let start_bidder = match start_after.clone() {
+                Some(start_after) if token_id == start_after.token_id => {
+                    Some(Bound::<Addr>::exclusive(start_after.clone().bidder))
+                }
+                _ => None,
+            };
+
             bids()
                 .prefix(token_id)
-                .range(deps.storage, None, None, Order::Ascending)
+                .range(deps.storage, start_bidder, None, Order::Ascending)
                 .flat_map(|item| item.map(|(_, b)| b))
                 .collect::<Vec<_>>()
         })
+        .take(limit)
         .collect();
 
     Ok(bids)
