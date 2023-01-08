@@ -1029,6 +1029,74 @@ mod query {
     }
 
     #[test]
+    fn renewal_fee() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // mint 1000 funds to user
+        let renewal_fee = coins(1000_u128, NATIVE_DENOM);
+
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: renewal_fee.clone(),
+            }
+        }))
+        .unwrap();
+
+        // user renew domain name
+        let msg = MarketplaceExecuteMsg::FundRenewal {
+            token_id: NAME.to_string(),
+        };
+
+        app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &msg,
+            &renewal_fee,
+        )
+        .unwrap();
+
+        // verify user have no money
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
+        assert_eq!(res.amount, Uint128::new(0));
+
+        // user sends the nft to bob
+        let bob: &str = &"bob";
+
+        let msg = Sg721NameExecuteMsg::TransferNft {
+            recipient: bob.to_string(),
+            token_id: NAME.to_string(),
+        };
+        app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        )
+        .unwrap();
+
+        // the renewal fee should refunded back to user, however it incorrectly sent to bob
+        let user_balance = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap()
+            .amount;
+        assert_eq!(user_balance, renewal_fee[0].amount);
+
+        let bob_balance = app
+            .wrap()
+            .query_balance(bob.clone(), NATIVE_DENOM)
+            .unwrap()
+            .amount;
+        assert_eq!(bob_balance, Uint128::zero());
+    }
+
+    #[test]
     fn query_name() {
         let mut app = instantiate_contracts(None, None, None);
 
