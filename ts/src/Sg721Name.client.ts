@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, Metadata, NFT, TextRecord, MintMsgForMetadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, String, NumTokensResponse, SudoParams, NullableString } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadata, Metadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, String, NumTokensResponse, SudoParams, NullableString } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   params: () => Promise<SudoParams>;
@@ -309,13 +309,6 @@ export interface Sg721NameInterface extends Sg721NameReadOnlyInterface {
     address?: string;
     name: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  updateMetadata: ({
-    metadata,
-    name
-  }: {
-    metadata?: Metadata;
-    name: string;
-  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   updateImageNft: ({
     name,
     nft
@@ -438,7 +431,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     this.contractAddress = contractAddress;
     this.setNameMarketplace = this.setNameMarketplace.bind(this);
     this.associateAddress = this.associateAddress.bind(this);
-    this.updateMetadata = this.updateMetadata.bind(this);
     this.updateImageNft = this.updateImageNft.bind(this);
     this.addTextRecord = this.addTextRecord.bind(this);
     this.removeTextRecord = this.removeTextRecord.bind(this);
@@ -479,20 +471,6 @@ export class Sg721NameClient extends Sg721NameQueryClient implements Sg721NameIn
     return await this.client.execute(this.sender, this.contractAddress, {
       associate_address: {
         address,
-        name
-      }
-    }, fee, memo, funds);
-  };
-  updateMetadata = async ({
-    metadata,
-    name
-  }: {
-    metadata?: Metadata;
-    name: string;
-  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      update_metadata: {
-        metadata,
         name
       }
     }, fee, memo, funds);

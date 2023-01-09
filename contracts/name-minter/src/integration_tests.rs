@@ -1339,26 +1339,6 @@ mod collection {
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
 
-        // attempt update metadata w text record w verified value
-        let msg = SgNameExecuteMsg::UpdateMetadata {
-            name: NAME.to_string(),
-            metadata: Some(Metadata {
-                image_nft: None,
-                records: vec![TextRecord {
-                    name: name.to_string(),
-                    value: "some new value".to_string(),
-                    verified: Some(true),
-                }],
-            }),
-        };
-        let res = app.execute_contract(
-            Addr::unchecked(USER),
-            Addr::unchecked(COLLECTION),
-            &msg,
-            &[],
-        );
-        assert!(res.is_ok());
-
         // query text record to see if verified is not set
         let res: NftInfoResponse<Metadata> = app
             .wrap()

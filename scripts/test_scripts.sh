@@ -12,19 +12,6 @@ name=$(openssl rand -hex 20);
 echo "mint new token $name";
 ./exec_mint.sh $name
 
-# update metadata
-echo "update metadata";
-metadata=$(cat <<EOF
-{
-    "records": [{
-        "name": "discord",
-        "value": "reallycool"
-    }]
-}
-EOF
-)
-./exec_update_metadata.sh $name $metadata
-
 # add text record
 echo "add text record";
 ./exec_add_text.sh $name

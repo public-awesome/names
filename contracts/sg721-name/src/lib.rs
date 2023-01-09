@@ -33,9 +33,8 @@ pub mod entry {
     use contract::{
         execute_add_text_record, execute_associate_address, execute_burn, execute_mint,
         execute_remove_text_record, execute_send_nft, execute_set_name_marketplace,
-        execute_transfer_nft, execute_update_image_nft, execute_update_metadata,
-        execute_update_text_record, query_associated_address, query_name, query_name_marketplace,
-        query_params,
+        execute_transfer_nft, execute_update_image_nft, execute_update_text_record,
+        query_associated_address, query_name, query_name_marketplace, query_params,
     };
     use cosmwasm_std::{
         to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, StdError, StdResult,
@@ -83,9 +82,6 @@ pub mod entry {
         let api = deps.api;
 
         match msg {
-            ExecuteMsg::UpdateMetadata { name, metadata } => {
-                execute_update_metadata(deps, env, info, name, metadata)
-            }
             ExecuteMsg::AssociateAddress { name, address } => {
                 execute_associate_address(deps, info, name, address)
             }

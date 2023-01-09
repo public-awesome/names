@@ -36,11 +36,6 @@ export type ExecuteMsg = {
     name: string;
   };
 } | {
-  update_metadata: {
-    metadata?: Metadata | null;
-    name: string;
-  };
-} | {
   update_image_nft: {
     name: string;
     nft?: NFT | null;
@@ -125,10 +120,6 @@ export type Expiration = {
 } | {
   never: {};
 };
-export interface Metadata {
-  image_nft?: NFT | null;
-  records: TextRecord[];
-}
 export interface NFT {
   collection: Addr;
   token_id: string;
@@ -143,6 +134,10 @@ export interface MintMsgForMetadata {
   owner: string;
   token_id: string;
   token_uri?: string | null;
+}
+export interface Metadata {
+  image_nft?: NFT | null;
+  records: TextRecord[];
 }
 export interface UpdateCollectionInfoMsgForRoyaltyInfoResponse {
   description?: string | null;
