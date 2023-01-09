@@ -1080,7 +1080,7 @@ mod query {
         )
         .unwrap();
 
-        // the renewal fee should refunded back to user, however it incorrectly sent to bob
+        // the renewal fee should refunded back to user
         let user_balance = app
             .wrap()
             .query_balance(USER.to_string(), NATIVE_DENOM)
