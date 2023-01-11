@@ -11,7 +11,7 @@ Stargaze Names associates human-readable usernames with Cosmos addresses. Addres
 | Testnet | `rest.elgafar-1.stargaze-apis.com` | `stars1rgn9tuxnl3ju9td3mfxdl2vm4t8xuaztcdakgtyx23c4ffm97cus25fvjs` |
 | Mainnet | `rest.stargaze-apis.com`           | `stars1fx74nkqkw2748av8j7ew7r3xt9cgjqduwn8m0ur5lhe49uhlsasszc5fhr` |
 
-### Querying Associated Address (Reverse Lookup)
+### Query Associated Address
 
 Given a name, get its associated address. Queries are base64 encoded.
 
@@ -44,7 +44,7 @@ API call:
 | Testnet | `rpc.elgafar-1.stargaze-apis.com` | `stars1rgn9tuxnl3ju9td3mfxdl2vm4t8xuaztcdakgtyx23c4ffm97cus25fvjs` |
 | Mainnet | `rpc.stargaze-apis.com`           | `stars1fx74nkqkw2748av8j7ew7r3xt9cgjqduwn8m0ur5lhe49uhlsasszc5fhr` |
 
-### Querying Associated Address (Reverse Lookup)
+### Query Associated Address
 
 ```ts
 import { CosmWasmClient } from "cosmwasm";
