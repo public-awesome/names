@@ -35,6 +35,26 @@ API call:
 {endpoint}/cosmwasm/wasm/v1/contract/{contract}/smart/{query}
 ```
 
+### Query Name
+
+Given an address, query it's associated name. An address can be _any_ Cosmos address for a chain that uses the 118 coin type. In the future, Stargaze Names will support other coin types.
+
+```json
+{
+  "name": { "address": "stars1tqzzmxsvzu4952mnd5ul800wfusr6p72magyge" }
+}
+```
+
+`query`:
+
+`ewogICJuYW1lIjogeyAiYWRkcmVzcyI6ICJzdGFyczF0cXp6bXhzdnp1NDk1Mm1uZDV1bDgwMHdmdXNyNnA3Mm1hZ3lnZSIgfQp9Cg==`
+
+API call:
+
+```
+{endpoint}/cosmwasm/wasm/v1/contract/{contract}/smart/{query}
+```
+
 ## Typescript
 
 ### Variables
@@ -56,4 +76,18 @@ const address = await client.queryContractSmart(contract, {
 });
 
 console.log("address:", address);
+```
+
+### Query Name
+
+```ts
+import { CosmWasmClient } from "cosmwasm";
+
+const client = await CosmWasmClient.connect(endpoint);
+
+const address = await client.queryContractSmart(contract, {
+  name: { address: "stars1tqzzmxsvzu4952mnd5ul800wfusr6p72magyge" },
+});
+
+console.log("name:", name);
 ```
