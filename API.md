@@ -27,7 +27,7 @@ Let's say you want to query the name `alice`.
 
 `query`:
 
-`ewogICJhc3NvY2lhdGVkX2FkZHJlc3MiOiB7CiAgICAibmFtZSI6ICJhbGljZSIKICB9Cn0K`
+`ewogICJhc3NvY2lhdGVkX2FkZHJlc3MiOiB7CiAgICAibmFtZSI6ICJhbGljZSIKICB9Cn0=`
 
 API call:
 
