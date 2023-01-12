@@ -1,5 +1,9 @@
 # Stargaze Names: A Cosmos IBC Name Service
 
+## API Docs
+
+See [API Docs](./API.md)
+
 ## Architecture
 
 Names are stored without the TLD so they can be mapped to _any_ Cosmos address. All names can be resolved to an address that is derived via the same Cosmos key derivation path (118).
