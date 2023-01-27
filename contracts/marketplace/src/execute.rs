@@ -117,14 +117,12 @@ pub fn execute_set_ask(
         return Err(ContractError::UnauthorizedMinter {});
     }
 
-    check_rate_limit(deps.storage, env.block.time, seller.clone())?;
-
     let collection = NAME_COLLECTION.load(deps.storage)?;
 
     // check if collection is approved to transfer on behalf of the seller
     let ops = Cw721Contract::<Empty, Empty>(collection, PhantomData, PhantomData).all_operators(
         &deps.querier,
-        &seller.to_string(),
+        seller.to_string(),
         false,
         None,
         None,
@@ -558,32 +556,6 @@ fn only_owner(
     }
 
     Ok(res)
-}
-
-fn check_rate_limit(store: &dyn Storage, block_time: Timestamp, seller: Addr) -> StdResult<()> {
-    let ask_interval = SUDO_PARAMS.load(store)?.ask_interval;
-
-    let min_renewal_time = block_time
-        .plus_seconds(SECONDS_PER_YEAR)
-        .minus_seconds(ask_interval);
-
-    if asks()
-        .idx
-        .seller
-        .prefix(seller)
-        .range(store, None, None, Order::Ascending)
-        .any(|item| {
-            let (_, ask) = item.as_ref().unwrap();
-            ask.renewal_time > min_renewal_time
-        })
-    {
-        return Err(StdError::generic_err(format!(
-            "You are rate limited. Try again after {} seconds",
-            ask_interval
-        )));
-    }
-
-    Ok(())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

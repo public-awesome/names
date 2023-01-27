@@ -744,24 +744,6 @@ mod execute {
     }
 
     #[test]
-    fn test_rate_limiter() {
-        let mut app = instantiate_contracts(None, None, None);
-
-        let res = mint_and_list(&mut app, NAME, USER, None);
-        assert!(res.is_ok());
-
-        update_block_time(&mut app, 10);
-
-        let res = mint_and_list(&mut app, "name2", USER, None);
-        assert!(res.is_err());
-
-        update_block_time(&mut app, 100);
-
-        let res = mint_and_list(&mut app, "name2", USER, None);
-        assert!(res.is_ok());
-    }
-
-    #[test]
     fn update_mkt_sudo() {
         let mut app = instantiate_contracts(None, None, None);
 
@@ -1066,7 +1048,7 @@ mod query {
         assert_eq!(res.amount, Uint128::new(0));
 
         // user sends the nft to bob
-        let bob: &str = &"bob";
+        let bob: &str = "bob";
 
         let msg = Sg721NameExecuteMsg::TransferNft {
             recipient: bob.to_string(),
@@ -1088,11 +1070,7 @@ mod query {
             .amount;
         assert_eq!(user_balance, renewal_fee[0].amount);
 
-        let bob_balance = app
-            .wrap()
-            .query_balance(bob.clone(), NATIVE_DENOM)
-            .unwrap()
-            .amount;
+        let bob_balance = app.wrap().query_balance(bob, NATIVE_DENOM).unwrap().amount;
         assert_eq!(bob_balance, Uint128::zero());
     }
 
