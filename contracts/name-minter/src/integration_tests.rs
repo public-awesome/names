@@ -1125,7 +1125,7 @@ mod collection {
     use cw_controllers::AdminResponse;
     use name_marketplace::state::Ask;
     use sg721_name::{msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams};
-    use sg_name::{Metadata, TextRecord};
+    use sg_name::{Metadata, TextRecord, NFT};
 
     use super::*;
 
@@ -1379,6 +1379,18 @@ mod collection {
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
+
+        // query image nft
+        let res: Option<NFT> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::ImageNFT {
+                    name: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert!(res.is_none());
     }
 
     #[test]

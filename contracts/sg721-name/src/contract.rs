@@ -524,6 +524,14 @@ pub fn query_associated_address(deps: Deps, name: &str) -> StdResult<String> {
         .ok_or_else(|| StdError::generic_err("No associated address"))
 }
 
+pub fn query_image_nft(deps: Deps, name: &str) -> StdResult<Option<NFT>> {
+    Ok(Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, name)?
+        .extension
+        .image_nft)
+}
+
 pub fn transcode(address: &str) -> StdResult<String> {
     let (_, data) =
         bech32::decode(address).map_err(|_| StdError::generic_err("Invalid bech32 address"))?;
