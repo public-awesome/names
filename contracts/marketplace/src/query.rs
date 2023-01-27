@@ -1,7 +1,7 @@
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, Bid, BidKey, Id, SudoParams, TokenId, ASK_HOOKS, BID_HOOKS,
-    NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, Bid, BidKey, Id, SudoParams, TokenId, ASK_COUNT, ASK_HOOKS,
+    BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -110,11 +110,7 @@ pub fn query_asks(deps: Deps, start_after: Option<Id>, limit: Option<u32>) -> St
 }
 
 pub fn query_ask_count(deps: Deps) -> StdResult<u64> {
-    let count = asks()
-        .keys_raw(deps.storage, None, None, Order::Ascending)
-        .count() as u64;
-
-    Ok(count)
+    ASK_COUNT.load(deps.storage)
 }
 
 // TODO: figure out how to paginate by `Id` instead of `TokenId`
