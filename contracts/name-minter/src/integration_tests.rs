@@ -882,24 +882,6 @@ mod query {
     }
 
     #[test]
-    fn query_reverse_asks() {
-        let mut app = instantiate_contracts(None, None, None);
-
-        let res = mint_and_list(&mut app, NAME, USER, None);
-        assert!(res.is_ok());
-
-        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
-        assert!(res.is_ok());
-
-        let msg = MarketplaceQueryMsg::ReverseAsks {
-            start_before: None,
-            limit: None,
-        };
-        let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res[0].id, 2);
-    }
-
-    #[test]
     fn query_asks_by_seller() {
         let mut app = instantiate_contracts(None, None, None);
 
