@@ -1,7 +1,7 @@
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_HOOKS,
-    BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_COUNT,
+    ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -19,10 +19,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Ask { token_id } => to_binary(&query_ask(deps, token_id)?),
         QueryMsg::Asks { start_after, limit } => to_binary(&query_asks(deps, start_after, limit)?),
-        QueryMsg::ReverseAsks {
-            start_before,
-            limit,
-        } => to_binary(&reverse_query_asks(deps, start_before, limit)?),
         QueryMsg::AsksBySeller {
             seller,
             start_after,
@@ -120,40 +116,8 @@ pub fn query_asks(deps: Deps, start_after: Option<Id>, limit: Option<u32>) -> St
         .collect::<StdResult<Vec<_>>>()
 }
 
-pub fn reverse_query_asks(
-    deps: Deps,
-    start_before: Option<Id>,
-    limit: Option<u32>,
-) -> StdResult<Vec<Ask>> {
-    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
-
-    let start = start_before.unwrap_or(
-        (asks()
-            .keys_raw(deps.storage, None, None, Order::Ascending)
-            .count()
-            + 1) as u64,
-    );
-
-    asks()
-        .idx
-        .id
-        .range(
-            deps.storage,
-            None,
-            Some(Bound::exclusive(start)),
-            Order::Descending,
-        )
-        .take(limit)
-        .map(|res| res.map(|item| item.1))
-        .collect::<StdResult<Vec<_>>>()
-}
-
 pub fn query_ask_count(deps: Deps) -> StdResult<u64> {
-    let count = asks()
-        .keys_raw(deps.storage, None, None, Order::Ascending)
-        .count() as u64;
-
-    Ok(count)
+    ASK_COUNT.load(deps.storage)
 }
 
 // TODO: figure out how to paginate by `Id` instead of `TokenId`

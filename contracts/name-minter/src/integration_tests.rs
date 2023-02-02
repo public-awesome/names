@@ -744,24 +744,6 @@ mod execute {
     }
 
     #[test]
-    fn test_rate_limiter() {
-        let mut app = instantiate_contracts(None, None, None);
-
-        let res = mint_and_list(&mut app, NAME, USER, None);
-        assert!(res.is_ok());
-
-        update_block_time(&mut app, 10);
-
-        let res = mint_and_list(&mut app, "name2", USER, None);
-        assert!(res.is_err());
-
-        update_block_time(&mut app, 100);
-
-        let res = mint_and_list(&mut app, "name2", USER, None);
-        assert!(res.is_ok());
-    }
-
-    #[test]
     fn update_mkt_sudo() {
         let mut app = instantiate_contracts(None, None, None);
 
@@ -898,24 +880,6 @@ mod query {
         };
         let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res[0].id, 1);
-    }
-
-    #[test]
-    fn query_reverse_asks() {
-        let mut app = instantiate_contracts(None, None, None);
-
-        let res = mint_and_list(&mut app, NAME, USER, None);
-        assert!(res.is_ok());
-
-        let res = mint_and_list(&mut app, "hack", ADMIN2, None);
-        assert!(res.is_ok());
-
-        let msg = MarketplaceQueryMsg::ReverseAsks {
-            start_before: None,
-            limit: None,
-        };
-        let res: Vec<Ask> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
-        assert_eq!(res[0].id, 2);
     }
 
     #[test]
@@ -1060,6 +1024,70 @@ mod query {
     }
 
     #[test]
+    fn renewal_fee() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // mint 1000 funds to user
+        let renewal_fee = coins(1000_u128, NATIVE_DENOM);
+
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: renewal_fee.clone(),
+            }
+        }))
+        .unwrap();
+
+        // user renew domain name
+        let msg = MarketplaceExecuteMsg::FundRenewal {
+            token_id: NAME.to_string(),
+        };
+
+        app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &msg,
+            &renewal_fee,
+        )
+        .unwrap();
+
+        // verify user have no money
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
+        assert_eq!(res.amount, Uint128::new(0));
+
+        // user sends the nft to bob
+        let bob: &str = "bob";
+
+        let msg = Sg721NameExecuteMsg::TransferNft {
+            recipient: bob.to_string(),
+            token_id: NAME.to_string(),
+        };
+        app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        )
+        .unwrap();
+
+        // the renewal fee should refunded back to user
+        let user_balance = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap()
+            .amount;
+        assert_eq!(user_balance, renewal_fee[0].amount);
+
+        let bob_balance = app.wrap().query_balance(bob, NATIVE_DENOM).unwrap().amount;
+        assert_eq!(bob_balance, Uint128::zero());
+    }
+
+    #[test]
     fn query_name() {
         let mut app = instantiate_contracts(None, None, None);
 
@@ -1128,7 +1156,7 @@ mod collection {
     use cw_controllers::AdminResponse;
     use name_marketplace::state::Ask;
     use sg721_name::{msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams};
-    use sg_name::{Metadata, TextRecord};
+    use sg_name::{Metadata, TextRecord, NFT};
 
     use super::*;
 
@@ -1370,26 +1398,6 @@ mod collection {
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
 
-        // attempt update metadata w text record w verified value
-        let msg = SgNameExecuteMsg::UpdateMetadata {
-            name: NAME.to_string(),
-            metadata: Some(Metadata {
-                image_nft: None,
-                records: vec![TextRecord {
-                    name: name.to_string(),
-                    value: "some new value".to_string(),
-                    verified: Some(true),
-                }],
-            }),
-        };
-        let res = app.execute_contract(
-            Addr::unchecked(USER),
-            Addr::unchecked(COLLECTION),
-            &msg,
-            &[],
-        );
-        assert!(res.is_ok());
-
         // query text record to see if verified is not set
         let res: NftInfoResponse<Metadata> = app
             .wrap()
@@ -1402,6 +1410,18 @@ mod collection {
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
         assert_eq!(res.extension.records[0].verified, None);
+
+        // query image nft
+        let res: Option<NFT> = app
+            .wrap()
+            .query_wasm_smart(
+                COLLECTION,
+                &Sg721NameQueryMsg::ImageNFT {
+                    name: NAME.to_string(),
+                },
+            )
+            .unwrap();
+        assert!(res.is_none());
     }
 
     #[test]

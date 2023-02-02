@@ -32,11 +32,6 @@ pub enum ExecuteMsg<T> {
         name: String,
         address: Option<String>,
     },
-    /// Update metadata
-    UpdateMetadata {
-        name: String,
-        metadata: Option<Metadata>,
-    },
     /// Update image NFT
     UpdateImageNft { name: String, nft: Option<NFT> },
     /// Add text record ex: twitter handle, discord name, etc
@@ -172,6 +167,9 @@ pub enum QueryMsg {
     /// Returns the associated address for a name
     #[returns(Addr)]
     AssociatedAddress { name: String },
+    /// Returns the image NFT for a name
+    #[returns(Option<NFT>)]
+    ImageNFT { name: String },
     /// Returns the verification oracle address
     #[returns(Option<String>)]
     Verifier {},

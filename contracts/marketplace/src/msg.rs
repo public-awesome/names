@@ -117,12 +117,6 @@ pub enum QueryMsg {
         start_after: Option<Id>,
         limit: Option<u32>,
     },
-    /// Get all asks in reverse
-    #[returns(Vec<Ask>)]
-    ReverseAsks {
-        start_before: Option<Id>,
-        limit: Option<u32>,
-    },
     /// Count of all asks
     #[returns(u64)]
     AskCount {},

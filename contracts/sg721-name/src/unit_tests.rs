@@ -1,7 +1,8 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
+    OwnedDeps, Querier, QuerierResult, QueryRequest, StdError, SystemError, SystemResult,
+    WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
@@ -10,7 +11,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
-use crate::contract::transcode;
+use crate::contract::{query_name, transcode};
 use crate::entry::{execute, instantiate, query};
 use crate::msg::InstantiateMsg;
 use crate::state::SudoParams;
@@ -18,7 +19,6 @@ use crate::{ContractError, ExecuteMsg, QueryMsg};
 pub type Sg721NameContract<'a> = sg721_base::Sg721Contract<'a, Metadata>;
 const CREATOR: &str = "creator";
 const IMPOSTER: &str = "imposter";
-// const FRIEND: &str = "friend";
 
 pub fn mock_deps() -> OwnedDeps<MockStorage, MockApi, CustomMockQuerier, Empty> {
     OwnedDeps {
@@ -132,76 +132,82 @@ fn mint_and_update() {
     assert_eq!(res.token_uri, mint_msg.token_uri);
     assert_eq!(res.extension, mint_msg.extension);
 
-    // update metadata
-    // update image, records
-    let new_metadata = Metadata {
-        image_nft: Some(NFT {
-            collection: Addr::unchecked("contract"),
-            token_id: "token_id".to_string(),
-        }),
-        records: vec![TextRecord {
-            name: "key".to_string(),
-            value: "value".to_string(),
-            verified: None,
-        }],
+    // update image
+    let new_nft = NFT {
+        collection: Addr::unchecked("contract"),
+        token_id: "token_id".to_string(),
     };
-    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
+    let update_image_msg = ExecuteMsg::UpdateImageNft {
         name: token_id.to_string(),
-        metadata: Some(new_metadata.clone()),
+        nft: Some(new_nft.clone()),
     };
-    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
-    let metadata_value = res.events[0].attributes[2].value.clone().into_bytes();
-    let metadata: Metadata = from_slice(&metadata_value).unwrap();
-    assert_eq!(metadata, new_metadata);
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_image_msg).unwrap();
+    let nft_value = res.events[0].attributes[2].value.clone().into_bytes();
+    let nft: NFT = from_slice(&nft_value).unwrap();
+    assert_eq!(nft, new_nft);
 
-    let res = contract
-        .parent
-        .nft_info(deps.as_ref(), token_id.into())
-        .unwrap();
-    assert_eq!(res.extension, new_metadata);
+    // add text record
+    let new_record = TextRecord {
+        name: "test".to_string(),
+        value: "test".to_string(),
+        verified: None,
+    };
+    let update_record_msg = ExecuteMsg::UpdateTextRecord {
+        name: token_id.to_string(),
+        record: new_record.clone(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg).unwrap();
+    let record_value = res.events[0].attributes[2].value.clone().into_bytes();
+    let record: TextRecord = from_slice(&record_value).unwrap();
+    assert_eq!(record, new_record);
 
     // trigger too many records error
-    let mut records = vec![];
-    for i in 1..=(max_record_count + 1) {
-        records.push(TextRecord {
+    for i in 1..=(max_record_count) {
+        let new_record = TextRecord {
             name: format!("key{:?}", i),
             value: "value".to_string(),
             verified: None,
-        });
-    }
-    dbg!(records.clone());
-
-    let new_metadata = Metadata {
-        image_nft: Some(NFT {
-            collection: Addr::unchecked("contract"),
-            token_id: "token_id".to_string(),
-        }),
-        records,
-    };
-    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
-        name: token_id.to_string(),
-        metadata: Some(new_metadata),
-    };
-    let res = execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg);
-    assert_eq!(
-        res.unwrap_err().to_string(),
-        ContractError::TooManyRecords {
-            max: max_record_count
+        };
+        let update_record_msg = ExecuteMsg::UpdateTextRecord {
+            name: token_id.to_string(),
+            record: new_record.clone(),
+        };
+        if i == max_record_count {
+            let res = execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg);
+            assert_eq!(
+                res.unwrap_err().to_string(),
+                ContractError::TooManyRecords {
+                    max: max_record_count
+                }
+                .to_string()
+            );
+            break;
+        } else {
+            execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg).unwrap();
         }
-        .to_string()
-    );
+    }
 
-    // reset metadata
-    let update_metadata_msg = ExecuteMsg::UpdateMetadata {
+    // rm text records
+    let rm_record_msg = ExecuteMsg::RemoveTextRecord {
         name: token_id.to_string(),
-        metadata: None,
+        record_name: "test".to_string(),
     };
-    execute(deps.as_mut(), mock_env(), info.clone(), update_metadata_msg).unwrap();
+    execute(deps.as_mut(), mock_env(), info.clone(), rm_record_msg).unwrap();
+
+    for i in 1..=(max_record_count) {
+        let record_name = format!("key{:?}", i);
+        let rm_record_msg = ExecuteMsg::RemoveTextRecord {
+            name: token_id.to_string(),
+            record_name: record_name.clone(),
+        };
+        execute(deps.as_mut(), mock_env(), info.clone(), rm_record_msg).unwrap();
+    }
+    // txt record count should be 0
     let res = contract
         .parent
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
-    assert_eq!(res.extension, Metadata::default());
+    assert_eq!(res.extension.records.len(), 0);
 
     // add txt record
     let record = TextRecord {
@@ -290,6 +296,20 @@ fn mint_and_update() {
         .nft_info(deps.as_ref(), token_id.into())
         .unwrap();
     assert_eq!(res.extension.records.len(), 1);
+}
+
+#[test]
+fn query_names() {
+    let deps = mock_deps();
+    let address = "stars1y54exmx84cqtasvjnskf9f63djuuj68p2th570".to_string();
+    let err = query_name(deps.as_ref(), address.clone()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        StdError::GenericErr {
+            msg: format!("No name associated with address {}", address)
+        }
+        .to_string()
+    );
 }
 
 #[test]
