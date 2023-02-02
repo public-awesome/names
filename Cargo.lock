@@ -531,7 +531,7 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "name-marketplace"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -557,7 +557,7 @@ dependencies = [
 
 [[package]]
 name = "name-minter"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -811,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name-common"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name-market"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -843,7 +843,7 @@ dependencies = [
 
 [[package]]
 name = "sg-name-minter"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -869,7 +869,7 @@ dependencies = [
 
 [[package]]
 name = "sg-whitelist-basic"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -926,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "sg721-name"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1131,7 +1131,7 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "whitelist-updatable"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
