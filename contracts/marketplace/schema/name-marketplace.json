@@ -616,8 +616,26 @@
               "seller"
             ],
             "properties": {
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "uint32",
+                "minimum": 0.0
+              },
               "seller": {
                 "type": "string"
+              },
+              "start_after": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/BidOffset"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "additionalProperties": false

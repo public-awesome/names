@@ -158,7 +158,11 @@ pub enum QueryMsg {
     },
     /// Get all bids for a specific account
     #[returns(Vec<Bid>)]
-    BidsForSeller { seller: String },
+    BidsForSeller {
+        seller: String,
+        start_after: Option<BidOffset>,
+        limit: Option<u32>,
+    },
     /// Get the highest bid for a name
     #[returns(Option<Bid>)]
     HighestBid { token_id: TokenId },

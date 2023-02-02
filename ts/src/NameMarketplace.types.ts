@@ -108,7 +108,9 @@ export type QueryMsg = {
   };
 } | {
   bids_for_seller: {
+    limit?: number | null;
     seller: string;
+    start_after?: BidOffset | null;
   };
 } | {
   highest_bid: {

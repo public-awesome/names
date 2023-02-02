@@ -278,7 +278,7 @@ fn mint_and_list(
     )
 }
 
-fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
+fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
     let bidder = Addr::unchecked(bidder);
 
     // give bidder some funds
@@ -293,7 +293,7 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
     .ok();
 
     let msg = MarketplaceExecuteMsg::SetBid {
-        token_id: NAME.to_string(),
+        token_id: name.to_string(),
     };
     let res = app.execute_contract(bidder.clone(), Addr::unchecked(MKT), &msg, &amount);
     assert!(res.is_ok());
@@ -304,13 +304,13 @@ fn bid(app: &mut StargazeApp, bidder: &str, amount: u128) {
         .query_wasm_smart(
             MKT,
             &MarketplaceQueryMsg::Bid {
-                token_id: NAME.to_string(),
+                token_id: name.to_string(),
                 bidder: bidder.to_string(),
             },
         )
         .unwrap();
     let bid = res.unwrap();
-    assert_eq!(bid.token_id, NAME.to_string());
+    assert_eq!(bid.token_id, name.to_string());
     assert_eq!(bid.bidder, bidder.to_string());
     assert_eq!(bid.amount, amount[0].amount);
 }
@@ -387,7 +387,7 @@ mod execute {
 
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
-        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
     }
 
     #[test]
@@ -397,7 +397,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
 
         // user (owner) starts off with 0 internet funny money
         let res = app
@@ -460,7 +460,7 @@ mod execute {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
             token_id: NAME.to_string(),
@@ -469,7 +469,7 @@ mod execute {
         let res = app.execute_contract(Addr::unchecked(USER), Addr::unchecked(MKT), &msg, &[]);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER2, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER2, BID_AMOUNT);
 
         // have to approve marketplace spend for bid acceptor (bidder)
         let msg = Sg721NameExecuteMsg::Approve {
@@ -843,6 +843,7 @@ mod admin {
 
 mod query {
     use cosmwasm_std::StdResult;
+    use name_marketplace::msg::BidOffset;
     use name_marketplace::state::Ask;
     use sg721_base::msg::CollectionInfoResponse;
     use sg721_base::msg::QueryMsg as Sg721QueryMsg;
@@ -922,8 +923,8 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
-        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER2, BID_AMOUNT * 5);
 
         let msg = MarketplaceQueryMsg::ReverseBidsSortedByPrice {
             start_before: None,
@@ -941,15 +942,45 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
-        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER2, BID_AMOUNT * 5);
 
         let msg = MarketplaceQueryMsg::BidsForSeller {
             seller: USER.to_string(),
+            start_after: None,
+            limit: None,
         };
         let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
         assert_eq!(res.len(), 2);
         assert_eq!(res[0].amount.u128(), BID_AMOUNT);
+
+        // test pagination
+        let bid_offset = BidOffset {
+            price: Uint128::from(BID_AMOUNT),
+            bidder: Addr::unchecked(BIDDER),
+            token_id: NAME.to_string(),
+        };
+        let msg = MarketplaceQueryMsg::BidsForSeller {
+            seller: USER.to_string(),
+            start_after: Some(bid_offset),
+            limit: None,
+        };
+        let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        // should be length 0 because there are no token_ids besides NAME.to_string()
+        assert_eq!(res.len(), 0);
+
+        // added to get around rate limiting
+        update_block_time(&mut app, 60);
+
+        // test pagination with multiple names and bids
+        let name = "jump";
+        let res = mint_and_list(&mut app, name, USER, None);
+        assert!(res.is_ok());
+        bid(&mut app, name, BIDDER, BID_AMOUNT * 3);
+        bid(&mut app, name, BIDDER2, BID_AMOUNT * 2);
+        let res: Vec<Bid> = app.wrap().query_wasm_smart(MKT, &msg).unwrap();
+        // should be length 2 because there is token_id "jump" with 2 bids
+        assert_eq!(res.len(), 2);
     }
 
     #[test]
@@ -959,8 +990,8 @@ mod query {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
-        bid(&mut app, BIDDER2, BID_AMOUNT * 5);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER2, BID_AMOUNT * 5);
 
         let msg = MarketplaceQueryMsg::HighestBid {
             token_id: NAME.to_string(),
@@ -1422,7 +1453,7 @@ mod collection {
 
         transfer(&mut app, USER, USER2);
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
 
         // user2 must approve the marketplace to transfer their name
         let msg = Sg721NameExecuteMsg::Approve {
@@ -1523,7 +1554,7 @@ mod collection {
         let res = mint_and_list(&mut app, NAME, USER, None);
         assert!(res.is_ok());
 
-        bid(&mut app, BIDDER, BID_AMOUNT);
+        bid(&mut app, NAME, BIDDER, BID_AMOUNT);
 
         let msg = Sg721NameExecuteMsg::Burn {
             token_id: NAME.to_string(),
