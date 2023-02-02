@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadata, Metadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, MinterResponse, String, NumTokensResponse, SudoParams, NullableString } from "./Sg721Name.types";
+import { Decimal, Timestamp, Uint64, InstantiateMsg, CollectionInfoForRoyaltyInfoResponse, RoyaltyInfoResponse, ExecuteMsg, Addr, Binary, Expiration, NFT, TextRecord, MintMsgForMetadata, Metadata, UpdateCollectionInfoMsgForRoyaltyInfoResponse, QueryMsg, AllNftInfoResponseForMetadata, OwnerOfResponse, Approval, NftInfoResponseForMetadata, OperatorsResponse, TokensResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse, ContractInfoResponse, NullableNFT, MinterResponse, String, NumTokensResponse, SudoParams, NullableString } from "./Sg721Name.types";
 export interface Sg721NameReadOnlyInterface {
   contractAddress: string;
   params: () => Promise<SudoParams>;
@@ -21,6 +21,11 @@ export interface Sg721NameReadOnlyInterface {
   }: {
     name: string;
   }) => Promise<Addr>;
+  imageNFT: ({
+    name
+  }: {
+    name: string;
+  }) => Promise<NullableNFT>;
   verifier: () => Promise<NullableString>;
   ownerOf: ({
     includeExpired,
@@ -100,6 +105,7 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
     this.name = this.name.bind(this);
     this.nameMarketplace = this.nameMarketplace.bind(this);
     this.associatedAddress = this.associatedAddress.bind(this);
+    this.imageNFT = this.imageNFT.bind(this);
     this.verifier = this.verifier.bind(this);
     this.ownerOf = this.ownerOf.bind(this);
     this.approval = this.approval.bind(this);
@@ -143,6 +149,17 @@ export class Sg721NameQueryClient implements Sg721NameReadOnlyInterface {
   }): Promise<Addr> => {
     return this.client.queryContractSmart(this.contractAddress, {
       associated_address: {
+        name
+      }
+    });
+  };
+  imageNFT = async ({
+    name
+  }: {
+    name: string;
+  }): Promise<NullableNFT> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      image_n_f_t: {
         name
       }
     });

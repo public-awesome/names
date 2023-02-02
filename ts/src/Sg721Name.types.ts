@@ -159,6 +159,10 @@ export type QueryMsg = {
     name: string;
   };
 } | {
+  image_n_f_t: {
+    name: string;
+  };
+} | {
   verifier: {};
 } | {
   owner_of: {
@@ -253,6 +257,7 @@ export interface ContractInfoResponse {
   name: string;
   symbol: string;
 }
+export type NullableNFT = NFT | null;
 export interface MinterResponse {
   minter: string;
 }
