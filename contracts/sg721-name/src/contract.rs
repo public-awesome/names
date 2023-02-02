@@ -509,7 +509,9 @@ pub fn query_name(deps: Deps, mut address: String) -> StdResult<String> {
         address = transcode(&address)?;
     }
 
-    REVERSE_MAP.load(deps.storage, &deps.api.addr_validate(&address)?)
+    REVERSE_MAP
+        .load(deps.storage, &deps.api.addr_validate(&address)?)
+        .map_err(|_| StdError::generic_err(format!("No name associated with address {}", address)))
 }
 
 pub fn query_params(deps: Deps) -> StdResult<SudoParams> {
