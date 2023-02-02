@@ -21,13 +21,6 @@ export interface NameMarketplaceReadOnlyInterface {
     limit?: number;
     startAfter?: number;
   }) => Promise<ArrayOfAsk>;
-  reverseAsks: ({
-    limit,
-    startBefore
-  }: {
-    limit?: number;
-    startBefore?: number;
-  }) => Promise<ArrayOfAsk>;
   askCount: () => Promise<Uint64>;
   asksBySeller: ({
     limit,
@@ -111,7 +104,6 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.contractAddress = contractAddress;
     this.ask = this.ask.bind(this);
     this.asks = this.asks.bind(this);
-    this.reverseAsks = this.reverseAsks.bind(this);
     this.askCount = this.askCount.bind(this);
     this.asksBySeller = this.asksBySeller.bind(this);
     this.bid = this.bid.bind(this);
@@ -151,20 +143,6 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       asks: {
         limit,
         start_after: startAfter
-      }
-    });
-  };
-  reverseAsks = async ({
-    limit,
-    startBefore
-  }: {
-    limit?: number;
-    startBefore?: number;
-  }): Promise<ArrayOfAsk> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      reverse_asks: {
-        limit,
-        start_before: startBefore
       }
     });
   };

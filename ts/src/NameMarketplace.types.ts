@@ -67,11 +67,6 @@ export type QueryMsg = {
     start_after?: number | null;
   };
 } | {
-  reverse_asks: {
-    limit?: number | null;
-    start_before?: number | null;
-  };
-} | {
   ask_count: {};
 } | {
   asks_by_seller: {
