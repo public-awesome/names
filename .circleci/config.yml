@@ -39,7 +39,7 @@ jobs:
           command: cargo unit-test --locked
       - run:
           name: Build and run schema generator
-          command: cargo schema --locked
+          command: cargo schema --locked; rm -rf ./schema/raw
       - run:
           name: Ensure checked-in schemas are up-to-date
           command: |
@@ -75,7 +75,7 @@ jobs:
           command: cargo unit-test --locked
       - run:
           name: Build and run schema generator
-          command: cargo schema --locked
+          command: cargo schema --locked; rm -rf ./schema/raw
       - run:
           name: Ensure checked-in schemas are up-to-date
           command: |
@@ -111,7 +111,7 @@ jobs:
           command: cargo unit-test --locked
       - run:
           name: Build and run schema generator
-          command: cargo schema --locked
+          command: cargo schema --locked; rm -rf ./schema/raw
       - run:
           name: Ensure checked-in schemas are up-to-date
           command: |
@@ -207,7 +207,7 @@ jobs:
             for C in ./contracts/*/
             do
               echo "Compiling `basename $C`..."
-              (cd $C && cargo build --release --target wasm32-unknown-unknown --locked --lib)
+              (cd $C && cargo build --release --lib --target wasm32-unknown-unknown --locked --lib)
             done
       - run:
           name: Install check_contract
