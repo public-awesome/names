@@ -55,6 +55,27 @@ API call:
 {endpoint}/cosmwasm/wasm/v1/contract/{contract}/smart/{query}
 ```
 
+### Query all info about name 
+
+If you just need to fetch address associated with name, it's recommended to use query from "Query Associated Address" section of this document, however if you need more advanced info like text records, associated NFT, minter address etc, then you might consider querying full name info.
+
+
+```json
+{
+  "all_nft_info": { "token_id": "alice" }
+}
+```
+
+`query`:
+
+`ewogICJhbGxfbmZ0X2luZm8iOiB7ICJ0b2tlbl9pZCI6ICJhbGljZSIgfQp9`
+
+API call:
+
+```
+{endpoint}/cosmwasm/wasm/v1/contract/{contract}/smart/{query}
+```
+
 ## Typescript
 
 ### Variables
@@ -85,9 +106,24 @@ import { CosmWasmClient } from "cosmwasm";
 
 const client = await CosmWasmClient.connect(endpoint);
 
-const address = await client.queryContractSmart(contract, {
+const name = await client.queryContractSmart(contract, {
   name: { address: "stars1tqzzmxsvzu4952mnd5ul800wfusr6p72magyge" },
 });
 
 console.log("name:", name);
+```
+
+### Query all info about name 
+
+
+```ts
+import { CosmWasmClient } from "cosmwasm";
+
+const client = await CosmWasmClient.connect(endpoint);
+
+const fullNameInfo = await client.queryContractSmart(contract, {
+  all_nft_info: { token_id: "alice" },
+});
+
+console.log("name info:", fullNameInfo);
 ```
