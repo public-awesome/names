@@ -33,4 +33,16 @@ impl NameCollectionContract {
 
         Ok(res)
     }
+
+    pub fn is_twitter_verified(&self, querier: &QuerierWrapper, name: &str) -> StdResult<bool> {
+        let records = self.text_records(querier, name)?;
+
+        for record in records {
+            if record.name == "twitter" {
+                return Ok(record.verified.unwrap_or_default());
+            }
+        }
+
+        Ok(false)
+    }
 }
