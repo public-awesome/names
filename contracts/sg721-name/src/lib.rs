@@ -23,7 +23,7 @@ pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::{
-        contract::{execute_verify_text_record, query_image_nft},
+        contract::{execute_verify_text_record, query_image_nft, query_text_records},
         msg::InstantiateMsg,
         state::{SudoParams, SUDO_PARAMS, VERIFIER},
     };
@@ -136,6 +136,7 @@ pub mod entry {
                 to_binary(&query_associated_address(deps, &name)?)
             }
             QueryMsg::ImageNFT { name } => to_binary(&query_image_nft(deps, &name)?),
+            QueryMsg::TextRecords { name } => to_binary(&query_text_records(deps, &name)?),
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }
