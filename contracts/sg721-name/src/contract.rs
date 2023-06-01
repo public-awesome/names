@@ -534,6 +534,29 @@ pub fn query_image_nft(deps: Deps, name: &str) -> StdResult<Option<NFT>> {
         .image_nft)
 }
 
+pub fn query_text_records(deps: Deps, name: &str) -> StdResult<Vec<TextRecord>> {
+    Ok(Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, name)?
+        .extension
+        .records)
+}
+pub fn query_is_twitter_verified(deps: Deps, name: &str) -> StdResult<bool> {
+    let records = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, name)?
+        .extension
+        .records;
+
+    for record in records {
+        if record.name == "twitter" {
+            return Ok(record.verified.unwrap_or(false));
+        }
+    }
+
+    Ok(false)
+}
+
 pub fn transcode(address: &str) -> StdResult<String> {
     let (_, data) =
         bech32::decode(address).map_err(|_| StdError::generic_err("Invalid bech32 address"))?;

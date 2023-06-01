@@ -6,9 +6,12 @@ use sg_name::Metadata;
 
 pub mod contract;
 mod error;
+mod helpers;
 pub mod msg;
 pub mod state;
 pub mod sudo;
+
+pub use helpers::NameCollectionContract;
 
 #[cfg(test)]
 pub mod unit_tests;
@@ -23,7 +26,10 @@ pub type QueryMsg = crate::msg::QueryMsg;
 
 pub mod entry {
     use crate::{
-        contract::{execute_verify_text_record, query_image_nft},
+        contract::{
+            execute_verify_text_record, query_image_nft, query_is_twitter_verified,
+            query_text_records,
+        },
         msg::InstantiateMsg,
         state::{SudoParams, SUDO_PARAMS, VERIFIER},
     };
@@ -136,6 +142,10 @@ pub mod entry {
                 to_binary(&query_associated_address(deps, &name)?)
             }
             QueryMsg::ImageNFT { name } => to_binary(&query_image_nft(deps, &name)?),
+            QueryMsg::TextRecords { name } => to_binary(&query_text_records(deps, &name)?),
+            QueryMsg::IsTwitterVerified { name } => {
+                to_binary(&query_is_twitter_verified(deps, &name)?)
+            }
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }
     }

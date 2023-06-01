@@ -170,6 +170,12 @@ pub enum QueryMsg {
     /// Returns the image NFT for a name
     #[returns(Option<NFT>)]
     ImageNFT { name: String },
+    /// Returns the text records for a name
+    #[returns(Vec<TextRecord>)]
+    TextRecords { name: String },
+    /// Returns if Twitter is verified for a name
+    #[returns(bool)]
+    IsTwitterVerified { name: String },
     /// Returns the verification oracle address
     #[returns(Option<String>)]
     Verifier {},
