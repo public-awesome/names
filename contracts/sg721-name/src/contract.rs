@@ -541,6 +541,21 @@ pub fn query_text_records(deps: Deps, name: &str) -> StdResult<Vec<TextRecord>> 
         .extension
         .records)
 }
+pub fn query_is_twitter_verified(deps: Deps, name: &str) -> StdResult<bool> {
+    let records = Sg721NameContract::default()
+        .tokens
+        .load(deps.storage, name)?
+        .extension
+        .records;
+
+    for record in records {
+        if record.name == "twitter" {
+            return Ok(record.verified.unwrap_or(false));
+        }
+    }
+
+    Ok(false)
+}
 
 pub fn transcode(address: &str) -> StdResult<String> {
     let (_, data) =

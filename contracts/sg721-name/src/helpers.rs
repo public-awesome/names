@@ -35,14 +35,13 @@ impl NameCollectionContract {
     }
 
     pub fn is_twitter_verified(&self, querier: &QuerierWrapper, name: &str) -> StdResult<bool> {
-        let records = self.text_records(querier, name)?;
+        let res: bool = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&QueryMsg::IsTwitterVerified {
+                name: name.to_string(),
+            })?,
+        }))?;
 
-        for record in records {
-            if record.name == "twitter" {
-                return Ok(record.verified.unwrap_or_default());
-            }
-        }
-
-        Ok(false)
+        Ok(res)
     }
 }

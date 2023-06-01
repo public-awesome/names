@@ -173,6 +173,9 @@ pub enum QueryMsg {
     /// Returns the text records for a name
     #[returns(Vec<TextRecord>)]
     TextRecords { name: String },
+    /// Returns if Twitter is verified for a name
+    #[returns(bool)]
+    IsTwitterVerified { name: String },
     /// Returns the verification oracle address
     #[returns(Option<String>)]
     Verifier {},

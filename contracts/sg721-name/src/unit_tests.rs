@@ -11,7 +11,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
-use crate::contract::{query_name, query_text_records, transcode};
+use crate::contract::{query_is_twitter_verified, query_name, query_text_records, transcode};
 use crate::entry::{execute, instantiate, query};
 use crate::msg::InstantiateMsg;
 use crate::state::SudoParams;
@@ -167,6 +167,9 @@ fn mint_and_update() {
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].name, "test");
     assert_eq!(records[0].value, "test");
+
+    let is_twitter_verified = query_is_twitter_verified(deps.as_ref(), token_id).unwrap();
+    assert!(!is_twitter_verified);
 
     // trigger too many records error
     for i in 1..=(max_record_count) {
