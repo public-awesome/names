@@ -11,7 +11,7 @@ use sg721_base::ContractError::Unauthorized;
 use sg_name::{Metadata, TextRecord, NFT};
 use std::marker::PhantomData;
 
-use crate::contract::{query_name, transcode};
+use crate::contract::{query_name, query_text_records, transcode};
 use crate::entry::{execute, instantiate, query};
 use crate::msg::InstantiateMsg;
 use crate::state::SudoParams;
@@ -162,6 +162,11 @@ fn mint_and_update() {
     let record_value = res.events[0].attributes[2].value.clone().into_bytes();
     let record: TextRecord = from_slice(&record_value).unwrap();
     assert_eq!(record, new_record);
+
+    let records = query_text_records(deps.as_ref(), token_id).unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].name, "test");
+    assert_eq!(records[0].value, "test");
 
     // trigger too many records error
     for i in 1..=(max_record_count) {
