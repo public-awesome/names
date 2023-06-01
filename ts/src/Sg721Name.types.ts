@@ -163,6 +163,14 @@ export type QueryMsg = {
     name: string;
   };
 } | {
+  text_records: {
+    name: string;
+  };
+} | {
+  is_twitter_verified: {
+    name: string;
+  };
+} | {
   verifier: {};
 } | {
   owner_of: {
@@ -258,6 +266,7 @@ export interface ContractInfoResponse {
   symbol: string;
 }
 export type NullableNFT = NFT | null;
+export type Boolean = boolean;
 export interface MinterResponse {
   minter: string;
 }
@@ -268,4 +277,5 @@ export interface NumTokensResponse {
 export interface SudoParams {
   max_record_count: number;
 }
+export type ArrayOfTextRecord = TextRecord[];
 export type NullableString = string | null;
