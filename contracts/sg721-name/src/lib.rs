@@ -6,9 +6,12 @@ use sg_name::Metadata;
 
 pub mod contract;
 mod error;
+mod helpers;
 pub mod msg;
 pub mod state;
 pub mod sudo;
+
+pub use helpers::NameCollectionContract;
 
 #[cfg(test)]
 pub mod unit_tests;
