@@ -46,4 +46,3 @@ cw721           = { workspace = true }
 cw721-base      = { workspace = true, features = ["library"] }
 sg-name-market  = { workspace = true }
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
-# name-marketplace = { workspace = true, features = ["library"] }
