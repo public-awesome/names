@@ -12,6 +12,17 @@ impl NameCollectionContract {
         self.0.clone()
     }
 
+    pub fn name(&self, querier: &QuerierWrapper, address: &str) -> StdResult<String> {
+        let res: String = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&QueryMsg::Name {
+                address: address.to_string(),
+            })?,
+        }))?;
+
+        Ok(res)
+    }
+
     pub fn image_nft(&self, querier: &QuerierWrapper, name: &str) -> StdResult<Option<NFT>> {
         let res: Option<NFT> = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
