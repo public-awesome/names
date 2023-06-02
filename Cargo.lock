@@ -936,7 +936,6 @@ dependencies = [
  "cw2",
  "cw721",
  "cw721-base",
- "name-marketplace",
  "schemars",
  "semver",
  "serde",

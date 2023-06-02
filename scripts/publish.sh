@@ -6,10 +6,5 @@ for d in packages/*; do
   fi
 done
 
-for d in contracts/*; do
-  if [ -d "$d" ]; then
-    cd $d
-    cargo publish
-    cd ../..
-  fi
-done
+cd contracts/sg721-name && cargo publish && cd ../../..
+

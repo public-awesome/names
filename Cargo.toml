@@ -10,27 +10,34 @@ repository = "https://github.com/public-awesome/names"
 license    = "Apache-2.0"
 
 [workspace.dependencies]
-cosmwasm-schema  = "1.2.1"
-cosmwasm-std     = "1.2.1"
-cw2              = "0.16.0"
-cw721            = "0.16.0"
-cw721-base       = "0.16.0"
-cw-controllers   = "0.16.0"
-cw-multi-test    = "0.16.0"
+cosmwasm-schema = "1.2.1"
+cosmwasm-std = "1.2.1"
+cw2 = "0.16.0"
+cw721 = "0.16.0"
+cw721-base = "0.16.0"
+cw-controllers = "0.16.0"
+cw-multi-test = "0.16.0"
 cw-storage-macro = "0.16.0"
-cw-storage-plus  = "0.16.0"
-cw-utils         = "0.16.0"
-schemars         = "0.8.11"
-semver           = "1"
-serde            = { version = "1.0.145", default-features = false, features = ["derive"] }
-sg1              = "0.22.9"
-sg721            = "0.22.9"
-sg721-base       = "0.22.9"
-sg-controllers   = "0.22.9"
-sg-metadata      = "0.22.9"
-sg-multi-test    = "0.22.9"
-sg-std           = "0.22.9"
-thiserror        = "1.0.31"
+cw-storage-plus = "0.16.0"
+cw-utils = "0.16.0"
+schemars = "0.8.11"
+semver = "1"
+serde = { version = "1.0.145", default-features = false, features = ["derive"] }
+sg1 = "0.22.9"
+sg721 = "0.22.9"
+sg721-base = "0.22.9"
+sg-controllers = "0.22.9"
+sg-metadata = "0.22.9"
+sg-multi-test = "0.22.9"
+sg-std = "0.22.9"
+thiserror = "1.0.31"
+sg-name-common = { version = "1.2.4", path = "./packages/sg-name-common" }
+sg721-name = { version = "1.2.4", path = "./contracts/sg721-name" }
+sg-name = { version = "1.2.4", path = "./packages/sg-name" }
+sg-name-market = { version = "1.2.4", path = "./packages/sg-name-market" }
+name-marketplace = { version = "1.2.4", path = "./contracts/marketplace", features = [
+    "library",
+] }
 
 [profile.release.package.name-minter]
 codegen-units = 1

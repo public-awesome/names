@@ -4,11 +4,12 @@ authors = [
   "Shane Vitarana <s@noreply.publicawesome.com>",
   "John Y <j@noreply.publicawesome.com>",
 ]
-version     = { workspace = true }
-edition     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-license     = { workspace = true }
+description = "Stargaze Names Collection Contract"
+version = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -28,21 +29,21 @@ library = []
 
 [dependencies]
 cosmwasm-schema = { workspace = true }
-cosmwasm-std = { workspace = true }
-cw-controllers = { workspace = true }
+cosmwasm-std    = { workspace = true }
+cw-controllers  = { workspace = true }
 cw-storage-plus = { workspace = true }
-cw-utils = { workspace = true }
-cw2 = { workspace = true }
-schemars = { workspace = true }
-serde = { workspace = true }
-semver = { workspace = true }
-sg-name = { path = "../../packages/sg-name" }
-sg-std = { workspace = true }
-sg721 = { workspace = true }
-sg721-base = {  workspace = true, features = ["library"] }
-thiserror = { workspace = true }
-cw721 = { workspace = true }
-cw721-base = { workspace = true, features = ["library"] }
-sg-name-market = { path = "../../packages/sg-name-market" }
+cw-utils        = { workspace = true }
+cw2             = { workspace = true }
+schemars        = { workspace = true }
+serde           = { workspace = true }
+semver          = { workspace = true }
+sg-name         = { workspace = true }
+sg-std          = { workspace = true }
+sg721           = { workspace = true }
+sg721-base      = { workspace = true, features = ["library"] }
+thiserror       = { workspace = true }
+cw721           = { workspace = true }
+cw721-base      = { workspace = true, features = ["library"] }
+sg-name-market  = { workspace = true }
 subtle-encoding = { version = "0.5.1", features = ["bech32-preview"] }
-name-marketplace = { path = "../marketplace", features = ["library"] }
+# name-marketplace = { workspace = true, features = ["library"] }
