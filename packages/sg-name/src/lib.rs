@@ -97,12 +97,16 @@ pub enum SgNameQueryMsg {
     /// converted to a stars address for internal mapping.
     #[returns(String)]
     Name { address: String },
-
     #[returns(Addr)]
     NameMarketplace {},
-
     #[returns(String)]
     AssociatedAddress { name: String },
+    #[returns(Option<NFT>)]
+    ImageNFT { name: String },
+    #[returns(Vec<TextRecord>)]
+    TextRecords { name: String },
+    #[returns(bool)]
+    IsTwitterVerified { name: String },
 }
 
 #[cfg(test)]
