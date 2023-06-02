@@ -1,6 +1,6 @@
 [package]
-name = "sg-name-common"
-authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
+name        = "sg-name-common"
+authors     = ["Shane Vitarana <s@noreply.publicawesome.com>"]
 description = "Stargaze Names common code"
 version     = { workspace = true }
 edition     = { workspace = true }
@@ -21,8 +21,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cosmwasm-schema = { workspace = true }
-cosmwasm-std = { workspace = true }
-schemars = { workspace = true }
-sg-std = { workspace = true }
-sg1 = { workspace = true }
-serde = { workspace = true }
+cosmwasm-std    = { workspace = true }
+schemars        = { workspace = true }
+sg-std          = { workspace = true }
+sg1             = { workspace = true }
+serde           = { workspace = true }
