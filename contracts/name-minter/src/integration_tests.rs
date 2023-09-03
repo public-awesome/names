@@ -2019,4 +2019,81 @@ mod eoa_owner {
         let owner = owner_of(&app, NAME.to_string());
         assert_eq!(owner, USER.to_string());
     }
+
+    #[test]
+    fn associate_with_a_contract_with_no_admin() {
+        let mut app = instantiate_contracts(
+            None,
+            Some(ADMIN.to_string()),
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
+        );
+
+        let nft_id = app.store_code(contract_nft());
+
+        // For the purposes of this test, a collection contract with no admin needs to be instantiated (contract_with_no_admin)
+        // This contract needs to have a creator that is itself a contract and this creator contract should have an admin (USER).
+        // The admin (USER) of the creator contract will mint a name and associate the name with the collection contract that doesn't have an admin successfully.
+
+        // Instantiating the creator contract with an admin (USER)
+        let creator_init_msg = Sg721InstantiateMsg {
+            name: "NFT".to_string(),
+            symbol: "NFT".to_string(),
+            minter: Addr::unchecked(MINTER).to_string(),
+            collection_info: CollectionInfo {
+                creator: USER.to_string(),
+                description: "Stargaze Names".to_string(),
+                image: "ipfs://example.com".to_string(),
+                external_link: None,
+                explicit_content: None,
+                start_trading_time: None,
+                royalty_info: None,
+            },
+        };
+        let creator_addr = app
+            .instantiate_contract(
+                nft_id,
+                Addr::unchecked(MINTER),
+                &creator_init_msg,
+                &[],
+                "NFT",
+                Some(USER.to_string()),
+            )
+            .unwrap();
+
+        // The creator contract instantiates the collection contract with no admin
+        let init_msg = Sg721InstantiateMsg {
+            name: "NFT".to_string(),
+            symbol: "NFT".to_string(),
+            minter: creator_addr.to_string(),
+            collection_info: CollectionInfo {
+                creator: USER.to_string(),
+                description: "Stargaze Names".to_string(),
+                image: "ipfs://example.com".to_string(),
+                external_link: None,
+                explicit_content: None,
+                start_trading_time: None,
+                royalty_info: None,
+            },
+        };
+
+        let collection_with_no_admin_addr = app
+            .instantiate_contract(nft_id, creator_addr.clone(), &init_msg, &[], "NFT", None)
+            .unwrap();
+
+        // USER mints a name
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // USER associates the name with the collection contract that doesn't have an admin
+        let msg = SgNameExecuteMsg::AssociateAddress {
+            name: NAME.to_string(),
+            address: Some(collection_with_no_admin_addr.to_string()),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(COLLECTION),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+    }
 }
