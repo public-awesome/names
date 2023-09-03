@@ -2077,7 +2077,7 @@ mod eoa_owner {
         };
 
         let collection_with_no_admin_addr = app
-            .instantiate_contract(nft_id, creator_addr.clone(), &init_msg, &[], "NFT", None)
+            .instantiate_contract(nft_id, creator_addr, &init_msg, &[], "NFT", None)
             .unwrap();
 
         // USER mints a name
