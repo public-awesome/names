@@ -573,15 +573,18 @@ fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, Contr
     let ContractInfoResponse { admin, creator, .. } =
         deps.querier.query_wasm_contract_info(&addr)?;
 
-    // If there is no admin and the creator is not the sender, check creator's admin
-    if admin.is_none() && &creator != sender {
-        // Check if the creator has an admin that matches the sender
-        let creator_info = deps.querier.query_wasm_contract_info(&creator)?;
-        if creator_info.admin.map_or(true, |a| &a != sender) {
-            return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+    if &creator != sender {
+        if let Some(admin) = admin {
+            if &admin != sender {
+                return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+            }
+        } else {
+            // If there is no admin and the creator is not the sender, check creator's admin
+            let creator_info = deps.querier.query_wasm_contract_info(&creator)?;
+            if creator_info.admin.map_or(true, |a| &a != sender) {
+                return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+            }
         }
-    } else if admin.map_or(true, |a| &a != sender) && &creator != sender {
-        return Err(ContractError::UnauthorizedCreatorOrAdmin {});
     }
 
     // we have a contract registration
