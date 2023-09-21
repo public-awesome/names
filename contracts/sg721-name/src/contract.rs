@@ -4,7 +4,7 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
+    ensure, to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
     StdError, StdResult, WasmMsg,
 };
 
@@ -573,9 +573,19 @@ fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, Contr
     let ContractInfoResponse { admin, creator, .. } =
         deps.querier.query_wasm_contract_info(&addr)?;
 
-    // If the sender is not the admin or creator, return an error
-    if admin.map_or(true, |a| &a != sender) && &creator != sender {
-        return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+    if &creator != sender {
+        if let Some(admin) = admin {
+            ensure!(
+                &admin == sender,
+                ContractError::UnauthorizedCreatorOrAdmin {}
+            );
+        } else {
+            // If there is no admin and the creator is not the sender, check creator's admin
+            let creator_info = deps.querier.query_wasm_contract_info(&creator)?;
+            if creator_info.admin.map_or(true, |a| &a != sender) {
+                return Err(ContractError::UnauthorizedCreatorOrAdmin {});
+            }
+        }
     }
 
     // we have a contract registration
