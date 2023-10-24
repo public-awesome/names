@@ -3,7 +3,7 @@ use crate::execute::{execute, instantiate};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::{query_asks_by_seller, query_bids_by_bidder};
 use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid};
-
+use crate::execute::execute_process_renewal;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, Addr, DepsMut, Timestamp, Uint128};
 use sg_std::NATIVE_DENOM;
@@ -14,6 +14,37 @@ const TOKEN_ID_NEXT: &str = "name2";
 
 // Governance parameters
 const TRADING_FEE_BASIS_POINTS: u64 = 200; // 2%
+
+#[test]
+fn test_execute_process_renewal() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info("anyone", &[]);
+
+    // Setup: Create an Ask with a renewal_time in the past
+    let ask = Ask {
+        token_id: "token1".to_string(),
+        id: 1,
+        seller: info.sender.clone(),
+        renewal_time: Timestamp::from_seconds(env.block.time.seconds() - 1),
+        renewal_fund: Uint128::zero(),
+    };
+    asks().save(deps.as_mut().storage, ask_key("token1"), &ask).unwrap();
+
+    // Call the function with a time in the past
+    let time = Timestamp::from_seconds(env.block.time.seconds() - 1);
+    let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
+    assert!(res.is_ok());
+
+    // Assert that the renewal was processed correctly
+    // This will depend on your specific renewal logic
+    // ...
+
+    // Call the function with a time in the future
+    let time = Timestamp::from_seconds(env.block.time.seconds() + 1);
+    let res = execute_process_renewal(deps.as_mut(), env, time);
+    assert!(res.is_err());
+}
 
 #[test]
 fn ask_indexed_map() {
