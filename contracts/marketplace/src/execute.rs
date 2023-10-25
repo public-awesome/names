@@ -431,7 +431,7 @@ pub fn execute_refund_renewal(
 
 /// Anyone can call this to process renewals for a block and earn a reward
 pub fn execute_process_renewal(
-    _deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     time: Timestamp,
 ) -> Result<Response, ContractError> {
@@ -442,7 +442,13 @@ pub fn execute_process_renewal(
     }
 
     // // TODO: add renewal processing logic
-    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, time)?;
+    let renewal_queue = RENEWAL_QUEUE.load(deps.storage, (time.seconds(), 0))?;
+
+    if renewal_queue.is_empty() {
+        print!("Queue is empty");
+        return Err(ContractError::NoRenewalQueue {});
+    }
+
     // for name in renewal_queue.iter() {
     //     let ask = asks().load(deps.storage, ask_key(name))?;
     //     if ask.renewal_fund.is_zero() {

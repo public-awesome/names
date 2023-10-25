@@ -16,34 +16,27 @@ const TOKEN_ID_NEXT: &str = "name2";
 const TRADING_FEE_BASIS_POINTS: u64 = 200; // 2%
 
 #[test]
-fn test_execute_process_renewal() {
+fn test_execute_process_renewal_negative_case() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info("anyone", &[]);
 
     // Setup: Create an Ask with a renewal_time in the past
     let ask = Ask {
-        token_id: "token1".to_string(),
+        token_id: TOKEN_ID.to_string(),
         id: 1,
         seller: info.sender.clone(),
         renewal_time: Timestamp::from_seconds(env.block.time.seconds() - 1),
         renewal_fund: Uint128::zero(),
     };
-    asks().save(deps.as_mut().storage, ask_key("token1"), &ask).unwrap();
+    asks().save(deps.as_mut().storage, ask_key(TOKEN_ID), &ask).unwrap();
 
-    // Call the function with a time in the past
+    // The queue will be empty at first so we should get an error
+    
     let time = Timestamp::from_seconds(env.block.time.seconds() - 1);
     let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
-    assert!(res.is_ok());
-
-    // Assert that the renewal was processed correctly
-    // This will depend on your specific renewal logic
-    // ...
-
-    // Call the function with a time in the future
-    let time = Timestamp::from_seconds(env.block.time.seconds() + 1);
-    let res = execute_process_renewal(deps.as_mut(), env, time);
     assert!(res.is_err());
+
 }
 
 #[test]
