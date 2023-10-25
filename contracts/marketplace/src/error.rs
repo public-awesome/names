@@ -64,4 +64,7 @@ pub enum ContractError {
 
     #[error("InvalidContractVersion")]
     InvalidContractVersion {},
+
+    #[error("NoRenewalQueue")]
+    NoRenewalQueue {},
 }
