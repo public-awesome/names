@@ -36,9 +36,10 @@ fn test_execute_process_renewal_positive_case() {
     assert!(save_res.is_ok());
 
     let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
-    if let Err(e) = res {
+    if let Err(ref e) = res {
         panic!("execute_process_renewal failed with error: {:?}", e);
     }
+    assert!(res.is_ok());
 }
 
 
