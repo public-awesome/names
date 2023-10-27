@@ -2,7 +2,7 @@
 use crate::execute::{execute, instantiate};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::{query_asks_by_seller, query_bids_by_bidder};
-use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid};
+use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid, RENEWAL_QUEUE};
 use crate::execute::execute_process_renewal;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, Addr, DepsMut, Timestamp, Uint128};
@@ -25,6 +25,22 @@ fn test_execute_process_renewal_negative_case() {
     assert!(res.is_err());
 
 }
+
+#[test]
+fn test_execute_process_renewal_positive_case() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    
+    let time = Timestamp::from_seconds(env.block.time.seconds());
+    let save_res = RENEWAL_QUEUE.save(deps.as_mut().storage, (time.seconds(), 0), &TOKEN_ID.to_string());
+    assert!(save_res.is_ok());
+
+    let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
+    if let Err(e) = res {
+        panic!("execute_process_renewal failed with error: {:?}", e);
+    }
+}
+
 
 #[test]
 fn ask_indexed_map() {
