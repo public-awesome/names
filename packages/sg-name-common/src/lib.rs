@@ -16,3 +16,4 @@ pub fn charge_fees(res: &mut Response, fair_burn_percent: Decimal, fee: Uint128)
 }
 
 pub const SECONDS_PER_YEAR: u64 = 31536000;
+pub const SECONDS_PER_WEEK: u64 = 7 * 24 * 60 * 60;
