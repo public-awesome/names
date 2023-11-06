@@ -16,9 +16,10 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
+use cw_storage_plus::Bound;
 use cw_utils::{must_pay, nonpayable};
 use semver::Version;
-use sg_name_common::{charge_fees, SECONDS_PER_YEAR, SECONDS_PER_WEEK};
+use sg_name_common::{charge_fees, SECONDS_PER_WEEK, SECONDS_PER_YEAR};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -436,90 +437,150 @@ pub fn execute_process_renewal(
     time: Timestamp,
 ) -> Result<Response, ContractError> {
     println!("Processing renewals at time {}", time);
+    let collection = NAME_COLLECTION.load(deps.storage)?;
 
+    // make sure we're not trying to renew in the future
     if time > env.block.time {
         return Err(ContractError::CannotProcessFutureRenewal {});
     }
 
-    // // TODO: add renewal processing logic
+    // get the queue to process
     let renewal_queue = RENEWAL_QUEUE.load(deps.storage, (time.seconds(), 0))?;
-
     // if renewal queue is empty we error out
     if renewal_queue.is_empty() {
         print!("Queue is empty");
         return Err(ContractError::NoRenewalQueue {});
     }
     // fetch all items in the renewal queue
-    let items: Result<Vec<((u64, u64), String)>, cosmwasm_std::StdError> = RENEWAL_QUEUE.range(deps.as_ref().storage, None, None, cosmwasm_std::Order::Ascending).collect();
-    // iterate through the items in the queue
-    for item in items.unwrap() {
-        println!("Processing renewal queue item: {:?}", item);
+    let items: Result<Vec<((u64, u64), String)>, cosmwasm_std::StdError> = RENEWAL_QUEUE
+        .range(
+            deps.as_ref().storage,
+            None,
+            None,
+            cosmwasm_std::Order::Ascending,
+        )
+        .collect();
 
+    // iterate through the items in the queue
+    // and process the renewal for each of them
+    for item in items.unwrap() {
+        // TODO: remove println debug statement
+        println!("Processing renewal queue item: {:?}", item.1);
+        let res = Response::new();
         let name = item.1;
 
-        // pull the asks for the name
-        let mut ask = asks().load(deps.storage, ask_key(&name))?;
-        // find the highest bid
-        let highest_bid = bids().range(deps.storage, None, None, Order::Descending)
-            .filter_map(|item| {
-                let (_, bid) = item.ok()?;
-                // check of the bid was created within the last 4 week
-                if bid.created_time > time.minus_seconds(4 * SECONDS_PER_WEEK) {
-                    Some(bid.amount)
-                } else {
-                    None
-                }
-            })
-            .max();
+        // fetch the asks and if there aren't any
+        // burn the name
+        let asks_for_name = asks()
+            .range(
+                deps.as_ref().storage,
+                Some(Bound::inclusive(ask_key(&name))),
+                None,
+                Order::Ascending,
+            )
+            .collect::<Vec<_>>();
+        if asks_for_name.is_empty() {
+            let burn_msg = Cw721ExecuteMsg::Burn {
+                token_id: name.to_string(),
+            };
+            let exec_burn_msg = WasmMsg::Execute {
+                contract_addr: collection.to_string(),
+                msg: to_binary(&burn_msg)?,
+                funds: vec![],
+            };
 
-        match highest_bid {
-            // if the renewal_fund is less than 0.5% of highest bid from the
-            // last 4 weeks we will refund the ask 
-            //
-            // note: this logic is largely taken from @execute_refund_renewal
-            Some(highest_bid) if ask.renewal_fund < highest_bid * Decimal::percent(50) / Uint128::from(100u128) => {
-                let msg = BankMsg::Send {
-                    to_address: ask.seller.to_string(),
-                    amount: vec![coin(ask.renewal_fund.u128(), NATIVE_DENOM)],
+            res.add_event(Event::new("burn").add_attribute("token_id", name.to_string()))
+                .add_message(exec_burn_msg);
+        } else {
+
+            // otherwise we begin the renewal logic
+            let res = Response::new();
+
+            // pull the ask
+            let ask = asks().load(deps.storage, ask_key(&name))?;
+
+            // if the renewal was never funded then
+            // burn the name
+            if ask.renewal_fund.is_zero() {
+                let burn_msg = Cw721ExecuteMsg::Burn {
+                    token_id: name.to_string(),
                 };
-                // set the renewal_fund to zero
-                ask.renewal_fund = Uint128::zero();
-                // store
-                asks().save(deps.storage, ask_key(&name), &ask)?;
-                // emit event fot refund
-                let event = Event::new("refund-renewal")
-                    .add_attribute("token_id", name)
-                    .add_attribute("refund", ask.renewal_fund);
-                return Ok(Response::new().add_event(event).add_message(msg));
-            },
-            _ => (),
+                let exec_burn_msg = WasmMsg::Execute {
+                    contract_addr: collection.to_string(),
+                    msg: to_binary(&burn_msg)?,
+                    funds: vec![],
+                };
+                let burn_event = Event::new("burn").add_attribute("token_id", name.to_string());
+
+                res.add_event(burn_event).add_message(exec_burn_msg);
+            } else {
+
+                // Otherwise it was funded so we will find the
+                // highest bid for this name in the last 4 weeks
+                let four_weeks_ago = env.block.time.minus_seconds(4 * SECONDS_PER_WEEK);
+                let bids_for_name = bids()
+                    .range(
+                        deps.as_ref().storage,
+                        Some(Bound::inclusive(bid_key(&name, &ask.seller))),
+                        None,
+                        Order::Descending,
+                    )
+                    .collect::<Vec<_>>();
+                let highest_bid_in_last_4_weeks = bids_for_name
+                    .iter()
+                    .filter(|bid| bid.as_ref().unwrap().1.created_time >= four_weeks_ago)
+                    .max_by(|a, b| {
+                        a.as_ref()
+                            .unwrap()
+                            .1
+                            .amount
+                            .cmp(&b.as_ref().unwrap().1.amount)
+                    });
+
+                // set the payment from the bid to 0.5% of the that value
+                let payment = match highest_bid_in_last_4_weeks {
+                    Some(bid) => bid
+                        .as_ref()
+                        .unwrap()
+                        .1
+                        .amount
+                        .multiply_ratio(5u128, 1000u128), // 0.5% of the highest bid
+                    None => Uint128::zero(),
+                };
+
+                // actually move tokens around
+                if payment <= ask.renewal_fund {
+                    // TODO: deduct payment from renewal_fund
+                } else {
+                    // TODO: ??
+                    // do we burn the name?
+                    // do we list it for sale and set the
+                    // price at 0.5% of the highest bid?
+                }
+
+                // Reset the ask
+                let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+                let reset_ask = Ask {
+                    token_id: name.to_string(),
+                    id: ask.id,
+                    seller: ask.seller,
+                    renewal_time,
+                    renewal_fund: ask.renewal_fund,
+                };
+                store_ask(deps.storage, &reset_ask)?;
+
+                let reset_event = Event::new("reset").add_attribute("token_id", name.to_string());
+
+                let exec_reset_msg = WasmMsg::Execute {
+                    contract_addr: collection.to_string(),
+                    msg: to_binary(&reset_ask)?,
+                    funds: vec![],
+                };
+
+                res.add_event(reset_event).add_message(exec_reset_msg);
+            }
         }
     }
-
-    // for name in renewal_queue.iter() {
-    //     let ask = asks().load(deps.storage, ask_key(name))?;
-    //     if ask.renewal_fund.is_zero() {
-    //         continue;
-    //         // transfer ownership to name service
-    //         // list in marketplace for 0.5% of bid price
-    //         // if no bids, list for original price
-    //     }
-
-    //     // charge renewal fee
-    //     // pay out reward to operator
-    //     // reset ask
-
-    //     // Update Ask with new renewal_time
-    //     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-    //     let ask = Ask {
-    //         token_id: name.to_string(),
-    //         id: ask.id,
-    //         seller: ask.seller,
-    //         renewal_time,
-    //         renewal_fund: ask.renewal_fund - payment, // validate payment
-    //     };
-    //     store_ask(deps.storage, &ask)?;
-    // }
 
     let event = Event::new("process-renewal").add_attribute("time", time.to_string());
     Ok(Response::new().add_event(event))
