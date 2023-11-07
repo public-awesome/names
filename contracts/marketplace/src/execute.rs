@@ -494,14 +494,14 @@ pub fn execute_process_renewal(
         } else {
 
             // otherwise we begin the renewal logic
-            let res = Response::new();
+            let mut res = Response::new();
 
             // pull the ask
-            let ask = asks().load(deps.storage, ask_key(&name))?;
+            let mut ask = asks().load(deps.storage, ask_key(&name))?;
 
             // if the renewal was never funded then
             // burn the name
-            if ask.renewal_fund.is_zero() {
+            if ask.renewal_fund.is_zero() || true {
                 let burn_msg = Cw721ExecuteMsg::Burn {
                     token_id: name.to_string(),
                 };
@@ -550,12 +550,15 @@ pub fn execute_process_renewal(
 
                 // actually move tokens around
                 if payment <= ask.renewal_fund {
-                    // TODO: deduct payment from renewal_fund
+                    // Deduct the tokens for the payment from the renewal fund
+                    charge_fees(&mut res, Decimal::zero(), payment);
+                    ask.renewal_fund = ask.renewal_fund.checked_sub(payment).unwrap();
                 } else {
                     // TODO: ??
                     // do we burn the name?
                     // do we list it for sale and set the
                     // price at 0.5% of the highest bid?
+                    
                 }
 
                 // Reset the ask
