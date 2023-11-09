@@ -498,7 +498,7 @@ pub fn execute_process_renewal(
 
             // pull the ask
             let mut ask = asks().load(deps.storage, ask_key(&name))?;
-
+            let seller = ask.seller.clone();
             // if the renewal was never funded then
             // burn the name
             if ask.renewal_fund.is_zero() || true {
@@ -553,11 +553,26 @@ pub fn execute_process_renewal(
                     // Deduct the tokens for the payment from the renewal fund
                     charge_fees(&mut res, Decimal::zero(), payment);
                     ask.renewal_fund = ask.renewal_fund.checked_sub(payment).unwrap();
+                    // reset the ask to the new renewal time
+                    let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+                    let reset_ask = Ask {
+                        token_id: name.to_string(),
+                        id: ask.id,
+                        seller: ask.seller,
+                        renewal_time,
+                        renewal_fund: ask.renewal_fund,
+                    };
+                    store_ask(deps.storage, &reset_ask)?;
                 } else {
-                    // TODO: ??
-                    // do we burn the name?
-                    // do we list it for sale and set the
-                    // price at 0.5% of the highest bid?
+                   // otherwise award the name to the highest bidder
+                    let highest_bid = &highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1;
+                    finalize_sale(
+                        deps.as_ref(),
+                        ask.clone(),
+                        highest_bid.amount,
+                        highest_bid.bidder.clone(),
+                        &mut res,
+                    )?; 
                     
                 }
 
@@ -566,13 +581,13 @@ pub fn execute_process_renewal(
                 let reset_ask = Ask {
                     token_id: name.to_string(),
                     id: ask.id,
-                    seller: ask.seller,
+                    seller: seller,
                     renewal_time,
                     renewal_fund: ask.renewal_fund,
                 };
                 store_ask(deps.storage, &reset_ask)?;
 
-                let reset_event = Event::new("reset").add_attribute("token_id", name.to_string());
+                let reset_event = Event::new("reset-ask").add_attribute("token_id", name.to_string());
 
                 let exec_reset_msg = WasmMsg::Execute {
                     contract_addr: collection.to_string(),
