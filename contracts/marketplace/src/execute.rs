@@ -575,27 +575,6 @@ pub fn execute_process_renewal(
                     )?; 
                     
                 }
-
-                // Reset the ask
-                let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-                let reset_ask = Ask {
-                    token_id: name.to_string(),
-                    id: ask.id,
-                    seller: seller,
-                    renewal_time,
-                    renewal_fund: ask.renewal_fund,
-                };
-                store_ask(deps.storage, &reset_ask)?;
-
-                let reset_event = Event::new("reset-ask").add_attribute("token_id", name.to_string());
-
-                let exec_reset_msg = WasmMsg::Execute {
-                    contract_addr: collection.to_string(),
-                    msg: to_binary(&reset_ask)?,
-                    funds: vec![],
-                };
-
-                res.add_event(reset_event).add_message(exec_reset_msg);
             }
         }
     }
