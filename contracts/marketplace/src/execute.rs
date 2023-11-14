@@ -498,7 +498,6 @@ pub fn execute_process_renewal(
 
             // pull the ask
             let mut ask = asks().load(deps.storage, ask_key(&name))?;
-            let seller = ask.seller.clone();
             // if the renewal was never funded then
             // burn the name
             if ask.renewal_fund.is_zero() || true {
