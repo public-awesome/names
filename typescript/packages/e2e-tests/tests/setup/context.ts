@@ -82,11 +82,8 @@ export default class Context {
     return instantiateResult
   }
 
-  
-
   private instantiateContracts = async () => {
     let { client, address: sender } = this.getTestUser('user1')
-
   }
 
   private writeContext = () => {

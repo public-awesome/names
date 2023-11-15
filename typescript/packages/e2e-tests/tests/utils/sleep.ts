@@ -1,8 +1,7 @@
 import chainConfig from '../../configs/chain_config.json'
 import axios, { AxiosResponse } from 'axios'
 
-export const sleep = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms))
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const pollConnection = async () => {
   console.log('Polling connection...')
