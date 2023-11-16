@@ -15,7 +15,7 @@ import path from 'path'
 export const CONTRACT_MAP = {
   // core artifacts
   MARKETPLACE: 'name_marketplace',
-  SG721_NAME: 'name_sg721',
+  SG721_NAME: 'sg721_name',
   NAME_MINTER: 'name_minter',
   WHITELIST_UPDATABLE: 'whitelist_updatable',
 }
@@ -96,26 +96,34 @@ export default class Context {
       sender,
       CONTRACT_MAP.WHITELIST_UPDATABLE,
       {
-        addresses: [],
+        addresses: [this.getTestUser('user1').address],
         per_address_limit: 1,
         mint_discount_bps: 0,
       },
     )
 
-    let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
-      base_init_msg: {
-        name: 'Farts McCool',
-        symbol: 'FART',
-        minter: 'rad_minter_bro',
-        collection_info: {
-          payment_address: 'rad_payment_address_bro',
-          share: 100,
-          creator: 'rad_creator_bro',
-          description: 'rad_description_bro',
-          image: 'rad_image_bro'
-        }
-      }
+    let instantiateNameMinter = await this.instantiateContract(client, sender, CONTRACT_MAP.NAME_MINTER, {
+      collection_code_id: 1,
+      marketplace_addr: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      min_name_length: 1,
+      max_name_length: 10,
+      base_price: '1',
+      fair_burn_bps: 100,
+      whitelists: [this.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)],
     })
+
+    // let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
+    //   base_init_msg: {
+    //     name: 'Farts McCool',
+    //     symbol: 'FART',
+    //     minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+    //     collection_info: {
+    //       creator: this.getTestUser('user1').address,
+    //       description: 'rad_description_bro',
+    //       image: 'rad_image_bro'
+    //     }
+    //   }
+    // })
 
   }
 
