@@ -101,6 +101,22 @@ export default class Context {
         mint_discount_bps: 0,
       },
     )
+
+    let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
+      base_init_msg: {
+        name: 'Farts McCool',
+        symbol: 'FART',
+        minter: 'rad_minter_bro',
+        collection_info: {
+          payment_address: 'rad_payment_address_bro',
+          share: 100,
+          creator: 'rad_creator_bro',
+          description: 'rad_description_bro',
+          image: 'rad_image_bro'
+        }
+      }
+    })
+
   }
 
   private writeContext = () => {

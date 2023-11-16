@@ -11,7 +11,7 @@ describe('Names Renewal', () => {
   test('is initialized', () => {
     expect(context.getContractAddress(CONTRACT_MAP.MARKETPLACE)).toBeTruthy()
     // expect(context.getContractAddress(CONTRACT_MAP.NAME_MINTER)).toBeTruthy()
-    // expect(context.getContractAddress(CONTRACT_MAP.SG721_NAME)).toBeTruthy()
+    expect(context.getContractAddress(CONTRACT_MAP.SG721_NAME)).toBeTruthy()
     expect(context.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)).toBeTruthy()
   })
 
