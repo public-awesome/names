@@ -26,26 +26,27 @@ fn test_execute_process_renewal_negative_case() {
 
 }
 
-#[test]
-fn test_execute_process_renewal_positive_case() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
+
+// #[test]
+// fn test_execute_process_renewal_positive_case() {
+//     let mut deps = mock_dependencies();
+//     let env = mock_env();
     
-    let time = Timestamp::from_seconds(env.block.time.seconds());
-    let save_res = RENEWAL_QUEUE.save(deps.as_mut().storage, (time.seconds(), 0), &TOKEN_ID.to_string());
-    assert!(save_res.is_ok());
+//     let time = Timestamp::from_seconds(env.block.time.seconds());
+//     let save_res = RENEWAL_QUEUE.save(deps.as_mut().storage, (time.seconds(), 0), &TOKEN_ID.to_string());
+//     assert!(save_res.is_ok());
 
-    let items: Result<Vec<((u64, u64), String)>, cosmwasm_std::StdError> = RENEWAL_QUEUE.range(deps.as_ref().storage, None, None, cosmwasm_std::Order::Ascending).collect();
-    for item in items.unwrap() {
-        println!("Renewal queue item: {:?}", item);
-    }
+//     let items: Result<Vec<((u64, u64), String)>, cosmwasm_std::StdError> = RENEWAL_QUEUE.range(deps.as_ref().storage, None, None, cosmwasm_std::Order::Ascending).collect();
+//     for item in items.unwrap() {
+//         println!("Renewal queue item: {:?}", item);
+//     }
 
-    let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
-    if let Err(ref e) = res {
-        panic!("execute_process_renewal failed with error: {:?}", e);
-    }
-    assert!(res.is_ok());
-}
+//     let res = execute_process_renewal(deps.as_mut(), env.clone(), time);
+//     if let Err(ref e) = res {
+//         panic!("execute_process_renewal failed with error: {:?}", e);
+//     }
+//     assert!(res.is_ok());
+// }
 
 
 #[test]

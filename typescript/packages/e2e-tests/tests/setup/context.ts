@@ -91,63 +91,16 @@ export default class Context {
       ask_interval: 60,
     })
 
-    let intantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
-      verifier: null,
-      base_init_msg: {
-        /*
-      pub name: String,
-    pub symbol: String,
-    pub minter: String,
-    pub collection_info: CollectionInfo<RoyaltyInfoResponse>,
-  */
-        name: 'Stargaze',
-        symbol: 'SGZ',
-        minter: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
-        collection_info: {
-          /*
-    pub creator: String,
-    pub description: String,
-    pub image: String,
-    pub external_link: Option<String>,
-    pub explicit_content: Option<bool>,
-    pub start_trading_time: Option<Timestamp>,
-    pub royalty_info: Option<T>,
-*/
-
-          creator: sender,
-          description: 'Stargaze NFTs',
-          image: 'https://stargaze.zone/images/sgz_logo.png',
-          external_link: null,
-          explicit_content: null,
-          start_trading_time: null,
-          royalty_info: null,
-        },
+    let instantiateWhitelistUpdatable = await this.instantiateContract(
+      client,
+      sender,
+      CONTRACT_MAP.WHITELIST_UPDATABLE,
+      {
+        addresses: [],
+        per_address_limit: 1,
+        mint_discount_bps: 0,
       },
-    })
-
-    // let instantiateNameMinter = await this.instantiateContract(client, sender, CONTRACT_MAP.NAME_MINTER, {
-    //   /*
-    //       /// Temporary admin for managing whitelists
-    // pub admin: Option<String>,
-    // /// Oracle for verifying text records
-    // pub verifier: Option<String>,
-    // pub collection_code_id: u64,
-    // pub marketplace_addr: String,
-    // pub min_name_length: u32,
-    // pub max_name_length: u32,
-    // pub base_price: Uint128,
-    // pub fair_burn_bps: u64,
-    // pub whitelists: Vec<String>,*/
-    //   admin: null,
-    //   verifier: null,
-    //   collection_code_id: this.codeIds[CONTRACT_MAP.SG721_NAME],
-    //   marketplace_addr: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
-    //   min_name_length: 5,
-    //   max_name_length: 20,
-    //   base_price: '1000000',
-    //   fair_burn_bps: 100,
-    //   whitelists: [],
-    // })
+    )
   }
 
   private writeContext = () => {
