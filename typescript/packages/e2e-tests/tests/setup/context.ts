@@ -1,9 +1,7 @@
-import { SigningCosmWasmClient, instantiate2Address } from '@cosmjs/cosmwasm-stargate'
-import { fromHex } from '@cosmjs/encoding'
+import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import chainConfig from '../../configs/chain_config.json'
 import testAccounts from '../../configs/test_accounts.json'
 import { getSigningClient } from '../utils/client'
-import { readChecksumFile } from '../utils/file'
 import assert from 'assert'
 import fs from 'fs'
 import _ from 'lodash'
@@ -81,6 +79,9 @@ export default class Context {
 
   private instantiateContracts = async () => {
     let { client, address: sender } = this.getTestUser('user1')
+
+    console.log("------->", CONTRACT_MAP)
+    console.log("blaaaah", this.codeIds) 
 
     let inistantiateMarketpace = await this.instantiateContract(client, sender, CONTRACT_MAP.MARKETPLACE, {
       trading_fee_bps: 100,
