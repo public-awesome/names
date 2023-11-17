@@ -100,6 +100,7 @@ export default class Context {
       },
     )
 
+    
     let instantiateNameMinter = await this.instantiateContract(client, sender, CONTRACT_MAP.NAME_MINTER, {
       collection_code_id: 1,
       marketplace_addr: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
@@ -110,18 +111,18 @@ export default class Context {
       whitelists: [this.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)],
     })
 
-    // let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
-    //   base_init_msg: {
-    //     name: 'Farts McCool',
-    //     symbol: 'FART',
-    //     minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
-    //     collection_info: {
-    //       creator: this.getTestUser('user1').address,
-    //       description: 'rad_description_bro',
-    //       image: 'rad_image_bro'
-    //     }
-    //   }
-    // })
+    let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
+      base_init_msg: {
+        name: 'Farts McCool',
+        symbol: 'FART',
+        minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+        collection_info: {
+          creator: this.getTestUser('user1').address,
+          description: 'rad_description_bro',
+          image: 'rad_image_bro'
+        }
+      }
+    })
 
   }
 
