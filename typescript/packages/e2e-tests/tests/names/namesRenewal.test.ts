@@ -14,17 +14,17 @@ describe('Names Renewal', () => {
     expect(context.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)).toBeTruthy()
   })
 
-  // test('mint name', async () => {
-  //   expect(true).toBe(false)
-  // })
+  test('mint name', async () => {
+    expect(true).toBe(false)
+  })
 
-  // test('bid on name', async () => {
-  //   expect(true).toBe(false)
-  // })
+  test('bid on name', async () => {
+    expect(true).toBe(false)
+  })
 
-  // test('renew name', async () => {
-  //   expect(true).toBe(false)
-  // })
+  test('renew name', async () => {
+    expect(true).toBe(false)
+  })
 
   test('STUB: true is true', () => {
     expect(true).toBe(true)
