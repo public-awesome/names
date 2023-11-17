@@ -80,9 +80,6 @@ export default class Context {
   private instantiateContracts = async () => {
     let { client, address: sender } = this.getTestUser('user1')
 
-    console.log("------->", CONTRACT_MAP)
-    console.log("blaaaah", this.codeIds) 
-
     let inistantiateMarketpace = await this.instantiateContract(client, sender, CONTRACT_MAP.MARKETPLACE, {
       trading_fee_bps: 100,
       min_price: '1',
@@ -100,9 +97,8 @@ export default class Context {
       },
     )
 
-    
     let instantiateNameMinter = await this.instantiateContract(client, sender, CONTRACT_MAP.NAME_MINTER, {
-      collection_code_id: 1,
+      collection_code_id: this.codeIds[CONTRACT_MAP.SG721_NAME],
       marketplace_addr: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
       min_name_length: 1,
       max_name_length: 10,
@@ -110,20 +106,6 @@ export default class Context {
       fair_burn_bps: 100,
       whitelists: [this.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)],
     })
-
-    let inistantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
-      base_init_msg: {
-        name: 'Farts McCool',
-        symbol: 'FART',
-        minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
-        collection_info: {
-          creator: this.getTestUser('user1').address,
-          description: 'rad_description_bro',
-          image: 'rad_image_bro'
-        }
-      }
-    })
-
   }
 
   private writeContext = () => {
