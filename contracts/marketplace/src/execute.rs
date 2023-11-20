@@ -459,6 +459,7 @@ pub fn execute_process_renewal(
             None,
             cosmwasm_std::Order::Ascending,
         )
+        .take(20)
         .collect();
 
     // iterate through the items in the queue
