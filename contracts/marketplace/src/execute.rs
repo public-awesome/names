@@ -480,19 +480,7 @@ pub fn execute_process_renewal(
                 Order::Ascending,
             )
             .collect::<Vec<_>>();
-        if asks_for_name.is_empty() {
-            let burn_msg = Cw721ExecuteMsg::Burn {
-                token_id: name.to_string(),
-            };
-            let exec_burn_msg = WasmMsg::Execute {
-                contract_addr: collection.to_string(),
-                msg: to_binary(&burn_msg)?,
-                funds: vec![],
-            };
-
-            res.add_event(Event::new("burn").add_attribute("token_id", name.to_string()))
-                .add_message(exec_burn_msg);
-        } else {
+ 
 
             // otherwise we begin the renewal logic
             let mut res = Response::new();
@@ -576,7 +564,7 @@ pub fn execute_process_renewal(
                     
                 }
             }
-        }
+        
     }
 
     let event = Event::new("process-renewal").add_attribute("time", time.to_string());
