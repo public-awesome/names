@@ -430,6 +430,139 @@ pub fn execute_refund_renewal(
     Ok(Response::new().add_event(event).add_message(msg))
 }
 
+
+pub fn execute_process_renewal_2(
+    deps: DepsMut,
+    env: Env,
+    time: Timestamp,
+) -> Result<Response, ContractError> {
+
+   // renewal logic: 
+    // if there is no renewal fund and no bids then burn it (for now, auctions in the future)
+    // if there is no renewal fund and there are bids, sell it to the highest bidder
+    // if there is renewal fund and no bids then renew it
+    // if there is renewal fund and bids check if renewa_fund > 0.5% of highest
+
+
+    // make sure we're not trying to renew in the future
+    if time > env.block.time {
+        return Err(ContractError::CannotProcessFutureRenewal {});
+    } else {
+        // load the renewal queue
+        let renewal_queue = RENEWAL_QUEUE.load(deps.storage, (time.seconds(), 0))?;
+        // for each item (name) in the queue we load all asks for it
+        for name in renewal_queue {
+            let asks_for_name = asks()
+                .range(
+                    deps.as_ref().storage,
+                    Some(Bound::inclusive(ask_key(&name))),
+                    None,
+                    Order::Ascending,
+                )
+                .collect::<Vec<_>>();
+            // if there are no asks for the name we burn it
+            if asks_for_name.is_empty() {
+                let burn_msg = Cw721ExecuteMsg::Burn {
+                    token_id: name.to_string(),
+                };
+                let exec_burn_msg = WasmMsg::Execute {
+                    contract_addr: collection.to_string(),
+                    msg: to_binary(&burn_msg)?,
+                    funds: vec![],
+                };
+                let burn_event = Event::new("burn").add_attribute("token_id", name.to_string());
+
+                res.add_event(burn_event).add_message(exec_burn_msg);
+            } else {
+                // otherwise we begin the renewal logic
+                let mut res = Response::new();
+
+                // pull the ask
+                let mut ask = asks().load(deps.storage, ask_key(&name))?;
+                // if the renewal was never funded then
+                // burn the name
+                if ask.renewal_fund.is_zero() {
+                    let burn_msg = Cw721ExecuteMsg::Burn {
+                        token_id: name.to_string(),
+                    };
+                    let exec_burn_msg = WasmMsg::Execute {
+                        contract_addr: collection.to_string(),
+                        msg: to_binary(&burn_msg)?,
+                        funds: vec![],
+                    };
+                    let burn_event = Event::new("burn").add_attribute("token_id", name.to_string());
+
+                    res.add_event(burn_event).add_message(exec_burn_msg);
+                } else {
+                    // otherwise it was funded so we will find the
+                    // highest bid for this name in the last 4 weeks
+                    let four_weeks_ago = env.block.time.minus_seconds(4 * SECONDS_PER_WEEK);
+                    let bids_for_name = bids()
+                        .range(
+                            deps.as_ref().storage,
+                            Some(Bound::inclusive(bid_key(&name, &ask.seller))),
+                            None,
+                            Order::Descending,
+                        )
+                        .take(20)
+                        .collect::<Vec<_>>();
+                    let highest_bid_in_last_4_weeks = bids_for_name
+                        .iter()
+                        .filter(|bid| bid.as_ref().unwrap().1.created_time >= four_weeks_ago)
+                        .max_by(|a, b| {
+                            a.as_ref()
+                                .unwrap()
+                                .1
+                                .amount
+                                .cmp(&b.as_ref().unwrap().1.amount)
+                        });
+
+                    // set the payment from the bid to 0.5% of the that value
+                    let payment = match highest_bid_in_last_4_weeks {
+                        Some(bid) => bid
+                            .as_ref()
+                            .unwrap()
+                            .1
+                            .amount
+                            .multiply_ratio(5u128, 1000u128), // 0.5% of the highest bid
+                        None => Uint128::zero(),
+                    };
+
+                    // actually move tokens around
+                    if payment <= ask.renewal_fund {
+                        // Deduct the tokens for the payment from the renewal fund
+                        charge_fees(&mut res, Decimal::zero(), payment);
+                        ask.renewal_fund = ask.renewal_fund.checked_sub(payment).unwrap();
+                        // reset the ask to the new renewal time
+                        let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+                        let reset_ask = Ask {
+                            token_id: name.to_string(),
+                            id: ask.id,
+                            seller: ask.seller,
+                            renewal_time,
+                            renewal_fund: ask.renewal_fund,
+                        };
+                        store_ask(deps.storage, &reset_ask)?;
+                    } else {
+                        // otherwise award the name to the highest bidder
+                        let highest_bid = &highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1;
+                        finalize_sale(
+                            deps.as_ref(),
+                            ask.clone(),
+                            highest_bid.amount,
+                            highest_bid.bidder.clone(),
+                            &mut res,
+                        )?;
+                    }
+                    
+
+    }
+
+    // tmp
+    return Ok(Response::new());
+
+}
+
 /// Anyone can call this to process renewals for a block and earn a reward
 pub fn execute_process_renewal(
     deps: DepsMut,

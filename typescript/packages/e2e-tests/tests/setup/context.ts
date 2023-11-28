@@ -1,5 +1,5 @@
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
-import chainConfig, {denom} from '../../configs/chain_config.json'
+import chainConfig, { denom } from '../../configs/chain_config.json'
 import testAccounts from '../../configs/test_accounts.json'
 import { getSigningClient } from '../utils/client'
 import assert from 'assert'
@@ -28,6 +28,24 @@ export default class Context {
   private contracts: { [key: string]: string[] } = {}
   private testCachePath: string = path.join(__dirname, '../../tmp/test_cache.json')
   private testUserMap: TestUserMap = {}
+
+  private sg721ContractAddress: string = ''
+
+  private extractAttribute = (instantiateNameMinter: any, attr: string) => {
+    const { events } = instantiateNameMinter
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i]
+      if (event.type === 'wasm') {
+        const { attributes } = event
+        for (let j = 0; j < attributes.length; j++) {
+          const attribute = attributes[j]
+          if (attribute.key === attr) {
+            return attribute.value
+          }
+        }
+      }
+    }
+  }
 
   private initializeTestUsers = async () => {
     for (let i = 0; i < testAccounts.length; i++) {
@@ -98,60 +116,81 @@ export default class Context {
     )
 
     const instantiateNameMinter = await this.instantiateContract(client, sender, CONTRACT_MAP.NAME_MINTER, {
+      admin: this.getTestUser('user1').address,
       collection_code_id: this.codeIds[CONTRACT_MAP.SG721_NAME],
       marketplace_addr: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
       min_name_length: 3,
       max_name_length: 63,
       base_price: '100000000',
       fair_burn_bps: 6666,
-      whitelists: [],
-    })
-    
-    const instantiateSG721Name = await this.instantiateContract(client, sender, CONTRACT_MAP.SG721_NAME, {
-      base_init_msg: {
-        name: 'sg721_name',
-        symbol: '721Name',
-        minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
-        collection_info: {
-          creator: this.getTestUser('user2').address,
-          description: 'Test SG721 Name Collection, yo',
-          image: '',
-        }
-      }
+      whitelists: [this.extractAttribute(instantiateWhitelistUpdatable, 'whitelist_addr')],
     })
 
     const setupMarketplaceMsg = {
       setup: {
         minter: this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
-        collection: this.getContractAddress(CONTRACT_MAP.SG721_NAME),
+        collection: this.extractAttribute(instantiateNameMinter, 'sg721_names_addr'),
       },
     }
-    let setupResult = await client.execute(
-      sender, 
+
+    this.sg721ContractAddress = this.extractAttribute(instantiateNameMinter, 'sg721_names_addr')
+
+    const setupResult = await client.execute(
+      sender,
       this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
-      setupMarketplaceMsg, 
+      setupMarketplaceMsg,
       'auto',
       undefined,
-      [])
+      [],
+    )
 
-    // console.log('setupResult', setupResult)
-    // // mint collection
+    const updateWhitelistMsg = {
+      add_whitelist: {
+        address: this.getTestUser('user1').address,
+      },
+    }
 
-    // // mint name
-    // let mintNameMsg = {
-    //   mint_and_list: {
-    //     name: 'testname',
-    //   },
-    // }
-    // let mintNameResult = await client.execute(
-    //   sender, 
-    //   this.getContractAddress(CONTRACT_MAP.NAME_MINTER), 
-    //   mintNameMsg, 
-    //   "auto",
-    //   undefined, 
-    //   [{ denom, amount: '50000000' }]
-    // );
-    // console.log(`Minted name ${mintNameResult.transactionHash}`);
+    await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+      updateWhitelistMsg,
+      'auto',
+      undefined,
+      [],
+    )
+
+    const approveMarketplaceMsg = {
+      approve_all: {
+        operator: this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      },
+    }
+
+    await client.execute(
+      sender,
+      this.extractAttribute(instantiateNameMinter, 'sg721_names_addr'),
+      approveMarketplaceMsg,
+      'auto',
+      undefined,
+      [],
+    )
+
+    // mint name
+    let mintNameMsg = {
+      mint_and_list: {
+        name: 'testname',
+      },
+    }
+
+    let mintNameResult = await client.execute(
+      this.getTestUser('user1').address,
+      this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+      mintNameMsg,
+      'auto',
+      undefined,
+      [{ denom, amount: '100000000' }],
+    )
+    // console.log(`Minted name ${mintNameResult.transactionHash}`)
+    // console.log(mintNameResult)
   }
 
   private writeContext = () => {
@@ -206,4 +245,15 @@ export default class Context {
   addContractAddress = (contractKey: string, contractAddress: string) => {
     this.contracts[contractKey] = _.extend([], this.contracts[contractKey], [contractAddress])
   }
+  getMintedName = async () => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      ask_count: {},
+    }
+    
+    // return client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.NAME_MINTER), queryMsg)
+    const result = await client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.MARKETPLACE), queryMsg)
+    return result
+  }
+  
 }
