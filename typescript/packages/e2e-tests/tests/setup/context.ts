@@ -245,15 +245,138 @@ export default class Context {
   addContractAddress = (contractKey: string, contractAddress: string) => {
     this.contracts[contractKey] = _.extend([], this.contracts[contractKey], [contractAddress])
   }
-  getMintedName = async () => {
+
+  countAsks = async () => {
     const { client, address: sender } = this.getTestUser('user1')
     const queryMsg = {
       ask_count: {},
     }
-    
-    // return client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.NAME_MINTER), queryMsg)
+
     const result = await client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.MARKETPLACE), queryMsg)
     return result
   }
-  
+
+  placeBid = async (name: string, price: string, bidder: string) => {
+    const { client, address: sender } = this.getTestUser(bidder)
+    const queryMsg = {
+      set_bid: {
+        token_id: name,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [{ denom, amount: price }],
+    )
+    return result
+  }
+  getBids = async (token_id: string, bidder: string) => {
+    const { client, address: sender } = this.getTestUser(bidder)
+    const queryMsg = {
+      bids: {
+        token_id,
+      },
+    }
+
+    const result = await client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.MARKETPLACE), queryMsg)
+    return result
+  }
+
+  removeBid = async (name: string, bidder: string) => {
+    const { client, address: sender } = this.getTestUser(bidder)
+    const queryMsg = {
+      remove_bid: {
+        token_id: name,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [],
+    )
+    return result
+  }
+  acceptBid = async (token_id: string, bidder: string) => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      accept_bid: {
+        token_id,
+        bidder: this.getTestUser(bidder).address,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [],
+    )
+    return result
+  }
+  fundRenewal = async (token_id: string, amount: string) => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      fund_renewal: {
+        token_id,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [{ denom, amount }],
+    )
+    return result
+  }
+
+  refundRenewal = async (token_id: string, bidder: string) => {
+    const { client, address: sender } = this.getTestUser(bidder)
+    const queryMsg = {
+      refund_renewal: {
+        token_id,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [],
+    )
+    return result
+  }
+
+  processRenewal = async (time: any) => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      process_renewals: {
+        time,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.MARKETPLACE),
+      queryMsg,
+      'auto',
+      undefined,
+      [],
+    )
+    return result
+  }
 }
