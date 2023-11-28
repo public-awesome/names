@@ -14,8 +14,9 @@ describe('Names Renewal', () => {
     expect(context.getContractAddress(CONTRACT_MAP.WHITELIST_UPDATABLE)).toBeTruthy()
   })
 
-  test('mint name', async () => {
-    expect(true).toBe(false)
+  test('mint name, check ask_count', async () => {
+    const askCount = await context.getMintedName()
+    expect(askCount).toBe(1)
   })
 
   test('bid on name', async () => {
