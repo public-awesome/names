@@ -361,7 +361,7 @@ export default class Context {
     return result
   }
 
-  processRenewal = async (time: any) => {
+  processRenewal = async (time: string) => {
     const { client, address: sender } = this.getTestUser('user1')
     const queryMsg = {
       process_renewals: {
