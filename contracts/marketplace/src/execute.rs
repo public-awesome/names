@@ -1,54 +1,26 @@
 use std::marker::PhantomData;
 
 use crate::error::ContractError;
-use crate::hooks::{ prepare_ask_hook, prepare_bid_hook, prepare_sale_hook };
-use crate::msg::{ ExecuteMsg, HookAction, InstantiateMsg };
+use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
+use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
-    ask_key,
-    asks,
-    bid_key,
-    bids,
-    increment_asks,
-    Ask,
-    Bid,
-    SudoParams,
-    IS_SETUP,
-    NAME_COLLECTION,
-    NAME_MINTER,
-    RENEWAL_QUEUE,
-    SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
+    NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin,
-    coins,
-    to_binary,
-    Addr,
-    BankMsg,
-    Decimal,
-    Deps,
-    DepsMut,
-    Empty,
-    Env,
-    Event,
-    MessageInfo,
-    Order,
-    StdError,
-    StdResult,
-    Storage,
-    Timestamp,
-    Uint128,
-    WasmMsg,
+    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
+    Order, StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw721::{ Cw721ExecuteMsg, OwnerOfResponse };
+use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_storage_plus::Bound;
-use cw_utils::{ must_pay, nonpayable };
+use cw_utils::{must_pay, nonpayable};
 use semver::Version;
-use sg_name_common::{ charge_fees, SECONDS_PER_WEEK, SECONDS_PER_YEAR };
-use sg_std::{ Response, SubMsg, NATIVE_DENOM };
+use sg_name_common::{charge_fees, SECONDS_PER_WEEK, SECONDS_PER_YEAR};
+use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
 const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
@@ -62,7 +34,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     if msg.trading_fee_bps > MAX_FEE_BPS {
@@ -86,7 +58,7 @@ pub fn execute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: ExecuteMsg
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
 
@@ -106,8 +78,11 @@ pub fn execute(
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
         ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, time),
-        ExecuteMsg::Setup { minter, collection } =>
-            execute_setup(deps, api.addr_validate(&minter)?, api.addr_validate(&collection)?),
+        ExecuteMsg::Setup { minter, collection } => execute_setup(
+            deps,
+            api.addr_validate(&minter)?,
+            api.addr_validate(&collection)?,
+        ),
     }
 }
 
@@ -115,7 +90,7 @@ pub fn execute(
 pub fn execute_setup(
     deps: DepsMut,
     minter: Addr,
-    collection: Addr
+    collection: Addr,
 ) -> Result<Response, ContractError> {
     if IS_SETUP.load(deps.storage)? {
         return Err(ContractError::AlreadySetup {});
@@ -136,7 +111,7 @@ pub fn execute_set_ask(
     env: Env,
     info: MessageInfo,
     token_id: &str,
-    seller: Addr
+    seller: Addr,
 ) -> Result<Response, ContractError> {
     let minter = NAME_MINTER.load(deps.storage)?;
     if info.sender != minter {
@@ -151,7 +126,7 @@ pub fn execute_set_ask(
         seller.to_string(),
         false,
         None,
-        None
+        None,
     )?;
     if ops.is_empty() {
         return Err(ContractError::NotApproved {});
@@ -168,7 +143,11 @@ pub fn execute_set_ask(
     };
     store_ask(deps.storage, &ask)?;
 
-    RENEWAL_QUEUE.save(deps.storage, (renewal_time.seconds(), ask.id), &token_id.to_string())?;
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (renewal_time.seconds(), ask.id),
+        &token_id.to_string(),
+    )?;
 
     let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Create)?;
 
@@ -185,7 +164,7 @@ pub fn execute_set_ask(
 pub fn execute_remove_ask(
     deps: DepsMut,
     info: MessageInfo,
-    token_id: &str
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
 
@@ -223,7 +202,7 @@ pub fn execute_update_ask(
     deps: DepsMut,
     info: MessageInfo,
     token_id: &str,
-    seller: Addr
+    seller: Addr,
 ) -> Result<Response, ContractError> {
     let collection = NAME_COLLECTION.load(deps.storage)?;
     if info.sender != collection {
@@ -257,7 +236,7 @@ pub fn execute_set_bid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    token_id: &str
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
@@ -300,7 +279,7 @@ pub fn execute_remove_bid(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    token_id: &str
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let bidder = info.sender;
@@ -320,7 +299,10 @@ pub fn execute_remove_bid(
         .add_attribute("token_id", token_id)
         .add_attribute("bidder", bidder);
 
-    let res = Response::new().add_message(refund_bidder_msg).add_submessages(hook).add_event(event);
+    let res = Response::new()
+        .add_message(refund_bidder_msg)
+        .add_submessages(hook)
+        .add_event(event);
 
     Ok(res)
 }
@@ -332,7 +314,7 @@ pub fn execute_accept_bid(
     env: Env,
     info: MessageInfo,
     token_id: &str,
-    bidder: Addr
+    bidder: Addr,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let collection = NAME_COLLECTION.load(deps.storage)?;
@@ -349,7 +331,7 @@ pub fn execute_accept_bid(
         &deps.querier,
         token_id,
         info.sender.as_ref(),
-        None
+        None,
     )?;
 
     // Remove accepted bid
@@ -357,7 +339,11 @@ pub fn execute_accept_bid(
 
     // Update renewal queue
     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-    RENEWAL_QUEUE.save(deps.storage, (renewal_time.seconds(), ask.id), &token_id.to_string())?;
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (renewal_time.seconds(), ask.id),
+        &token_id.to_string(),
+    )?;
 
     let mut res = Response::new();
 
@@ -371,7 +357,13 @@ pub fn execute_accept_bid(
     }
 
     // Transfer funds and NFT
-    finalize_sale(deps.as_ref(), ask.clone(), bid.amount, bidder.clone(), &mut res)?;
+    finalize_sale(
+        deps.as_ref(),
+        ask.clone(),
+        bid.amount,
+        bidder.clone(),
+        &mut res,
+    )?;
 
     // Update Ask with new seller and renewal time
     let ask = Ask {
@@ -394,7 +386,7 @@ pub fn execute_accept_bid(
 pub fn execute_fund_renewal(
     deps: DepsMut,
     info: MessageInfo,
-    token_id: &str
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     let payment = must_pay(&info, NATIVE_DENOM)?;
 
@@ -411,7 +403,7 @@ pub fn execute_fund_renewal(
 pub fn execute_refund_renewal(
     deps: DepsMut,
     info: MessageInfo,
-    token_id: &str
+    token_id: &str,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
 
@@ -441,14 +433,19 @@ pub fn execute_refund_renewal(
 pub fn execute_process_renewal(
     deps: DepsMut,
     env: Env,
-    time: Timestamp
+    time: Timestamp,
 ) -> Result<Response, ContractError> {
     print!("Processing renewals at time {}", time);
     let collection = NAME_COLLECTION.load(deps.storage)?;
     // 1. load asks
     // 2. load renewal queue for time and ask_id
     let name_asks = asks()
-        .range(deps.as_ref().storage, None, None, cosmwasm_std::Order::Ascending)
+        .range(
+            deps.as_ref().storage,
+            None,
+            None,
+            cosmwasm_std::Order::Ascending,
+        )
         .take(20)
         .collect::<Vec<_>>();
 
@@ -461,7 +458,8 @@ pub fn execute_process_renewal(
         let ask_renewal_time = ask.renewal_time;
         let ask_renewal_fund = ask.renewal_fund;
 
-        let renewal_queue = RENEWAL_QUEUE.load(deps.storage, (ask_renewal_time.seconds(), ask_id))?;
+        let renewal_queue =
+            RENEWAL_QUEUE.load(deps.storage, (ask_renewal_time.seconds(), ask_id))?;
 
         // if renewal queue is empty we error out
         if renewal_queue.is_empty() {
@@ -469,15 +467,13 @@ pub fn execute_process_renewal(
             return Err(ContractError::NoRenewalQueue {});
         } else {
             // fetch all items in the renewal queue
-            let items: Result<
-                Vec<((u64, u64), String)>,
-                cosmwasm_std::StdError
-            > = RENEWAL_QUEUE.range(
-                deps.as_ref().storage,
-                None,
-                None,
-                cosmwasm_std::Order::Ascending
-            )
+            let items: Result<Vec<((u64, u64), String)>, cosmwasm_std::StdError> = RENEWAL_QUEUE
+                .range(
+                    deps.as_ref().storage,
+                    None,
+                    None,
+                    cosmwasm_std::Order::Ascending,
+                )
                 .take(20)
                 .collect();
 
@@ -488,7 +484,7 @@ pub fn execute_process_renewal(
                         deps.as_ref().storage,
                         Some(Bound::inclusive(bid_key(&item.1.to_string(), &ask_seller))),
                         None,
-                        Order::Descending
+                        Order::Descending,
                     )
                     .collect::<Vec<_>>();
 
@@ -504,10 +500,8 @@ pub fn execute_process_renewal(
                             msg: to_binary(&burn_msg)?,
                             funds: vec![],
                         };
-                        let burn_event = Event::new("burn").add_attribute(
-                            "token_id",
-                            ask_token_id.to_string()
-                        );
+                        let burn_event =
+                            Event::new("burn").add_attribute("token_id", ask_token_id.to_string());
                         // remove the ask
                         asks().remove(deps.storage, ask_key(&ask_token_id))?;
                         return Ok(Response::new().add_event(burn_event));
@@ -519,7 +513,7 @@ pub fn execute_process_renewal(
                             deps.as_ref().storage,
                             Some(Bound::inclusive(bid_key(&ask_token_id, &ask_seller))),
                             None,
-                            Order::Descending
+                            Order::Descending,
                         )
                         .collect::<Vec<_>>();
 
@@ -530,7 +524,11 @@ pub fn execute_process_renewal(
                         .iter()
                         .filter(|bid| bid.as_ref().unwrap().1.created_time >= four_weeks_ago)
                         .max_by(|a, b| {
-                            a.as_ref().unwrap().1.amount.cmp(&b.as_ref().unwrap().1.amount)
+                            a.as_ref()
+                                .unwrap()
+                                .1
+                                .amount
+                                .cmp(&b.as_ref().unwrap().1.amount)
                         });
 
                     // get the amount of the higest bid
@@ -538,7 +536,14 @@ pub fn execute_process_renewal(
 
                     // check if renewal_fund is greater than 0.5% of the highest bid
                     let payment = ask_renewal_fund.multiply_ratio(5u128, 1000u128);
-                    if payment >= highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1.amount {
+                    if payment
+                        >= highest_bid_in_last_4_weeks
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .1
+                            .amount
+                    {
                         // reset the ask to the new renewal time
                         let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
                         let reset_ask = Ask {
@@ -551,23 +556,29 @@ pub fn execute_process_renewal(
                         store_ask(deps.storage, &reset_ask)?;
                         // remove the old ask
                         asks().remove(deps.storage, ask_key(&ask_token_id))?;
-                        return Ok(
-                            Response::new().add_event(
-                                Event::new("yoooooo1").add_attribute(
-                                    "hbidwas greater than",
-                                    payment
-                                )
-                            )
-                        );
+                        return Ok(Response::new().add_event(
+                            Event::new("yoooooo1").add_attribute("hbidwas greater than", payment),
+                        ));
                     } else {
                         // award the name to the highest bidder
                         let mut res = Response::new();
                         finalize_sale(
                             deps.as_ref(),
                             ask_copy,
-                            highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1.amount,
-                            highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1.bidder.clone(),
-                            &mut res
+                            highest_bid_in_last_4_weeks
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .1
+                                .amount,
+                            highest_bid_in_last_4_weeks
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .1
+                                .bidder
+                                .clone(),
+                            &mut res,
                         )?;
 
                         return Ok(Response::new().add_event(Event::new("TEST OMG.....")));
@@ -588,7 +599,7 @@ fn finalize_sale(
     ask: Ask,
     price: Uint128,
     buyer: Addr,
-    res: &mut Response
+    res: &mut Response,
 ) -> StdResult<()> {
     payout(deps, price, ask.seller.clone(), res)?;
 
@@ -606,7 +617,8 @@ fn finalize_sale(
     };
     res.messages.push(SubMsg::new(exec_cw721_transfer));
 
-    res.messages.append(&mut prepare_sale_hook(deps, &ask, buyer.clone())?);
+    res.messages
+        .append(&mut prepare_sale_hook(deps, &ask, buyer.clone())?);
 
     let event = Event::new("finalize-sale")
         .add_attribute("token_id", ask.token_id.to_string())
@@ -623,7 +635,7 @@ fn payout(
     deps: Deps,
     payment: Uint128,
     payment_recipient: Addr,
-    res: &mut Response
+    res: &mut Response,
 ) -> StdResult<()> {
     let params = SUDO_PARAMS.load(deps.storage)?;
 
@@ -656,13 +668,10 @@ fn only_owner(
     deps: Deps,
     info: &MessageInfo,
     collection: &Addr,
-    token_id: &str
+    token_id: &str,
 ) -> Result<OwnerOfResponse, ContractError> {
-    let res = Cw721Contract::<Empty, Empty>(collection.clone(), PhantomData, PhantomData).owner_of(
-        &deps.querier,
-        token_id,
-        false
-    )?;
+    let res = Cw721Contract::<Empty, Empty>(collection.clone(), PhantomData, PhantomData)
+        .owner_of(&deps.querier, token_id, false)?;
     if res.owner != info.sender {
         return Err(ContractError::UnauthorizedOwner {});
     }
@@ -676,12 +685,13 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
     if current_version.contract != CONTRACT_NAME {
         return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
     }
-    let version: Version = current_version.version
+    let version: Version = current_version
+        .version
         .parse()
         .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-    let new_version: Version = CONTRACT_VERSION.parse().map_err(|_|
-        StdError::generic_err("Invalid contract version")
-    )?;
+    let new_version: Version = CONTRACT_VERSION
+        .parse()
+        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
 
     if version > new_version {
         return Err(StdError::generic_err("Cannot upgrade to a previous contract version").into());

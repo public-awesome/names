@@ -30,7 +30,7 @@ pub fn instantiate(
     let config = Config {
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
-        /// 1% = 100, 50% = 5000
+        // 1% = 100, 50% = 5000
         mint_discount_bps: msg.mint_discount_bps,
     };
 
