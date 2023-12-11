@@ -2,7 +2,6 @@ import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import chainConfig, { denom } from '../../configs/chain_config.json'
 import testAccounts from '../../configs/test_accounts.json'
 import { getSigningClient } from '../utils/client'
-import assert from 'assert'
 import fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
@@ -110,7 +109,7 @@ export default class Context {
       CONTRACT_MAP.WHITELIST_UPDATABLE,
       {
         addresses: [this.getTestUser('user1').address],
-        per_address_limit: 1,
+        per_address_limit: 10,
         mint_discount_bps: 0,
       },
     )
@@ -143,7 +142,7 @@ export default class Context {
       undefined,
       [],
     )
-
+// here
     const updateWhitelistMsg = {
       add_whitelist: {
         address: this.getTestUser('user1').address,
@@ -177,7 +176,7 @@ export default class Context {
     // mint name
     let mintNameMsg = {
       mint_and_list: {
-        name: 'testname',
+        name: 'testname2',
       },
     }
 
@@ -244,6 +243,16 @@ export default class Context {
 
   addContractAddress = (contractKey: string, contractAddress: string) => {
     this.contracts[contractKey] = _.extend([], this.contracts[contractKey], [contractAddress])
+  }
+
+  getAsks = async () => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      asks: {},
+    }
+
+    const result = await client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.MARKETPLACE), queryMsg)
+    return result
   }
 
   countAsks = async () => {
@@ -361,6 +370,56 @@ export default class Context {
     return result
   }
 
+  mintName = async (name: string, user: string) => {
+    const { client, address: sender } = this.getTestUser(user)
+    const queryMsg = {
+      mint_and_list: {
+        name,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+      queryMsg,
+      'auto',
+      undefined,
+      [{ denom, amount: '100000000' }],
+    )
+    return result
+  }
+
+  updateWhitelist = async (address: string, user: string) => {
+    const { client, address: sender } = this.getTestUser(user)
+    const updateWhitelistMsg = {
+      add_whitelist: {
+        address: this.getTestUser(address).address,
+      },
+    }
+
+    const result = await client.execute(
+      sender,
+      this.getContractAddress(CONTRACT_MAP.NAME_MINTER),
+      updateWhitelistMsg,
+      'auto',
+      undefined,
+      [],
+    )
+    return result
+  }
+
+  getRenewalQueue = async (time: string) => {
+    const { client, address: sender } = this.getTestUser('user1')
+    const queryMsg = {
+      renewal_queue: {
+        time,
+      },
+    }
+
+    const result = await client.queryContractSmart(this.getContractAddress(CONTRACT_MAP.MARKETPLACE), queryMsg)
+    return result
+  }
+
   processRenewal = async (time: string) => {
     const { client, address: sender } = this.getTestUser('user1')
     const queryMsg = {
@@ -378,5 +437,5 @@ export default class Context {
       [],
     )
     return result
-  }
+    }
 }
