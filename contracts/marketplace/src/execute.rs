@@ -105,7 +105,7 @@ pub fn execute(
         }
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
-        ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, info, time),
+        ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, time),
         ExecuteMsg::Setup { minter, collection } =>
             execute_setup(deps, api.addr_validate(&minter)?, api.addr_validate(&collection)?),
     }
@@ -441,7 +441,6 @@ pub fn execute_refund_renewal(
 pub fn execute_process_renewal(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
     time: Timestamp
 ) -> Result<Response, ContractError> {
     print!("Processing renewals at time {}", time);
