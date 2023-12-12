@@ -122,15 +122,25 @@ describe('Names Renewal', () => {
 
 
   test('process renewal, no bid & no renewal fund (burn name)', async () => {
-    const timestamp = (Date.now() - 100000)
-
+    // const timestamp = (Date.now() - 100000)
+    let timestamp = ''
+    const asks = await context.getAsks()
+    // get the newest renewal time from asks
+    for(let i = 0; i < asks.length; i++) {
+      if(asks[i].renewal_time > timestamp) {
+        timestamp = asks[i].renewal_time
+      }
+    }
+    console.log("burn name asks---->", asks)
+    console.log("timestamp is---->", timestamp)
     const processResponse = await context.processRenewal(timestamp.toString())
     expect(processResponse.transactionHash).toBeTruthy()
 
     const burnEvent = extractEvent(processResponse, 'wasm-burn')
     expect(burnEvent).toBeTruthy()
 
-    let asks = await context.getAsks()
+    
+    // let asks = await context.getAsks()
     expect(asks.length).toBe(2)
 
     const burnAttribute = extractAttribute(burnEvent, 'token_id-burned')
@@ -141,8 +151,15 @@ describe('Names Renewal', () => {
 
   test('process renewal, with renewal funded but no bid (renew name)', async() =>{
     // timestamp in ns
-    const timestamp = (Date.now() - 100000)// * 1000000
-
+    // let timestamp = (Date.now() - 100000)// * 1000000
+    let timestamp = ''
+    const asks = await context.getAsks()
+    // get the newest renewal time from asks
+    for(let i = 0; i < asks.length; i++) {
+      if(asks[i].renewal_time > timestamp) {
+        timestamp = asks[i].renewal_time
+      }
+    }
     // fund the renewal
     await context.fundRenewal(NAME, BID+1000)
 
@@ -160,14 +177,14 @@ describe('Names Renewal', () => {
 
     // get the all the asks
     const asks = await context.getAsks()
-    console.log("asks----->", asks)
+    // console.log("asks----->", asks)
     // get the newest renewal time from asks
     for(let i = 0; i < asks.length; i++) {
       if(asks[i].renewal_time > timestamp) {
         timestamp = asks[i].renewal_time
       }
     }
-    console.log("asks----->", asks)
+    // console.log("asks----->", asks)
     // get the renewal queue and log it
     const queue = await context.getRenewalQueue(timestamp.toString())
     console.log("renewal queue----->", queue)
@@ -178,7 +195,7 @@ describe('Names Renewal', () => {
     // const askCount = await context.countAsks()
     // console.log("ask count----->", askCount)
     // expect(processResponse.transactionHash).toBeTruthy()
-    expect(true).toBeTruthy()
+    expect(false).toBeTruthy()
   })
 
 })

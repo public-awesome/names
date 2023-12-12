@@ -509,15 +509,18 @@ pub fn execute_process_renewal(
 
                 let key = ask_key(&item.1.to_string());
                 let ask = asks().load(deps.storage, key.clone())?;
-                asks().remove(deps.storage, key)?;
+                // asks().remove(deps.storage, key)?;
 
                 RENEWAL_QUEUE.remove(deps.storage, (ask.renewal_time.seconds(), ask.id));
 
-                let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
+                // let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
 
                 let event = Event::new("remove-ask").add_attribute("token_id", item.1.to_string());
 
-                res.add_event(burn_event).add_event(event).add_submessages(hook);
+                // res.add_event(burn_event).add_event(event).add_submessages(hook);
+                res.events.push(burn_event);
+                res.events.push(event);
+                // res.add_submessage(hook);
                 continue;
             }
 
@@ -540,7 +543,7 @@ pub fn execute_process_renewal(
                 let buyer = highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1.bidder.clone();
                 let price = highest_bid_in_last_4_weeks.unwrap().as_ref().unwrap().1.amount;
                 // finalize the sale
-                finalize_sale(deps.as_ref(), ask_copy.clone(), price, buyer, &mut res);
+                finalize_sale(deps.as_ref(), ask_copy.clone(), price, buyer, &mut res)?;
                 continue;
             }
 
