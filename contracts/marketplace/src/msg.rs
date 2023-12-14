@@ -127,6 +127,13 @@ pub enum QueryMsg {
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
+    /// Get all renewable Asks
+    #[returns(Vec<Ask>)]
+    AsksByRenewTime {
+        max_time: Timestamp,
+        start_after: Option<Timestamp>,
+        limit: Option<u32>,
+    },
     /// Get data for a specific bid
     #[returns(Option<Bid>)]
     Bid { token_id: TokenId, bidder: Bidder },

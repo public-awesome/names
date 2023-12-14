@@ -6,7 +6,7 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult, Timestamp};
-use cw_storage_plus::Bound;
+use cw_storage_plus::{Bound, PrefixBound};
 
 // Query limits
 const DEFAULT_QUERY_LIMIT: u32 = 10;
@@ -26,6 +26,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_asks_by_seller(
             deps,
             api.addr_validate(&seller)?,
+            start_after,
+            limit,
+        )?),
+        QueryMsg::AsksByRenewTime {
+            max_time,
+            start_after,
+            limit,
+        } => to_binary(&query_asks_by_renew_time(
+            deps,
+            max_time,
             start_after,
             limit,
         )?),
@@ -139,6 +149,30 @@ pub fn query_asks_by_seller(
         .take(limit)
         .map(|res| res.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()
+}
+
+pub fn query_asks_by_renew_time(
+    deps: Deps,
+    max_time: Timestamp,
+    start_after: Option<Timestamp>,
+    limit: Option<u32>,
+) -> StdResult<Vec<Ask>> {
+    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT) as usize;
+
+    let renewable_asks = asks()
+        .idx
+        .renewal_time
+        .prefix_range(
+            deps.storage,
+            start_after.map(|start| PrefixBound::exclusive(start.seconds())),
+            Some(PrefixBound::inclusive(max_time.seconds())),
+            Order::Ascending,
+        )
+        .take(limit)
+        .map(|item| item.map(|(_, v)| v))
+        .collect::<StdResult<Vec<_>>>()?;
+
+    Ok(renewable_asks)
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
