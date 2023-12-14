@@ -12,6 +12,8 @@ pub struct SudoParams {
     pub min_price: Uint128,
     /// Interval to rate limit setting asks (in seconds)
     pub ask_interval: u64,
+    /// The maximum number of renewals that can be processed in each block
+    pub max_renewals_per_block: u64,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("sudo-params");

@@ -122,6 +122,7 @@ fn instantiate_contracts(
         trading_fee_bps: TRADING_FEE_BPS,
         min_price: Uint128::from(5u128),
         ask_interval: 60,
+        max_renewals_per_block: 20,
     };
     let marketplace = app
         .instantiate_contract(

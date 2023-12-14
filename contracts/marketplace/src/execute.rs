@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::error::ContractError;
+use crate::helpers::process_renewal;
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
@@ -11,19 +12,20 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
-    Order, StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
+    Order, StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
+use cw_storage_plus::PrefixBound;
 use cw_utils::{must_pay, nonpayable};
 use semver::Version;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
-const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
@@ -44,6 +46,7 @@ pub fn instantiate(
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps) / Uint128::from(100u128),
         min_price: msg.min_price,
         ask_interval: msg.ask_interval,
+        max_renewals_per_block: msg.max_renewals_per_block,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -76,7 +79,7 @@ pub fn execute(
         }
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
-        ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, time),
+        ExecuteMsg::ProcessRenewals { limit } => execute_process_renewal(deps, env, limit),
         ExecuteMsg::Setup { minter, collection } => execute_setup(
             deps,
             api.addr_validate(&minter)?,
@@ -431,45 +434,30 @@ pub fn execute_refund_renewal(
 
 /// Anyone can call this to process renewals for a block and earn a reward
 pub fn execute_process_renewal(
-    _deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
-    time: Timestamp,
+    limit: u32,
 ) -> Result<Response, ContractError> {
-    println!("Processing renewals at time {}", time);
+    let renewable_asks = asks()
+        .idx
+        .renewal_time
+        .prefix_range(
+            deps.storage,
+            None,
+            Some(PrefixBound::inclusive(env.block.time.seconds())),
+            Order::Ascending,
+        )
+        .take(limit as usize)
+        .map(|item| item.map(|(_, v)| v))
+        .collect::<StdResult<Vec<Ask>>>()?;
 
-    if time > env.block.time {
-        return Err(ContractError::CannotProcessFutureRenewal {});
+    let mut response = Response::new();
+
+    for renewable_ask in renewable_asks {
+        response = process_renewal(deps.branch(), &env, renewable_ask, response)?;
     }
 
-    // // TODO: add renewal processing logic
-    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, time)?;
-    // for name in renewal_queue.iter() {
-    //     let ask = asks().load(deps.storage, ask_key(name))?;
-    //     if ask.renewal_fund.is_zero() {
-    //         continue;
-    //         // transfer ownership to name service
-    //         // list in marketplace for 0.5% of bid price
-    //         // if no bids, list for original price
-    //     }
-
-    //     // charge renewal fee
-    //     // pay out reward to operator
-    //     // reset ask
-
-    //     // Update Ask with new renewal_time
-    //     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-    //     let ask = Ask {
-    //         token_id: name.to_string(),
-    //         id: ask.id,
-    //         seller: ask.seller,
-    //         renewal_time,
-    //         renewal_fund: ask.renewal_fund - payment, // validate payment
-    //     };
-    //     store_ask(deps.storage, &ask)?;
-    // }
-
-    let event = Event::new("process-renewal").add_attribute("time", time.to_string());
-    Ok(Response::new().add_event(event))
+    Ok(response)
 }
 
 /// Transfers funds and NFT, updates bid

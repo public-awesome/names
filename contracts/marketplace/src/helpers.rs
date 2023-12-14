@@ -1,12 +1,14 @@
 use crate::{
     msg::{ExecuteMsg, QueryMsg},
-    state::Bid,
+    state::{Ask, Bid},
+    ContractError,
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, Addr, QuerierWrapper, QueryRequest, StdError, StdResult, WasmMsg, WasmQuery,
+    ensure, to_binary, Addr, DepsMut, Env, QuerierWrapper, QueryRequest, StdError, StdResult,
+    WasmMsg, WasmQuery,
 };
-use sg_std::CosmosMsg;
+use sg_std::{CosmosMsg, Response};
 
 /// MarketplaceContract is a wrapper around Addr that provides a lot of helpers
 #[cw_serde]
@@ -68,4 +70,18 @@ impl NameMarketplaceContract {
             bidder: bidder.to_string(),
         })
     }
+}
+
+pub fn process_renewal(
+    deps: DepsMut,
+    env: &Env,
+    ask: Ask,
+    response: Response,
+) -> Result<Response, ContractError> {
+    ensure!(
+        ask.renewal_time.seconds() <= env.block.time.seconds(),
+        ContractError::CannotProcessFutureRenewal {}
+    );
+
+    Ok(Response::new())
 }

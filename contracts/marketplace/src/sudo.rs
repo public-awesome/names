@@ -1,9 +1,13 @@
 use crate::error::ContractError;
+use crate::helpers::process_renewal;
 use crate::msg::SudoMsg;
-use crate::state::{ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, SALE_HOOKS, SUDO_PARAMS};
+use crate::state::{
+    asks, Ask, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, SALE_HOOKS, SUDO_PARAMS,
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event, Uint128};
+use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event, Order, StdResult, Uint128};
+use cw_storage_plus::PrefixBound;
 use sg_std::Response;
 
 // bps fee can not exceed 100%
@@ -45,6 +49,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
         SudoMsg::UpdateNameMinter { minter } => {
             sudo_update_name_minter(deps, api.addr_validate(&minter)?)
         }
+        SudoMsg::EndBlock {} => sudo_end_block(deps, env),
     }
 }
 
@@ -143,4 +148,32 @@ pub fn sudo_remove_bid_hook(deps: DepsMut, hook: Addr) -> Result<Response, Contr
 
     let event = Event::new("remove-bid-hook").add_attribute("hook", hook);
     Ok(Response::new().add_event(event))
+}
+
+pub fn sudo_end_block(mut deps: DepsMut, env: Env) -> Result<Response, ContractError> {
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    let mut response = Response::new();
+
+    let renewable_asks = asks()
+        .idx
+        .renewal_time
+        .prefix_range(
+            deps.storage,
+            None,
+            Some(PrefixBound::inclusive(env.block.time.seconds())),
+            Order::Ascending,
+        )
+        .take(sudo_params.max_renewals_per_block as usize)
+        .map(|item| item.map(|(_, v)| v))
+        .collect::<StdResult<Vec<Ask>>>()?;
+
+    response = response
+        .add_event(Event::new("sudo-end-block").add_attribute("action", "process-name-renewals"));
+
+    for renewable_ask in renewable_asks {
+        response = process_renewal(deps.branch(), &env, renewable_ask, response)?;
+    }
+
+    Ok(response)
 }

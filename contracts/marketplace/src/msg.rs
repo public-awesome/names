@@ -12,6 +12,8 @@ pub struct InstantiateMsg {
     pub min_price: Uint128,
     /// Interval to rate limit setting asks (in seconds)
     pub ask_interval: u64,
+    /// The maximum number of renewals that can be processed in each block
+    pub max_renewals_per_block: u64,
 }
 
 #[cw_serde]
@@ -37,7 +39,7 @@ pub enum ExecuteMsg {
     RefundRenewal { token_id: TokenId },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
-    ProcessRenewals { time: Timestamp },
+    ProcessRenewals { limit: u32 },
     /// Setup contract with minter and collection addresses
     /// Can only be run once
     Setup { minter: String, collection: String },
@@ -68,6 +70,9 @@ pub enum SudoMsg {
     AddSaleHook { hook: String },
     /// Remove a trade hook
     RemoveSaleHook { hook: String },
+    /// Is called by x/cron module EndBlocker,
+    /// and is used to process name renewals.
+    EndBlock {},
 }
 
 pub type Collection = String;
