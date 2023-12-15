@@ -21,6 +21,7 @@ use cw_storage_plus::PrefixBound;
 use cw_utils::{must_pay, nonpayable};
 use semver::Version;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
+use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 
 // Version info for migration info
@@ -47,6 +48,9 @@ pub fn instantiate(
         min_price: msg.min_price,
         ask_interval: msg.ask_interval,
         max_renewals_per_block: msg.max_renewals_per_block,
+        valid_bid_query_limit: msg.valid_bid_query_limit,
+        valid_bid_seconds_delta: msg.valid_bid_seconds_delta,
+        renewal_bid_percentage: msg.renewal_bid_percentage,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -451,17 +455,34 @@ pub fn execute_process_renewal(
         .map(|item| item.map(|(_, v)| v))
         .collect::<StdResult<Vec<Ask>>>()?;
 
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let name_collection = NAME_COLLECTION.load(deps.storage)?;
+
     let mut response = Response::new();
 
     for renewable_ask in renewable_asks {
-        response = process_renewal(deps.branch(), &env, renewable_ask, response)?;
+        response = process_renewal(
+            deps.branch(),
+            &env,
+            &sudo_params,
+            &name_minter_params,
+            &name_collection,
+            renewable_ask,
+            response,
+        )?;
     }
 
     Ok(response)
 }
 
 /// Transfers funds and NFT, updates bid
-fn finalize_sale(
+pub fn finalize_sale(
     deps: Deps,
     ask: Ask,
     price: Uint128,
@@ -522,11 +543,11 @@ fn payout(
     Ok(())
 }
 
-fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
+pub fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
     bids().save(store, bid_key(&bid.token_id, &bid.bidder), bid)
 }
 
-fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
+pub fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
     asks().save(store, ask_key(&ask.token_id), ask)
 }
 

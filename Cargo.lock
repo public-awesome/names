@@ -547,11 +547,12 @@ dependencies = [
  "serde",
  "sg-controllers",
  "sg-multi-test",
+ "sg-name",
  "sg-name-common",
+ "sg-name-minter",
  "sg-std",
  "sg1",
  "sg721",
- "sg721-name",
  "thiserror",
 ]
 

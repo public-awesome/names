@@ -13,7 +13,14 @@ pub struct SudoParams {
     /// Interval to rate limit setting asks (in seconds)
     pub ask_interval: u64,
     /// The maximum number of renewals that can be processed in each block
-    pub max_renewals_per_block: u64,
+    pub max_renewals_per_block: u32,
+    /// The number of bids to query to when searching for the highest bid
+    pub valid_bid_query_limit: u32,
+    /// The number of seconds before the current block time that a
+    /// bid must have been created in order to be considered valid
+    pub valid_bid_seconds_delta: u64,
+    /// The percentage of the winning bid that must be paid to renew a name
+    pub renewal_bid_percentage: Decimal,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("sudo-params");

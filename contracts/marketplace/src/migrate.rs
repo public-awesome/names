@@ -26,7 +26,10 @@ pub const SUDO_PARAMS_V1_2: Item<SudoParamsV1_2> = Item::new("sudo-params");
 
 #[cw_serde]
 pub struct MigrateMsg {
-    max_renewals_per_block: u64,
+    max_renewals_per_block: u32,
+    valid_bid_query_limit: u32,
+    valid_bid_seconds_delta: u64,
+    renewal_bid_percentage: Decimal,
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -51,6 +54,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         min_price: sudo_params_v1_2.min_price,
         ask_interval: sudo_params_v1_2.ask_interval,
         max_renewals_per_block: msg.max_renewals_per_block,
+        valid_bid_query_limit: msg.valid_bid_query_limit,
+        valid_bid_seconds_delta: msg.valid_bid_seconds_delta,
+        renewal_bid_percentage: msg.renewal_bid_percentage,
     };
     SUDO_PARAMS.save(deps.storage, &sudo_params)?;
 

@@ -35,6 +35,7 @@ sg-name-common = { version = "1.2.5", path = "./packages/sg-name-common" }
 sg721-name = { version = "1.2.5", path = "./contracts/sg721-name" }
 sg-name = { version = "1.2.5", path = "./packages/sg-name" }
 sg-name-market = { version = "1.2.5", path = "./packages/sg-name-market" }
+sg-name-minter = { version = "1.2.5", path = "./packages/sg-name-minter" }
 name-marketplace = { version = "1.2.5", path = "./contracts/marketplace", features = [
     "library",
 ] }

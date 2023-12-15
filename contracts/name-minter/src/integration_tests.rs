@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::contract::{execute, instantiate, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::query;
@@ -123,6 +125,9 @@ fn instantiate_contracts(
         min_price: Uint128::from(5u128),
         ask_interval: 60,
         max_renewals_per_block: 20,
+        valid_bid_query_limit: 10,
+        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
     };
     let marketplace = app
         .instantiate_contract(

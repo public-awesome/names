@@ -8,6 +8,7 @@ use crate::state::{
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event, Order, StdResult, Uint128};
 use cw_storage_plus::PrefixBound;
+use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 use sg_std::Response;
 
 // bps fee can not exceed 100%
@@ -171,8 +172,25 @@ pub fn sudo_end_block(mut deps: DepsMut, env: Env) -> Result<Response, ContractE
     response = response
         .add_event(Event::new("sudo-end-block").add_attribute("action", "process-name-renewals"));
 
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let name_collection = NAME_COLLECTION.load(deps.storage)?;
+
     for renewable_ask in renewable_asks {
-        response = process_renewal(deps.branch(), &env, renewable_ask, response)?;
+        response = process_renewal(
+            deps.branch(),
+            &env,
+            &sudo_params,
+            &name_minter_params,
+            &name_collection,
+            renewable_ask,
+            response,
+        )?;
     }
 
     Ok(response)

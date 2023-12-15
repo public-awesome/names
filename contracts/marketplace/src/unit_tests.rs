@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[cfg(test)]
 use crate::execute::{execute, instantiate};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -5,7 +7,7 @@ use crate::query::{query_asks_by_seller, query_bids_by_bidder};
 use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid};
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, Addr, DepsMut, Timestamp, Uint128};
+use cosmwasm_std::{coins, Addr, Decimal, DepsMut, Timestamp, Uint128};
 use sg_std::NATIVE_DENOM;
 
 const CREATOR: &str = "creator";
@@ -91,6 +93,9 @@ fn setup_contract(deps: DepsMut) {
         min_price: Uint128::from(5u128),
         ask_interval: 60,
         max_renewals_per_block: 20,
+        valid_bid_query_limit: 10,
+        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
     };
     let info = mock_info(CREATOR, &[]);
     let res = instantiate(deps, mock_env(), info, msg).unwrap();
@@ -106,6 +111,9 @@ fn proper_initialization() {
         min_price: Uint128::from(5u128),
         ask_interval: 60,
         max_renewals_per_block: 20,
+        valid_bid_query_limit: 10,
+        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
 
@@ -124,6 +132,9 @@ fn bad_fees_initialization() {
         min_price: Uint128::from(5u128),
         ask_interval: 60,
         max_renewals_per_block: 20,
+        valid_bid_query_limit: 10,
+        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);

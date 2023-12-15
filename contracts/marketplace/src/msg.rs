@@ -1,6 +1,6 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Timestamp, Uint128};
+use cosmwasm_std::{to_binary, Addr, Binary, Decimal, StdResult, Timestamp, Uint128};
 use sg_controllers::HooksResponse;
 
 #[cw_serde]
@@ -13,7 +13,14 @@ pub struct InstantiateMsg {
     /// Interval to rate limit setting asks (in seconds)
     pub ask_interval: u64,
     /// The maximum number of renewals that can be processed in each block
-    pub max_renewals_per_block: u64,
+    pub max_renewals_per_block: u32,
+    /// The number of bids to query to when searching for the highest bid
+    pub valid_bid_query_limit: u32,
+    /// The number of seconds before the current block time that a
+    /// bid must have been created in order to be considered valid
+    pub valid_bid_seconds_delta: u64,
+    /// The percentage of the winning bid that must be paid to renew a name
+    pub renewal_bid_percentage: Decimal,
 }
 
 #[cw_serde]

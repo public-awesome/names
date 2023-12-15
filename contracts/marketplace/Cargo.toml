@@ -42,9 +42,10 @@ sg-name-common   = { workspace = true }
 sg-std           = { workspace = true }
 sg1              = { workspace = true }
 thiserror        = { workspace = true }
+sg-name          = { workspace = true }
+sg-name-minter   = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = { workspace = true }
 sg-multi-test = { workspace = true }
-sg721-name    = { workspace = true, features = ["library"] }
 sg721         = { workspace = true }
