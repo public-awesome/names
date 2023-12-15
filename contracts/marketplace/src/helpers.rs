@@ -9,8 +9,8 @@ use crate::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    coins, ensure, to_binary, Addr, BankMsg, Deps, DepsMut, Env, Event, Order, QuerierWrapper,
-    QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    coins, ensure, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Env, Event, Order,
+    QuerierWrapper, QueryRequest, StdError, StdResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw721::Cw721ExecuteMsg;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
@@ -80,12 +80,12 @@ impl NameMarketplaceContract {
 }
 
 /// Iterate over top n priced bids, if one is within the time window then it is valid
-fn find_valid_bid(
+pub fn find_valid_bid(
     deps: Deps,
-    env: &Env,
+    block_time: &Timestamp,
     sudo_params: &SudoParams,
 ) -> Result<Option<Bid>, ContractError> {
-    let min_time = env.block.time.seconds() - sudo_params.valid_bid_seconds_delta;
+    let min_time = block_time.seconds() - sudo_params.valid_bid_seconds_delta;
 
     let bid = bids()
         .idx
@@ -117,6 +117,21 @@ pub fn get_char_price(base_price: u128, name_len: usize) -> Uint128 {
     .into()
 }
 
+// Renewal price is the max of the char based price and a percentage of highest valid bid
+pub fn get_renewal_price(
+    base_price: u128,
+    name_len: usize,
+    valid_bid: Option<&Bid>,
+    renewal_bid_percentage: Decimal,
+) -> Uint128 {
+    let renewal_char_price = get_char_price(base_price, name_len);
+    let renewal_bid_price = valid_bid
+        .as_ref()
+        .map_or(Uint128::zero(), |bid| bid.amount * renewal_bid_percentage);
+    let renewal_price = max(renewal_char_price, renewal_bid_price);
+    renewal_price
+}
+
 pub fn process_renewal(
     deps: DepsMut,
     env: &Env,
@@ -135,15 +150,15 @@ pub fn process_renewal(
         .add_attribute("token_id", ask.token_id.to_string())
         .add_attribute("renewal_time", ask.renewal_time.seconds().to_string());
 
-    let valid_bid = find_valid_bid(deps.as_ref(), env, &sudo_params)?;
+    let valid_bid = find_valid_bid(deps.as_ref(), &env.block.time, &sudo_params)?;
 
     // Renewal price is the max of the char based price and a percentage of highest valid bid
-    let renewal_char_price =
-        get_char_price(name_minter_params.base_price.u128(), ask.token_id.len());
-    let renewal_bid_price = valid_bid.as_ref().map_or(Uint128::zero(), |bid| {
-        bid.amount * sudo_params.renewal_bid_percentage
-    });
-    let renewal_price = max(renewal_char_price, renewal_bid_price);
+    let renewal_price = get_renewal_price(
+        name_minter_params.base_price.u128(),
+        ask.token_id.len(),
+        valid_bid.as_ref(),
+        sudo_params.renewal_bid_percentage,
+    );
 
     let next_renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
 

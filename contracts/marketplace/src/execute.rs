@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::error::ContractError;
-use crate::helpers::process_renewal;
+use crate::helpers::{find_valid_bid, get_renewal_price, process_renewal};
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
@@ -11,14 +11,14 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
-    Order, StdError, StdResult, Storage, Uint128, WasmMsg,
+    coin, coins, ensure, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event,
+    MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
 use cw_storage_plus::PrefixBound;
-use cw_utils::{must_pay, nonpayable};
+use cw_utils::{may_pay, must_pay, nonpayable};
 use semver::Version;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
@@ -83,6 +83,7 @@ pub fn execute(
         }
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
+        ExecuteMsg::Renew { token_id } => execute_renew(deps, env, info, &token_id),
         ExecuteMsg::ProcessRenewals { limit } => execute_process_renewal(deps, env, limit),
         ExecuteMsg::Setup { minter, collection } => execute_setup(
             deps,
@@ -434,6 +435,84 @@ pub fn execute_refund_renewal(
         .add_attribute("token_id", token_id)
         .add_attribute("refund", ask.renewal_fund);
     Ok(Response::new().add_event(event).add_message(msg))
+}
+
+pub fn execute_renew(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    token_id: &str,
+) -> Result<Response, ContractError> {
+    let mut ask = asks().load(deps.storage, ask_key(&token_id))?;
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.valid_bid_seconds_delta;
+
+    ensure!(
+        env.block.time.seconds() >= ask_renew_start_time,
+        ContractError::CannotProcessFutureRenewal {}
+    );
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let valid_bid = find_valid_bid(deps.as_ref(), &env.block.time, &sudo_params)
+        .map_err(|_| StdError::generic_err("failed to check for valid bids".to_string()))?;
+
+    let renewal_price = get_renewal_price(
+        name_minter_params.base_price.u128(),
+        token_id.len(),
+        valid_bid.as_ref(),
+        sudo_params.renewal_bid_percentage,
+    );
+
+    let payment = may_pay(&info, NATIVE_DENOM)?;
+
+    ask.renewal_fund += payment;
+
+    ensure!(
+        ask.renewal_fund >= renewal_price,
+        ContractError::InsufficientRenewalFunds {
+            expected: coin(renewal_price.u128(), NATIVE_DENOM),
+            actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
+        }
+    );
+
+    let mut response = Response::new();
+
+    charge_fees(
+        &mut response,
+        sudo_params.trading_fee_percent,
+        renewal_price,
+    );
+
+    let next_renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (next_renewal_time.seconds(), ask.id),
+        &ask.token_id.to_string(),
+    )?;
+
+    // Update Ask with new renewal time
+    let next_renewal_fund = ask.renewal_fund - renewal_price;
+    let ask = Ask {
+        token_id: ask.token_id.to_string(),
+        id: ask.id,
+        seller: ask.seller,
+        renewal_time: next_renewal_time,
+        renewal_fund: next_renewal_fund,
+    };
+    store_ask(deps.storage, &ask)?;
+
+    response = response.add_event(
+        Event::new("renew")
+            .add_attribute("token_id", token_id)
+            .add_attribute("renewal_price", renewal_price),
+    );
+
+    Ok(response)
 }
 
 /// Anyone can call this to process renewals for a block and earn a reward

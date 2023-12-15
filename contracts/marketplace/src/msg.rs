@@ -1,6 +1,6 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_binary, Addr, Binary, Decimal, StdResult, Timestamp, Uint128};
+use cosmwasm_std::{to_binary, Addr, Binary, Coin, Decimal, StdResult, Timestamp, Uint128};
 use sg_controllers::HooksResponse;
 
 #[cw_serde]
@@ -44,6 +44,8 @@ pub enum ExecuteMsg {
     FundRenewal { token_id: TokenId },
     /// Refund a renewal of a name
     RefundRenewal { token_id: TokenId },
+    /// Fully renew a name if within the renewal period
+    Renew { token_id: TokenId },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
     ProcessRenewals { limit: u32 },
@@ -145,6 +147,12 @@ pub enum QueryMsg {
         max_time: Timestamp,
         start_after: Option<Timestamp>,
         limit: Option<u32>,
+    },
+    /// Get the renewal price for a specific name
+    #[returns(Option<Coin>)]
+    AskRenewPrice {
+        current_time: Timestamp,
+        token_id: TokenId,
     },
     /// Get data for a specific bid
     #[returns(Option<Bid>)]

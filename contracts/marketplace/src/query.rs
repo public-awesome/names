@@ -1,12 +1,19 @@
+use crate::helpers::{find_valid_bid, get_renewal_price};
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_COUNT,
     ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
+
+use cosmwasm_std::{
+    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
+};
+use cw_storage_plus::{Bound, PrefixBound};
+use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult, Timestamp};
-use cw_storage_plus::{Bound, PrefixBound};
+use sg_std::NATIVE_DENOM;
 
 // Query limits
 const DEFAULT_QUERY_LIMIT: u32 = 10;
@@ -39,6 +46,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         )?),
+        QueryMsg::AskRenewPrice {
+            current_time,
+            token_id,
+        } => to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
@@ -173,6 +184,38 @@ pub fn query_asks_by_renew_time(
         .collect::<StdResult<Vec<_>>>()?;
 
     Ok(renewable_asks)
+}
+
+pub fn query_ask_renew_price(
+    deps: Deps,
+    current_time: Timestamp,
+    token_id: String,
+) -> StdResult<Option<Coin>> {
+    let ask = asks().load(deps.storage, ask_key(&token_id))?;
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.valid_bid_seconds_delta;
+
+    if current_time.seconds() < ask_renew_start_time {
+        return Ok(None);
+    }
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let valid_bid = find_valid_bid(deps, &current_time, &sudo_params)
+        .map_err(|_| StdError::generic_err("failed to check for valid bids".to_string()))?;
+
+    let renewal_price = get_renewal_price(
+        name_minter_params.base_price.u128(),
+        token_id.len(),
+        valid_bid.as_ref(),
+        sudo_params.renewal_bid_percentage,
+    );
+
+    return Ok(Some(coin(renewal_price.u128(), NATIVE_DENOM)));
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
