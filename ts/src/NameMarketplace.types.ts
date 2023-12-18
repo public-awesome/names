@@ -5,10 +5,15 @@
 */
 
 export type Uint128 = string;
+export type Decimal = string;
 export interface InstantiateMsg {
   ask_interval: number;
+  max_renewals_per_block: number;
   min_price: Uint128;
+  renewal_bid_percentage: Decimal;
   trading_fee_bps: number;
+  valid_bid_query_limit: number;
+  valid_bid_seconds_delta: number;
 }
 export type ExecuteMsg = {
   set_ask: {
@@ -46,8 +51,12 @@ export type ExecuteMsg = {
     token_id: string;
   };
 } | {
+  renew: {
+    token_id: string;
+  };
+} | {
   process_renewals: {
-    time: Timestamp;
+    limit: number;
   };
 } | {
   setup: {
@@ -55,8 +64,6 @@ export type ExecuteMsg = {
     minter: string;
   };
 };
-export type Timestamp = Uint64;
-export type Uint64 = string;
 export type QueryMsg = {
   ask: {
     token_id: string;
@@ -73,6 +80,17 @@ export type QueryMsg = {
     limit?: number | null;
     seller: string;
     start_after?: string | null;
+  };
+} | {
+  asks_by_renew_time: {
+    limit?: number | null;
+    max_time: Timestamp;
+    start_after?: Timestamp | null;
+  };
+} | {
+  ask_renew_price: {
+    current_time: Timestamp;
+    token_id: string;
   };
 } | {
   bid: {
@@ -126,6 +144,8 @@ export type QueryMsg = {
 } | {
   config: {};
 };
+export type Timestamp = Uint64;
+export type Uint64 = string;
 export type Addr = string;
 export interface BidOffset {
   bidder: Addr;
@@ -143,6 +163,12 @@ export interface Ask {
 export interface HooksResponse {
   hooks: string[];
 }
+export type NullableCoin = Coin | null;
+export interface Coin {
+  amount: Uint128;
+  denom: string;
+  [k: string]: unknown;
+}
 export type ArrayOfAsk = Ask[];
 export type NullableBid = Bid | null;
 export interface Bid {
@@ -156,9 +182,12 @@ export interface ConfigResponse {
   collection: Addr;
   minter: Addr;
 }
-export type Decimal = string;
 export interface SudoParams {
   ask_interval: number;
+  max_renewals_per_block: number;
   min_price: Uint128;
+  renewal_bid_percentage: Decimal;
   trading_fee_percent: Decimal;
+  valid_bid_query_limit: number;
+  valid_bid_seconds_delta: number;
 }

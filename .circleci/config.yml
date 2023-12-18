@@ -207,7 +207,7 @@ jobs:
             for C in ./contracts/*/
             do
               echo "Compiling `basename $C`..."
-              (cd $C && cargo build --release --lib --target wasm32-unknown-unknown --locked --lib)
+              (cd $C && cargo build --release --lib --target wasm32-unknown-unknown --locked)
             done
       - run:
           name: Install check_contract
