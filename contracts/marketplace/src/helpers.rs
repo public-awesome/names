@@ -152,7 +152,7 @@ fn renew_name(
     RENEWAL_QUEUE.save(
         deps.storage,
         (next_renewal_time.seconds(), ask.id),
-        &ask.token_id.to_string(),
+        &ask.token_id,
     )?;
 
     // Update Ask with new renewal time
@@ -185,7 +185,7 @@ fn sell_name(
     RENEWAL_QUEUE.save(
         deps.storage,
         (next_renewal_time.seconds(), ask.id),
-        &ask.token_id.to_string(),
+        &ask.token_id,
     )?;
 
     // Transfer funds and NFT
@@ -201,7 +201,7 @@ fn sell_name(
     let ask = Ask {
         token_id: ask.token_id.to_string(),
         id: ask.id,
-        seller: bid.bidder.clone(),
+        seller: bid.bidder,
         renewal_time: next_renewal_time,
         renewal_fund: Uint128::zero(),
     };

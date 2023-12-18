@@ -1213,7 +1213,7 @@ mod query {
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
                 to_address: USER.to_string(),
-                amount: fund_amount.clone(),
+                amount: fund_amount,
             }
         }))
         .map_err(|err| println!("{:?}", err))
@@ -1277,7 +1277,7 @@ mod query {
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
                 to_address: USER.to_string(),
-                amount: fund_amount.clone(),
+                amount: fund_amount,
             }
         }))
         .map_err(|err| println!("{:?}", err))
@@ -1358,7 +1358,7 @@ mod query {
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
                 to_address: USER.to_string(),
-                amount: fund_amount.clone(),
+                amount: fund_amount,
             }
         }))
         .map_err(|err| println!("{:?}", err))
@@ -1441,7 +1441,7 @@ mod query {
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
                 to_address: USER.to_string(),
-                amount: fund_amount.clone(),
+                amount: fund_amount,
             }
         }))
         .map_err(|err| println!("{:?}", err))

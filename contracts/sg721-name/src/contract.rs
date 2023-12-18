@@ -148,7 +148,7 @@ pub fn execute_burn(
     sg721.execute(
         deps,
         env,
-        info.clone(),
+        info,
         Sg721ExecuteMsg::Burn {
             token_id: token_id.to_string(),
         },
