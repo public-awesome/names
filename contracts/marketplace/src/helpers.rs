@@ -94,7 +94,7 @@ pub fn find_valid_bid(
         .take(sudo_params.valid_bid_query_limit as usize)
         .filter_map(|item| {
             item.map_or(None, |(_, bid)| {
-                if bid.created_time.seconds() >= min_time {
+                if bid.created_time.seconds() <= min_time {
                     Some(bid)
                 } else {
                     None
@@ -128,8 +128,111 @@ pub fn get_renewal_price(
     let renewal_bid_price = valid_bid
         .as_ref()
         .map_or(Uint128::zero(), |bid| bid.amount * renewal_bid_percentage);
-    let renewal_price = max(renewal_char_price, renewal_bid_price);
-    renewal_price
+    max(renewal_char_price, renewal_bid_price)
+}
+
+fn renew_name(
+    deps: DepsMut,
+    env: &Env,
+    sudo_params: &SudoParams,
+    ask: Ask,
+    renewal_price: Uint128,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    // Take renewal payment
+    charge_fees(
+        &mut response,
+        sudo_params.trading_fee_percent,
+        renewal_price,
+    );
+
+    let next_renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+
+    // Update renewal time
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (next_renewal_time.seconds(), ask.id),
+        &ask.token_id.to_string(),
+    )?;
+
+    // Update Ask with new renewal time
+    let next_renewal_fund = ask.renewal_fund - renewal_price;
+    let ask = Ask {
+        token_id: ask.token_id.to_string(),
+        id: ask.id,
+        seller: ask.seller,
+        renewal_time: next_renewal_time,
+        renewal_fund: next_renewal_fund,
+    };
+    store_ask(deps.storage, &ask)?;
+
+    Ok(response)
+}
+
+fn sell_name(
+    deps: DepsMut,
+    env: &Env,
+    ask: Ask,
+    bid: Bid,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    // Remove accepted bid
+    bids().remove(deps.storage, bid_key(&ask.token_id, &bid.bidder))?;
+
+    let next_renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
+
+    // Update renewal queue
+    RENEWAL_QUEUE.save(
+        deps.storage,
+        (next_renewal_time.seconds(), ask.id),
+        &ask.token_id.to_string(),
+    )?;
+
+    // Transfer funds and NFT
+    finalize_sale(
+        deps.as_ref(),
+        ask.clone(),
+        bid.amount,
+        bid.bidder.clone(),
+        &mut response,
+    )?;
+
+    // Update Ask with new seller and renewal time
+    let ask = Ask {
+        token_id: ask.token_id.to_string(),
+        id: ask.id,
+        seller: bid.bidder.clone(),
+        renewal_time: next_renewal_time,
+        renewal_fund: Uint128::zero(),
+    };
+    store_ask(deps.storage, &ask)?;
+
+    Ok(response)
+}
+
+fn burn_name(
+    deps: DepsMut,
+    collection: &Addr,
+    ask: Ask,
+    mut response: Response,
+) -> Result<Response, ContractError> {
+    response = response.add_message(WasmMsg::Execute {
+        contract_addr: collection.to_string(),
+        msg: to_binary(&Cw721ExecuteMsg::Burn {
+            token_id: ask.token_id.to_string(),
+        })?,
+        funds: vec![],
+    });
+
+    // Delete ask
+    asks().remove(deps.storage, ask_key(&ask.token_id))?;
+
+    let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
+    let event = Event::new("remove-ask").add_attribute("token_id", ask.token_id);
+
+    response = response.add_submessages(hook).add_event(event);
+
+    Ok(response)
 }
 
 pub fn process_renewal(
@@ -150,7 +253,7 @@ pub fn process_renewal(
         .add_attribute("token_id", ask.token_id.to_string())
         .add_attribute("renewal_time", ask.renewal_time.seconds().to_string());
 
-    let valid_bid = find_valid_bid(deps.as_ref(), &env.block.time, &sudo_params)?;
+    let valid_bid = find_valid_bid(deps.as_ref(), &env.block.time, sudo_params)?;
 
     // Renewal price is the max of the char based price and a percentage of highest valid bid
     let renewal_price = get_renewal_price(
@@ -160,39 +263,12 @@ pub fn process_renewal(
         sudo_params.renewal_bid_percentage,
     );
 
-    let next_renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-
     // If the renewal fund is sufficient, renew it
-    if ask.renewal_fund > renewal_price {
-        // Take renewal payment
-        charge_fees(
-            &mut response,
-            sudo_params.trading_fee_percent,
-            renewal_price,
-        );
-
-        // Update renewal time
-        RENEWAL_QUEUE.save(
-            deps.storage,
-            (next_renewal_time.seconds(), ask.id),
-            &ask.token_id.to_string(),
-        )?;
-
-        // Update Ask with new renewal time
-        let next_renewal_fund = ask.renewal_fund - renewal_price;
-        let ask = Ask {
-            token_id: ask.token_id.to_string(),
-            id: ask.id,
-            seller: ask.seller,
-            renewal_time: next_renewal_time,
-            renewal_fund: next_renewal_fund,
-        };
-        store_ask(deps.storage, &ask)?;
-
+    if ask.renewal_fund >= renewal_price {
+        process_renewal_event = process_renewal_event.add_attribute("action", "renew");
         response = response.add_event(process_renewal_event);
 
-        // Finished processing renewal, return
-        return Ok(response);
+        return renew_name(deps, env, sudo_params, ask, renewal_price, response);
     }
 
     // Renewal fund is insufficient, send it back to the owner
@@ -206,57 +282,14 @@ pub fn process_renewal(
     if let Some(bid) = valid_bid {
         // The renewal fund is insufficient, sell to the highest bidder
         process_renewal_event = process_renewal_event.add_attribute("action", "sell");
+        response = response.add_event(process_renewal_event);
 
-        // Remove accepted bid
-        bids().remove(deps.storage, bid_key(&ask.token_id, &bid.bidder))?;
-
-        // Update renewal queue
-        RENEWAL_QUEUE.save(
-            deps.storage,
-            (next_renewal_time.seconds(), ask.id),
-            &ask.token_id.to_string(),
-        )?;
-
-        // Transfer funds and NFT
-        finalize_sale(
-            deps.as_ref(),
-            ask.clone(),
-            bid.amount,
-            bid.bidder.clone(),
-            &mut response,
-        )?;
-
-        // Update Ask with new seller and renewal time
-        let ask = Ask {
-            token_id: ask.token_id.to_string(),
-            id: ask.id,
-            seller: bid.bidder.clone(),
-            renewal_time: next_renewal_time,
-            renewal_fund: Uint128::zero(),
-        };
-        store_ask(deps.storage, &ask)?;
+        sell_name(deps, env, ask, bid, response)
     } else {
-        // Burn name
+        // The renewal fund is insufficient, and there is no valid bid, burn it
         process_renewal_event = process_renewal_event.add_attribute("action", "burn");
+        response = response.add_event(process_renewal_event);
 
-        response = response.add_message(WasmMsg::Execute {
-            contract_addr: collection.to_string(),
-            msg: to_binary(&Cw721ExecuteMsg::Burn {
-                token_id: ask.token_id.to_string(),
-            })?,
-            funds: vec![],
-        });
-
-        // Delete ask
-        asks().remove(deps.storage, ask_key(&ask.token_id))?;
-
-        let hook = prepare_ask_hook(deps.as_ref(), &ask, HookAction::Delete)?;
-        let event = Event::new("remove-ask").add_attribute("token_id", ask.token_id);
-
-        response = response.add_submessages(hook).add_event(event);
+        burn_name(deps, collection, ask, response)
     }
-
-    response = response.add_event(process_renewal_event);
-
-    return Ok(response);
 }

@@ -7,7 +7,7 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Addr, Decimal, DepsMut, Env, Event, Order, StdResult, Uint128};
-use cw_storage_plus::PrefixBound;
+use cw_storage_plus::Bound;
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 use sg_std::Response;
 
@@ -159,10 +159,13 @@ pub fn sudo_end_block(mut deps: DepsMut, env: Env) -> Result<Response, ContractE
     let renewable_asks = asks()
         .idx
         .renewal_time
-        .prefix_range(
+        .range(
             deps.storage,
             None,
-            Some(PrefixBound::inclusive(env.block.time.seconds())),
+            Some(Bound::exclusive((
+                (env.block.time.seconds() + 1),
+                "".to_string(),
+            ))),
             Order::Ascending,
         )
         .take(sudo_params.max_renewals_per_block as usize)

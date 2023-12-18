@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
+use crate::execute::store_ask;
 #[cfg(test)]
 use crate::execute::{execute, instantiate};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use crate::query::{query_asks_by_seller, query_bids_by_bidder};
+use crate::query::{query_asks_by_renew_time, query_asks_by_seller, query_bids_by_bidder};
 use crate::state::{ask_key, asks, bid_key, bids, Ask, Bid};
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -170,4 +171,37 @@ fn try_set_ask() {
     let not_allowed = mock_info("random", &[]);
     let err = execute(deps.as_mut(), mock_env(), not_allowed, set_ask);
     assert!(err.is_err());
+}
+
+#[test]
+fn try_query_asks_by_renew_time() {
+    let env = mock_env();
+    let mut deps = mock_dependencies();
+    setup_contract(deps.as_mut());
+
+    let seller = Addr::unchecked("seller");
+
+    let five_days_in_seconds = 60 * 60 * 24 * 5;
+
+    for n in 1..=10 {
+        let token_id = format!("renew-name-{}", n);
+        let ask = Ask {
+            token_id: token_id.to_string(),
+            id: n,
+            seller: seller.clone(),
+            renewal_time: env.block.time.plus_seconds(five_days_in_seconds * n),
+            renewal_fund: Uint128::zero(),
+        };
+        let result = store_ask(&mut deps.storage, &ask);
+        assert!(result.is_ok());
+    }
+
+    let start_after = env.block.time.plus_seconds(five_days_in_seconds * 2);
+    let max_time = env.block.time.plus_seconds(five_days_in_seconds * 9);
+
+    let result = query_asks_by_renew_time(deps.as_ref(), max_time, Some(start_after), None);
+    assert!(result.is_ok());
+
+    let asks = result.unwrap();
+    assert_eq!(asks.len(), 7);
 }

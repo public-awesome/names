@@ -9,7 +9,7 @@ use cosmwasm_std::{
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
-use cw_utils::nonpayable;
+use cw_utils::{nonpayable, Expiration};
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::ContractError::{Claimed, Unauthorized};
@@ -124,15 +124,39 @@ pub fn execute_mint(
     Ok(Response::new().add_event(event))
 }
 
-/// WIP Throw not implemented error
 pub fn execute_burn(
-    _deps: DepsMut,
-    _env: Env,
+    deps: DepsMut,
+    env: Env,
     info: MessageInfo,
-    _token_id: String,
+    token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-    Err(ContractError::NotImplemented {})
+
+    let names_marketplace = NAME_MARKETPLACE.load(deps.storage)?;
+
+    ensure!(info.sender == names_marketplace, Unauthorized {});
+
+    let sg721 = Sg721NameContract::default();
+
+    // Force names marketplace address as operator
+    sg721.operators.save(
+        deps.storage,
+        (&info.sender, &names_marketplace),
+        &Expiration::Never {},
+    )?;
+
+    sg721.execute(
+        deps,
+        env,
+        info.clone(),
+        Sg721ExecuteMsg::Burn {
+            token_id: token_id.to_string(),
+        },
+    )?;
+
+    let event = Event::new("burn-name").add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_transfer_nft(
@@ -143,9 +167,12 @@ pub fn execute_transfer_nft(
     token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
+
+    let names_marketplace = NAME_MARKETPLACE.load(deps.storage)?;
     let recipient = deps.api.addr_validate(&recipient)?;
 
-    let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+    let update_ask_msg =
+        _transfer_nft(deps, env, &info, &recipient, &token_id, &names_marketplace)?;
 
     let event = Event::new("transfer")
         .add_attribute("sender", info.sender)
@@ -213,6 +240,7 @@ fn _transfer_nft(
     info: &MessageInfo,
     recipient: &Addr,
     token_id: &str,
+    names_marketplace: &Addr,
 ) -> Result<WasmMsg, ContractError> {
     let update_ask_msg = update_ask_on_marketplace(deps.as_ref(), token_id, recipient.clone())?;
 
@@ -223,7 +251,16 @@ fn _transfer_nft(
         token_id: token_id.to_string(),
     };
 
-    Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
+    let sg721 = Sg721NameContract::default();
+
+    // Force names marketplace address as operator
+    sg721.operators.save(
+        deps.storage,
+        (&info.sender, names_marketplace),
+        &Expiration::Never {},
+    )?;
+
+    sg721.execute(deps, env, info.clone(), msg)?;
 
     Ok(update_ask_msg)
 }

@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::error::ContractError;
 use crate::helpers::{find_valid_bid, get_renewal_price, process_renewal};
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
@@ -8,8 +6,7 @@ use crate::state::{
     ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
     NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
+
 use cosmwasm_std::{
     coin, coins, ensure, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event,
     MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
@@ -17,12 +14,12 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_storage_plus::PrefixBound;
+use cw_storage_plus::Bound;
 use cw_utils::{may_pay, must_pay, nonpayable};
-use semver::Version;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
+use std::marker::PhantomData;
 
 // Version info for migration info
 pub const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
@@ -30,6 +27,9 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
+
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -443,7 +443,7 @@ pub fn execute_renew(
     info: MessageInfo,
     token_id: &str,
 ) -> Result<Response, ContractError> {
-    let mut ask = asks().load(deps.storage, ask_key(&token_id))?;
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
     let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.valid_bid_seconds_delta;
@@ -524,10 +524,13 @@ pub fn execute_process_renewal(
     let renewable_asks = asks()
         .idx
         .renewal_time
-        .prefix_range(
+        .range(
             deps.storage,
             None,
-            Some(PrefixBound::inclusive(env.block.time.seconds())),
+            Some(Bound::exclusive((
+                (env.block.time.seconds() + 1),
+                "".to_string(),
+            ))),
             Order::Ascending,
         )
         .take(limit as usize)
@@ -644,31 +647,4 @@ fn only_owner(
     }
 
     Ok(res)
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    let current_version = cw2::get_contract_version(deps.storage)?;
-    if current_version.contract != CONTRACT_NAME {
-        return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
-    }
-    let version: Version = current_version
-        .version
-        .parse()
-        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-    let new_version: Version = CONTRACT_VERSION
-        .parse()
-        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-
-    if version > new_version {
-        return Err(StdError::generic_err("Cannot upgrade to a previous contract version").into());
-    }
-    // if same version return
-    if version == new_version {
-        return Ok(Response::new());
-    }
-
-    // set new contract version
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    Ok(Response::new())
 }

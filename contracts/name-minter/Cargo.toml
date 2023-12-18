@@ -1,11 +1,11 @@
 [package]
-name = "name-minter"
-authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-version     = { workspace = true }
-edition     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-license     = { workspace = true }
+name       = "name-minter"
+authors    = ["Shane Vitarana <s@noreply.publicawesome.com>"]
+version    = { workspace = true }
+edition    = { workspace = true }
+homepage   = { workspace = true }
+repository = { workspace = true }
+license    = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -49,7 +49,8 @@ whitelist-updatable = { path = "../whitelist-updatable", features = [
 ] }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
-sg-multi-test = { workspace = true }
-sg721-base = { workspace = true }
-anyhow = "1"
+cw-multi-test    = { workspace = true }
+sg-multi-test    = { workspace = true }
+sg721-base       = { workspace = true }
+name-marketplace = { workspace = true }
+anyhow           = "1"

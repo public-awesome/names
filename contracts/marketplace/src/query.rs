@@ -8,7 +8,7 @@ use crate::state::{
 use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
 };
-use cw_storage_plus::{Bound, PrefixBound};
+use cw_storage_plus::Bound;
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 
 #[cfg(not(feature = "library"))]
@@ -173,10 +173,10 @@ pub fn query_asks_by_renew_time(
     let renewable_asks = asks()
         .idx
         .renewal_time
-        .prefix_range(
+        .range(
             deps.storage,
-            start_after.map(|start| PrefixBound::exclusive(start.seconds())),
-            Some(PrefixBound::inclusive(max_time.seconds())),
+            start_after.map(|start| Bound::inclusive((start.seconds() + 1, "".to_string()))),
+            Some(Bound::exclusive((max_time.seconds() + 1, "".to_string()))),
             Order::Ascending,
         )
         .take(limit)
@@ -215,7 +215,7 @@ pub fn query_ask_renew_price(
         sudo_params.renewal_bid_percentage,
     );
 
-    return Ok(Some(coin(renewal_price.u128(), NATIVE_DENOM)));
+    Ok(Some(coin(renewal_price.u128(), NATIVE_DENOM)))
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
