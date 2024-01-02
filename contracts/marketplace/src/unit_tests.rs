@@ -94,7 +94,7 @@ fn bid_indexed_map() {
     let res = execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(&bidder.to_string(), &[]),
+        mock_info(bidder.as_ref(), &[]),
         remove_bid_msg,
     );
     assert!(res.is_ok());
@@ -234,7 +234,7 @@ fn try_migrate_bids_fails_with_no_bids() {
     let result = execute(
         deps.as_mut(),
         mock_env(),
-        mock_info(&OPERATOR.to_string(), &[]),
+        mock_info(OPERATOR, &[]),
         migrate_bids_msg,
     );
     assert!(result.is_err());
