@@ -209,8 +209,8 @@ pub fn query_ask_renew_price(
         deps,
         &current_time,
         &sudo_params,
+        &ask.token_id,
         name_minter_params.base_price.u128(),
-        ask.token_id.len(),
     )
     .map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
 

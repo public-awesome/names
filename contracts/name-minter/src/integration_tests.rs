@@ -1119,26 +1119,30 @@ mod query {
         );
         assert!(res.is_err());
 
-        let renewal_price = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
                 token_id: NAME.to_string(),
             },
         );
-        assert!(renewal_price.is_ok());
-        assert!(renewal_price.unwrap().is_none());
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
+        assert!(renewal_price.is_none());
 
         update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
 
-        let renewal_price = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
                 token_id: NAME.to_string(),
             },
         );
-        assert!(renewal_price.is_ok());
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
 
         let params: NameMinterParams = app
             .wrap()
@@ -1149,7 +1153,7 @@ mod query {
 
         println!("char_price: {}", char_price);
 
-        assert_eq!(renewal_price.unwrap().unwrap().amount, char_price);
+        assert_eq!(renewal_price.unwrap().amount, char_price);
     }
 
     #[test]
@@ -1167,14 +1171,16 @@ mod query {
 
         update_block_time(&mut app, 60 * 60 * 24 * 31);
 
-        let renewal_price = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
                 token_id: NAME.to_string(),
             },
         );
-        assert!(renewal_price.is_ok());
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
 
         let params: NameMarketplaceParams = app
             .wrap()
@@ -1182,7 +1188,7 @@ mod query {
             .unwrap();
 
         let expect_price = Uint128::from(bid_amount) * params.renewal_bid_percentage;
-        assert_eq!(renewal_price.unwrap().unwrap().amount, expect_price);
+        assert_eq!(renewal_price.unwrap().amount, expect_price);
     }
 
     #[test]
@@ -1194,22 +1200,23 @@ mod query {
         // Amount to make it just above the char price
         let bid_amount = 1_000_000_000u128 * 201u128;
 
-        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 31));
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
 
         bid(&mut app, NAME, BIDDER, bid_amount);
 
-        update_block_time(&mut app, 60 * 60 * 24 * 10);
+        update_block_time(&mut app, 1);
 
-        let renewal_price = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
                 token_id: NAME.to_string(),
             },
         );
-        assert!(renewal_price.is_ok());
+        assert!(result.is_ok());
 
-        let renewal_amount = renewal_price.unwrap().unwrap().amount;
+        let (renewal_price, _renewal_bid) = result.unwrap();
+        let renewal_amount = renewal_price.unwrap().amount;
 
         let fund_amount = coins(renewal_amount.u128() * 100_u128, NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
@@ -1220,6 +1227,18 @@ mod query {
         }))
         .map_err(|err| println!("{:?}", err))
         .ok();
+
+        let ask = app
+            .wrap()
+            .query_wasm_smart::<Option<Ask>>(
+                MKT,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap()
+            .unwrap();
+        let expected_renewal_time = ask.renewal_time.plus_seconds(SECONDS_PER_YEAR);
 
         let result = app.execute_contract(
             Addr::unchecked(USER),
@@ -1241,8 +1260,6 @@ mod query {
         let ask = result.unwrap().unwrap();
 
         assert_eq!(ask.renewal_fund, Uint128::zero());
-
-        let expected_renewal_time = app.block_info().time.plus_seconds(SECONDS_PER_YEAR);
         assert_eq!(ask.renewal_time, expected_renewal_time);
 
         let result = app.wrap().query_wasm_smart::<Vec<Ask>>(
@@ -1353,6 +1370,7 @@ mod query {
                 token_id: NAME.to_string(),
             },
         );
+        println!("xxx {:?}", response);
         assert!(response.is_ok());
         let response = response.unwrap();
 

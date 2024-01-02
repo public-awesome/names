@@ -504,8 +504,8 @@ pub fn execute_renew(
         deps.as_ref(),
         &env.block.time,
         &sudo_params,
+        &ask.token_id,
         name_minter_params.base_price.u128(),
-        token_id.len(),
     )?;
 
     let payment = may_pay(&info, NATIVE_DENOM)?;

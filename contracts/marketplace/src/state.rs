@@ -147,19 +147,19 @@ pub struct BidIndicies<'a> {
 
 pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
     let indexes = BidIndicies {
-        bidder: MultiIndex::new(|_pk: &[u8], b: &Bid| b.bidder.clone(), "bv2", "bv2__b"),
+        bidder: MultiIndex::new(|_pk: &[u8], b: &Bid| b.bidder.clone(), "b2", "b2__b"),
         price: MultiIndex::new(
             |_pk: &[u8], b: &Bid| (b.token_id.clone(), b.amount.u128()),
-            "bv2",
-            "bv2__cp",
+            "b2",
+            "b2__p",
         ),
         created_time: MultiIndex::new(
             |_pk: &[u8], b: &Bid| (b.token_id.clone(), b.created_time.seconds()),
-            "bv2",
-            "bv2__ct",
+            "b2",
+            "b2__ct",
         ),
     };
-    IndexedMap::new("bv2", indexes)
+    IndexedMap::new("b2", indexes)
 }
 
 /// Defines indices for accessing bids

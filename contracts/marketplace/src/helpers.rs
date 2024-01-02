@@ -12,6 +12,7 @@ use cosmwasm_std::{
     QueryRequest, StdError, StdResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw721::Cw721ExecuteMsg;
+use cw_storage_plus::Bound;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::SudoParams as NameMinterParams;
 use sg_std::{CosmosMsg, Response, NATIVE_DENOM};
@@ -83,43 +84,34 @@ pub fn find_valid_bid(
     deps: Deps,
     block_time: &Timestamp,
     sudo_params: &SudoParams,
-    _min_price: Option<Uint128>,
+    token_id: &str,
+    min_price: Uint128,
 ) -> Result<Option<Bid>, ContractError> {
-    let min_time = block_time.seconds() - sudo_params.renew_window;
+    let max_time = block_time.seconds() - sudo_params.renew_window;
 
     let bid = bids()
         .idx
         .price
-        .prefix_range(deps.storage, None, None, Order::Descending)
+        .sub_prefix(token_id.to_string())
+        .range(
+            deps.storage,
+            Some(Bound::inclusive((
+                min_price.u128(),
+                (token_id.to_string(), Addr::unchecked("")),
+            ))),
+            None,
+            Order::Descending,
+        )
         .take(sudo_params.valid_bid_query_limit as usize)
-        .filter_map(|item| {
+        .find_map(|item| {
             item.map_or(None, |(_, bid)| {
-                if bid.created_time.seconds() <= min_time {
+                if bid.created_time.seconds() <= max_time {
                     Some(bid)
                 } else {
                     None
                 }
             })
-        })
-        .next();
-
-    println!("bid1: {:?}", bid);
-
-    let bid = bids()
-        .idx
-        .price
-        .prefix_range(deps.storage, None, None, Order::Descending)
-        .take(sudo_params.valid_bid_query_limit as usize)
-        .filter_map(|item| {
-            item.map_or(None, |(_, bid)| {
-                if bid.created_time.seconds() <= min_time {
-                    Some(bid)
-                } else {
-                    None
-                }
-            })
-        })
-        .next();
+        });
 
     Ok(bid)
 }
@@ -140,11 +132,11 @@ pub fn get_renewal_price_and_bid(
     deps: Deps,
     block_time: &Timestamp,
     sudo_params: &SudoParams,
+    token_id: &str,
     base_price: u128,
-    name_len: usize,
 ) -> Result<(Uint128, Option<Bid>), ContractError> {
-    let renewal_char_price = get_char_price(base_price, name_len);
-    let valid_bid = find_valid_bid(deps, block_time, sudo_params, Some(renewal_char_price))?;
+    let renewal_char_price = get_char_price(base_price, token_id.len());
+    let valid_bid = find_valid_bid(deps, block_time, sudo_params, token_id, renewal_char_price)?;
 
     let renewal_bid_price = valid_bid.as_ref().map_or(Uint128::zero(), |bid| {
         bid.amount * sudo_params.renewal_bid_percentage
@@ -268,8 +260,8 @@ pub fn process_renewal(
         deps.as_ref(),
         &env.block.time,
         sudo_params,
+        &ask.token_id,
         name_minter_params.base_price.u128(),
-        ask.token_id.len(),
     )?;
 
     // If the renewal fund is sufficient, renew it
