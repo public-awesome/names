@@ -132,7 +132,7 @@ impl Bid {
 
 /// Primary key for bids: (token_id, bidder)
 pub type BidKey = (TokenId, Addr);
-/// Convenience bid key constructor
+
 pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
     (token_id.to_string(), bidder.clone())
 }
@@ -140,13 +140,38 @@ pub fn bid_key(token_id: &str, bidder: &Addr) -> BidKey {
 /// Defines indices for accessing bids
 #[index_list(Bid)]
 pub struct BidIndicies<'a> {
+    pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
+    pub price: MultiIndex<'a, (String, u128), Bid, BidKey>,
+    pub created_time: MultiIndex<'a, (String, u64), Bid, BidKey>,
+}
+
+pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
+    let indexes = BidIndicies {
+        bidder: MultiIndex::new(|_pk: &[u8], b: &Bid| b.bidder.clone(), "bv2", "bv2__b"),
+        price: MultiIndex::new(
+            |_pk: &[u8], b: &Bid| (b.token_id.clone(), b.amount.u128()),
+            "bv2",
+            "bv2__cp",
+        ),
+        created_time: MultiIndex::new(
+            |_pk: &[u8], b: &Bid| (b.token_id.clone(), b.created_time.seconds()),
+            "bv2",
+            "bv2__ct",
+        ),
+    };
+    IndexedMap::new("bv2", indexes)
+}
+
+/// Defines indices for accessing bids
+#[index_list(Bid)]
+pub struct LegacyBidIndices<'a> {
     pub price: MultiIndex<'a, u128, Bid, BidKey>,
     pub bidder: MultiIndex<'a, Addr, Bid, BidKey>,
     pub created_time: MultiIndex<'a, u64, Bid, BidKey>,
 }
 
-pub fn bids<'a>() -> IndexedMap<'a, BidKey, Bid, BidIndicies<'a>> {
-    let indexes = BidIndicies {
+pub fn legacy_bids<'a>() -> IndexedMap<'a, BidKey, Bid, LegacyBidIndices<'a>> {
+    let indexes = LegacyBidIndices {
         price: MultiIndex::new(
             |_pk: &[u8], d: &Bid| d.amount.u128(),
             "bids",

@@ -3,8 +3,8 @@ use crate::helpers::{get_char_price, get_renewal_price_and_bid, process_renewal,
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
-    NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, increment_asks, legacy_bids, Ask, Bid, SudoParams, IS_SETUP,
+    NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
 
 use cosmwasm_std::{
@@ -82,6 +82,7 @@ pub fn execute(
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
+        ExecuteMsg::MigrateBids { limit } => execute_migrate_bids(deps, env, info, limit),
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
         ExecuteMsg::Renew { token_id } => execute_renew(deps, env, info, &token_id),
@@ -396,6 +397,39 @@ pub fn execute_accept_bid(
         .add_attribute("price", bid.amount.to_string());
 
     Ok(res.add_event(event))
+}
+
+/// Migrates bids from the old index contract to the new index
+pub fn execute_migrate_bids(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    limit: u32,
+) -> Result<Response, ContractError> {
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    ensure_eq!(
+        info.sender,
+        sudo_params.operator,
+        ContractError::Unauthorized {}
+    );
+
+    let bids = legacy_bids()
+        .range(deps.storage, None, None, Order::Ascending)
+        .take(limit as usize)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()?;
+
+    let mut event = Event::new("migrate-bids");
+
+    for bid in bids {
+        store_bid(deps.storage, &bid)?;
+        legacy_bids().remove(deps.storage, bid_key(&bid.token_id, &bid.bidder))?;
+
+        event = event.add_attribute("bid_key", format!("{:?}-{:?}", bid.token_id, bid.bidder));
+    }
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_fund_renewal(

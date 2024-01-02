@@ -1,8 +1,8 @@
 use crate::helpers::get_renewal_price_and_bid;
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_COUNT,
-    ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, Id, SudoParams, TokenId, ASK_COUNT, ASK_HOOKS,
+    BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
 };
 
 use cosmwasm_std::{
@@ -322,9 +322,9 @@ pub fn query_bids_sorted_by_price(
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start: Option<Bound<(u128, BidKey)>> = start_after.map(|offset| {
+    let start = start_after.map(|offset| {
         Bound::exclusive((
-            offset.price.u128(),
+            (offset.token_id.clone(), offset.price.u128()),
             bid_key(&offset.token_id, &offset.bidder),
         ))
     });
@@ -345,9 +345,9 @@ pub fn reverse_query_bids_sorted_by_price(
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let end: Option<Bound<(u128, BidKey)>> = start_before.map(|offset| {
+    let end = start_before.map(|offset| {
         Bound::exclusive((
-            offset.price.u128(),
+            (offset.token_id.clone(), offset.price.u128()),
             bid_key(&offset.token_id, &offset.bidder),
         ))
     });

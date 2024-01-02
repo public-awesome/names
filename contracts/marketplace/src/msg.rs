@@ -43,6 +43,8 @@ pub enum ExecuteMsg {
     RemoveBid { token_id: TokenId },
     /// Accept a bid on an existing ask
     AcceptBid { token_id: TokenId, bidder: String },
+    /// Migrate bids from the old index to the new index
+    MigrateBids { limit: u32 },
     /// Fund renewal of a name
     FundRenewal { token_id: TokenId },
     /// Refund a renewal of a name
