@@ -176,6 +176,12 @@ pub enum QueryMsg {
         start_after: Option<Bidder>,
         limit: Option<u32>,
     },
+    /// Get all legacy bids
+    #[returns(Vec<Bid>)]
+    LegacyBids {
+        start_after: Option<BidOffset>,
+        limit: Option<u32>,
+    },
     /// Get all bids for a collection, sorted by price
     #[returns(Vec<Bid>)]
     BidsSortedByPrice {

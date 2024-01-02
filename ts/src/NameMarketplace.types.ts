@@ -115,6 +115,11 @@ export type QueryMsg = {
     token_id: string;
   };
 } | {
+  legacy_bids: {
+    limit?: number | null;
+    start_after?: BidOffset | null;
+  };
+} | {
   bids_sorted_by_price: {
     limit?: number | null;
     start_after?: BidOffset | null;

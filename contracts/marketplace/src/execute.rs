@@ -406,6 +406,8 @@ pub fn execute_migrate_bids(
     info: MessageInfo,
     limit: u32,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
     ensure_eq!(
@@ -414,22 +416,42 @@ pub fn execute_migrate_bids(
         ContractError::Unauthorized {}
     );
 
-    let bids = legacy_bids()
+    let old_bids = legacy_bids()
         .range(deps.storage, None, None, Order::Ascending)
         .take(limit as usize)
         .map(|item| item.map(|(_, b)| b))
         .collect::<StdResult<Vec<_>>>()?;
 
+    ensure!(
+        old_bids.len() > 0,
+        ContractError::Std(StdError::generic_err("No bids to migrate"))
+    );
+
+    let mut response = Response::new();
+
     let mut event = Event::new("migrate-bids");
 
-    for bid in bids {
-        store_bid(deps.storage, &bid)?;
+    for bid in old_bids {
+        let existing_bid = bids().may_load(deps.storage, bid_key(&bid.token_id, &bid.bidder))?;
+
         legacy_bids().remove(deps.storage, bid_key(&bid.token_id, &bid.bidder))?;
 
-        event = event.add_attribute("bid_key", format!("{:?}-{:?}", bid.token_id, bid.bidder));
+        if let Some(existing_bid) = existing_bid {
+            let msg = BankMsg::Send {
+                to_address: existing_bid.bidder.to_string(),
+                amount: vec![coin(existing_bid.amount.u128(), NATIVE_DENOM)],
+            };
+            response = response.add_message(msg);
+        } else {
+            store_bid(deps.storage, &bid)?;
+        }
+
+        event = event.add_attribute("bid_key", format!("{}-{}", bid.token_id, bid.bidder));
     }
 
-    Ok(Response::new().add_event(event))
+    response = response.add_event(event);
+
+    Ok(response)
 }
 
 pub fn execute_fund_renewal(
@@ -533,6 +555,8 @@ pub fn execute_process_renewals(
     info: MessageInfo,
     limit: u32,
 ) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
     ensure_eq!(

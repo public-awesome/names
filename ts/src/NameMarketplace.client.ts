@@ -72,6 +72,13 @@ export interface NameMarketplaceReadOnlyInterface {
     startAfter?: string;
     tokenId: string;
   }) => Promise<ArrayOfBid>;
+  legacyBids: ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: BidOffset;
+  }) => Promise<ArrayOfBid>;
   bidsSortedByPrice: ({
     limit,
     startAfter
@@ -127,6 +134,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.bid = this.bid.bind(this);
     this.bidsByBidder = this.bidsByBidder.bind(this);
     this.bids = this.bids.bind(this);
+    this.legacyBids = this.legacyBids.bind(this);
     this.bidsSortedByPrice = this.bidsSortedByPrice.bind(this);
     this.reverseBidsSortedByPrice = this.reverseBidsSortedByPrice.bind(this);
     this.bidsForSeller = this.bidsForSeller.bind(this);
@@ -262,6 +270,20 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
         limit,
         start_after: startAfter,
         token_id: tokenId
+      }
+    });
+  };
+  legacyBids = async ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: BidOffset;
+  }): Promise<ArrayOfBid> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      legacy_bids: {
+        limit,
+        start_after: startAfter
       }
     });
   };

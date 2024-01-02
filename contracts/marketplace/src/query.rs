@@ -1,8 +1,9 @@
 use crate::helpers::get_renewal_price_and_bid;
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, Ask, AskKey, Bid, Id, SudoParams, TokenId, ASK_COUNT, ASK_HOOKS,
-    BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, legacy_bids, Ask, AskKey, Bid, Id, SudoParams, TokenId,
+    ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
+    SUDO_PARAMS,
 };
 
 use cosmwasm_std::{
@@ -59,6 +60,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
         } => to_binary(&query_bids(deps, token_id, start_after, limit)?),
+        QueryMsg::LegacyBids { start_after, limit } => {
+            to_binary(&query_legacy_bids(deps, start_after, limit)?)
+        }
         QueryMsg::BidsByBidder {
             bidder,
             start_after,
@@ -288,6 +292,23 @@ pub fn query_bids(
 
     bids()
         .prefix(token_id)
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()
+}
+
+pub fn query_legacy_bids(
+    deps: Deps,
+    start_after: Option<BidOffset>,
+    limit: Option<u32>,
+) -> StdResult<Vec<Bid>> {
+    let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
+
+    let start =
+        start_after.map(|offset| Bound::exclusive(bid_key(&offset.token_id, &offset.bidder)));
+
+    legacy_bids()
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|item| item.map(|(_, b)| b))
