@@ -164,7 +164,7 @@ pub fn renew_name(
     mut response: Response,
 ) -> Result<Response, ContractError> {
     // Take renewal payment
-    ask.renewal_fund = ask.renewal_fund - renewal_price;
+    ask.renewal_fund -= renewal_price;
     charge_fees(
         &mut response,
         sudo_params.trading_fee_percent,
@@ -267,7 +267,7 @@ pub fn process_renewal(
     let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps.as_ref(),
         &env.block.time,
-        &sudo_params,
+        sudo_params,
         name_minter_params.base_price.u128(),
         ask.token_id.len(),
     )?;

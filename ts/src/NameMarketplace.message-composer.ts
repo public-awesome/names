@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, NullableCoin, Coin, ArrayOfAsk, NullableBid, Bid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;
@@ -46,6 +46,11 @@ export interface NameMarketplaceMessage {
   }: {
     bidder: string;
     tokenId: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  migrateBids: ({
+    limit
+  }: {
+    limit: number;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   fundRenewal: ({
     tokenId
@@ -88,6 +93,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
+    this.migrateBids = this.migrateBids.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
     this.renew = this.renew.bind(this);
@@ -212,6 +218,25 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
           accept_bid: {
             bidder,
             token_id: tokenId
+          }
+        })),
+        funds
+      })
+    };
+  };
+  migrateBids = ({
+    limit
+  }: {
+    limit: number;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          migrate_bids: {
+            limit
           }
         })),
         funds

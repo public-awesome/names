@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, NullableCoin, Coin, ArrayOfAsk, NullableBid, Bid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -46,7 +46,7 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     currentTime: Timestamp;
     tokenId: string;
-  }) => Promise<NullableCoin>;
+  }) => Promise<TupleOfNullableCoinAndNullableBid>;
   bid: ({
     bidder,
     tokenId
@@ -209,7 +209,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     currentTime: Timestamp;
     tokenId: string;
-  }): Promise<NullableCoin> => {
+  }): Promise<TupleOfNullableCoinAndNullableBid> => {
     return this.client.queryContractSmart(this.contractAddress, {
       ask_renew_price: {
         current_time: currentTime,
@@ -397,6 +397,11 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     bidder: string;
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  migrateBids: ({
+    limit
+  }: {
+    limit: number;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   fundRenewal: ({
     tokenId
   }: {
@@ -441,6 +446,7 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
+    this.migrateBids = this.migrateBids.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
     this.renew = this.renew.bind(this);
@@ -520,6 +526,17 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
       accept_bid: {
         bidder,
         token_id: tokenId
+      }
+    }, fee, memo, funds);
+  };
+  migrateBids = async ({
+    limit
+  }: {
+    limit: number;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      migrate_bids: {
+        limit
       }
     }, fee, memo, funds);
   };
