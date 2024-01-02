@@ -56,7 +56,7 @@ pub enum ContractError {
     #[error("Cannot remove ask with existing bids")]
     ExistingBids {},
 
-    #[error("PriceTooSmall: {0}")]
+    #[error("PriceTooSmall: minimum {0}")]
     PriceTooSmall(Uint128),
 
     #[error("InvalidListingFee: {0}")]

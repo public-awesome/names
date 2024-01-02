@@ -17,10 +17,13 @@ pub struct InstantiateMsg {
     /// The number of bids to query to when searching for the highest bid
     pub valid_bid_query_limit: u32,
     /// The number of seconds before the current block time that a
-    /// bid must have been created in order to be considered valid
-    pub valid_bid_seconds_delta: u64,
+    /// bid must have been created in order to be considered valid.
+    /// Also, the number of seconds before an ask expires where it can be renewed.
+    pub renew_window: u64,
     /// The percentage of the winning bid that must be paid to renew a name
     pub renewal_bid_percentage: Decimal,
+    /// The address with permission to invoke process_renewals
+    pub operator: String,
 }
 
 #[cw_serde]
@@ -149,7 +152,7 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     /// Get the renewal price for a specific name
-    #[returns(Option<Coin>)]
+    #[returns((Option<Coin>, Option<Bid>))]
     AskRenewPrice {
         current_time: Timestamp,
         token_id: TokenId,

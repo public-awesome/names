@@ -82,6 +82,7 @@ const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
 const VERIFIER: &str = "verifier";
+const OPERATOR: &str = "operator";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
@@ -132,8 +133,9 @@ fn instantiate_contracts(
         ask_interval: 60,
         max_renewals_per_block: 20,
         valid_bid_query_limit: 10,
-        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renew_window: 60 * 60 * 24 * 30,
         renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
+        operator: OPERATOR.to_string(),
     };
     let marketplace = app
         .instantiate_contract(
@@ -1263,7 +1265,7 @@ mod query {
 
         update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
 
-        let response = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
@@ -1271,7 +1273,7 @@ mod query {
             },
         );
         assert!(response.is_ok());
-        let renewal_price = response.unwrap().unwrap();
+        let renewal_price = response.unwrap().0.unwrap();
 
         let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
@@ -1295,7 +1297,7 @@ mod query {
         update_block_time(&mut app, 60 * 60 * 24 * 30);
 
         let result = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(OPERATOR),
             Addr::unchecked(MKT),
             &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
             &[],
@@ -1344,7 +1346,7 @@ mod query {
 
         update_block_time(&mut app, 60 * 60 * 24 * 31);
 
-        let response = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
@@ -1352,7 +1354,10 @@ mod query {
             },
         );
         assert!(response.is_ok());
-        let renewal_price = response.unwrap().unwrap();
+        let response = response.unwrap();
+
+        assert!(response.1.is_some());
+        let renewal_price = response.0.unwrap();
 
         let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
@@ -1379,7 +1384,7 @@ mod query {
             .unwrap();
 
         let result = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(OPERATOR),
             Addr::unchecked(MKT),
             &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
             &[],
@@ -1427,7 +1432,7 @@ mod query {
 
         update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
 
-        let response = app.wrap().query_wasm_smart::<Option<Coin>>(
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
             MKT,
             &MarketplaceQueryMsg::AskRenewPrice {
                 current_time: app.block_info().time,
@@ -1435,7 +1440,7 @@ mod query {
             },
         );
         assert!(response.is_ok());
-        let renewal_price = response.unwrap().unwrap();
+        let renewal_price = response.unwrap().0.unwrap();
 
         let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
@@ -1459,7 +1464,7 @@ mod query {
         update_block_time(&mut app, 60 * 60 * 24 * 30);
 
         let result = app.execute_contract(
-            Addr::unchecked(USER),
+            Addr::unchecked(OPERATOR),
             Addr::unchecked(MKT),
             &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
             &[],

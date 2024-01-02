@@ -12,6 +12,7 @@ use cosmwasm_std::{coins, Addr, Decimal, DepsMut, Timestamp, Uint128};
 use sg_std::NATIVE_DENOM;
 
 const CREATOR: &str = "creator";
+const OPERATOR: &str = "operator";
 const TOKEN_ID: &str = "name";
 const TOKEN_ID_NEXT: &str = "name2";
 
@@ -95,8 +96,9 @@ fn setup_contract(deps: DepsMut) {
         ask_interval: 60,
         max_renewals_per_block: 20,
         valid_bid_query_limit: 10,
-        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renew_window: 60 * 60 * 24 * 30,
         renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
+        operator: OPERATOR.to_string(),
     };
     let info = mock_info(CREATOR, &[]);
     let res = instantiate(deps, mock_env(), info, msg).unwrap();
@@ -113,8 +115,9 @@ fn proper_initialization() {
         ask_interval: 60,
         max_renewals_per_block: 20,
         valid_bid_query_limit: 10,
-        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renew_window: 60 * 60 * 24 * 30,
         renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
+        operator: OPERATOR.to_string(),
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
 
@@ -134,8 +137,9 @@ fn bad_fees_initialization() {
         ask_interval: 60,
         max_renewals_per_block: 20,
         valid_bid_query_limit: 10,
-        valid_bid_seconds_delta: 60 * 60 * 24 * 30,
+        renew_window: 60 * 60 * 24 * 30,
         renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
+        operator: OPERATOR.to_string(),
     };
     let info = mock_info("creator", &coins(1000, NATIVE_DENOM));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);

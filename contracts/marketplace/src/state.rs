@@ -18,9 +18,11 @@ pub struct SudoParams {
     pub valid_bid_query_limit: u32,
     /// The number of seconds before the current block time that a
     /// bid must have been created in order to be considered valid
-    pub valid_bid_seconds_delta: u64,
+    pub renew_window: u64,
     /// The percentage of the winning bid that must be paid to renew a name
     pub renewal_bid_percentage: Decimal,
+    /// The address with permission to invoke process_renewals
+    pub operator: Addr,
 }
 
 pub const SUDO_PARAMS: Item<SudoParams> = Item::new("sudo-params");

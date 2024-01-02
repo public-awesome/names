@@ -1,4 +1,4 @@
-use crate::helpers::{find_valid_bid, get_renewal_price};
+use crate::helpers::get_renewal_price_and_bid;
 use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, Ask, AskKey, Bid, BidKey, Id, SudoParams, TokenId, ASK_COUNT,
@@ -190,14 +190,14 @@ pub fn query_ask_renew_price(
     deps: Deps,
     current_time: Timestamp,
     token_id: String,
-) -> StdResult<Option<Coin>> {
+) -> StdResult<(Option<Coin>, Option<Bid>)> {
     let ask = asks().load(deps.storage, ask_key(&token_id))?;
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
-    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.valid_bid_seconds_delta;
+    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.renew_window;
 
     if current_time.seconds() < ask_renew_start_time {
-        return Ok(None);
+        return Ok((None, None));
     }
 
     let name_minter = NAME_MINTER.load(deps.storage)?;
@@ -205,17 +205,16 @@ pub fn query_ask_renew_price(
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let valid_bid = find_valid_bid(deps, &current_time, &sudo_params)
-        .map_err(|_| StdError::generic_err("failed to check for valid bids".to_string()))?;
-
-    let renewal_price = get_renewal_price(
+    let (renewal_price, valid_bid) = get_renewal_price_and_bid(
+        deps,
+        &current_time,
+        &sudo_params,
         name_minter_params.base_price.u128(),
-        token_id.len(),
-        valid_bid.as_ref(),
-        sudo_params.renewal_bid_percentage,
-    );
+        ask.token_id.len(),
+    )
+    .map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
 
-    Ok(Some(coin(renewal_price.u128(), NATIVE_DENOM)))
+    Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid))
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
