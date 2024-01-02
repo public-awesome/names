@@ -423,7 +423,7 @@ pub fn execute_migrate_bids(
         .collect::<StdResult<Vec<_>>>()?;
 
     ensure!(
-        old_bids.len() > 0,
+        !old_bids.is_empty(),
         ContractError::Std(StdError::generic_err("No bids to migrate"))
     );
 
