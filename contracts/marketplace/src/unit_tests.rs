@@ -84,8 +84,23 @@ fn bid_indexed_map() {
     let res = bids().load(deps.as_ref().storage, key);
     assert_eq!(res.unwrap(), bid);
 
-    let res = query_bids_by_bidder(deps.as_ref(), bidder, None, None).unwrap();
+    let res = query_bids_by_bidder(deps.as_ref(), bidder.clone(), None, None).unwrap();
     assert_eq!(res.len(), 2);
+    assert_eq!(res[0], bid);
+
+    let remove_bid_msg = ExecuteMsg::RemoveBid {
+        token_id: TOKEN_ID_NEXT.to_string(),
+    };
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info(&bidder.to_string(), &[]),
+        remove_bid_msg,
+    );
+    assert!(res.is_ok());
+
+    let res = query_bids_by_bidder(deps.as_ref(), bidder, None, None).unwrap();
+    assert_eq!(res.len(), 1);
     assert_eq!(res[0], bid);
 }
 
@@ -208,4 +223,19 @@ fn try_query_asks_by_renew_time() {
 
     let asks = result.unwrap();
     assert_eq!(asks.len(), 7);
+}
+
+#[test]
+fn try_migrate_bids_fails_with_no_bids() {
+    let mut deps = mock_dependencies();
+    setup_contract(deps.as_mut());
+
+    let migrate_bids_msg = ExecuteMsg::MigrateBids { limit: 100 };
+    let result = execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info(&OPERATOR.to_string(), &[]),
+        migrate_bids_msg,
+    );
+    assert!(result.is_err());
 }
