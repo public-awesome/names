@@ -11,9 +11,9 @@ use crate::{
 
 /// WhitelistUpdatableContract is a wrapper around Addr that provides a lot of helpers
 #[cw_serde]
-pub struct WhitelistUpdatableContract(pub Addr);
+pub struct WhitelistUpdatableFlatrateContract(pub Addr);
 
-impl WhitelistUpdatableContract {
+impl WhitelistUpdatableFlatrateContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }

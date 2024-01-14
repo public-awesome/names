@@ -584,6 +584,7 @@ dependencies = [
  "sg721-name",
  "thiserror",
  "whitelist-updatable",
+ "whitelist-updatable-flatrate",
 ]
 
 [[package]]
@@ -1130,6 +1131,30 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "whitelist-updatable"
+version = "1.2.6"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "name-minter",
+ "schemars",
+ "semver",
+ "serde",
+ "sg-multi-test",
+ "sg-name",
+ "sg-name-minter",
+ "sg-std",
+ "sg-whitelist-basic",
+ "sg721-name",
+ "thiserror",
+]
+
+[[package]]
+name = "whitelist-updatable-flatrate"
 version = "1.2.6"
 dependencies = [
  "cosmwasm-schema",

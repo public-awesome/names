@@ -1,6 +1,6 @@
 [package]
 name = "whitelist-updatable-flatrate"
-authors = ["John Y <j@publicawesome.com>"]
+authors = ["John Y <j@publicawesome.com>", "jason-c-child <child.jason@icloud.com>"]
 version     = { workspace = true }
 edition     = { workspace = true }
 homepage    = { workspace = true }
