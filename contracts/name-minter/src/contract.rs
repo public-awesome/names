@@ -27,7 +27,8 @@ use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS, WhitelistContract,
+    WhitelistContract, ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS,
+    WHITELISTS,
 };
 
 // version info for migration info
@@ -131,8 +132,14 @@ pub fn execute(
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
         ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
-        ExecuteMsg::AddWhitelist { address, whitelist_type } => execute_add_whitelist(deps, info, address, whitelist_type),
-        ExecuteMsg::RemoveWhitelist { address, whitelist_type} => execute_remove_whitelist(deps, info, address, whitelist_type),
+        ExecuteMsg::AddWhitelist {
+            address,
+            whitelist_type,
+        } => execute_add_whitelist(deps, info, address, whitelist_type),
+        ExecuteMsg::RemoveWhitelist {
+            address,
+            whitelist_type,
+        } => execute_remove_whitelist(deps, info, address, whitelist_type),
         ExecuteMsg::UpdateConfig { config } => execute_update_config(deps, info, env, config),
     }
 }
@@ -159,15 +166,13 @@ pub fn execute_mint_and_list(
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
 
-    let list = whitelists.iter().find(|whitelist| {
-        match whitelist {
-            WhitelistContract::Updatable(updatable) => {
-                updatable.includes(&deps.querier, sender.to_string()).unwrap_or(false)
-            }
-            WhitelistContract::Flatrate(flatrate) => {
-                flatrate.includes(&deps.querier, sender.to_string()).unwrap_or(false)
-            }
-        }
+    let list = whitelists.iter().find(|whitelist| match whitelist {
+        WhitelistContract::Updatable(updatable) => updatable
+            .includes(&deps.querier, sender.to_string())
+            .unwrap_or(false),
+        WhitelistContract::Flatrate(flatrate) => flatrate
+            .includes(&deps.querier, sender.to_string())
+            .unwrap_or(false),
     });
 
     // if not on any whitelist, check public mint start time
@@ -176,20 +181,20 @@ pub fn execute_mint_and_list(
     }
 
     let discount = list
-    .map(|whitelist| {
-        match whitelist {
+        .map(|whitelist| match whitelist {
             WhitelistContract::Updatable(updatable) => {
-                res.messages.push(SubMsg::new(updatable.process_address(sender)?));
+                res.messages
+                    .push(SubMsg::new(updatable.process_address(sender)?));
                 updatable.mint_discount_percent(&deps.querier)
             }
             WhitelistContract::Flatrate(flatrate) => {
-                res.messages.push(SubMsg::new(flatrate.process_address(sender)?));
+                res.messages
+                    .push(SubMsg::new(flatrate.process_address(sender)?));
                 flatrate.mint_discount_amount(&deps.querier)
             }
-        }
-    })
-    .transpose()?
-    .unwrap_or(None);
+        })
+        .transpose()?
+        .unwrap_or(None);
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
@@ -243,7 +248,6 @@ pub fn execute_pause(
     Ok(Response::new().add_event(event))
 }
 
-
 #[derive(PartialEq, Clone, JsonSchema, Deserialize, Debug, Serialize)]
 pub enum WhitelistType {
     Updatable,
@@ -261,12 +265,16 @@ pub fn execute_add_whitelist(
     let whitelist_type = whitelist_type.unwrap_or(WhitelistType::Updatable);
 
     let whitelist = match whitelist_type {
-        WhitelistType::Updatable => {
-            WhitelistContract::Updatable(deps.api.addr_validate(&address).map(WhitelistUpdatableContract)?)
-        }
-        WhitelistType::Flatrate => {
-            WhitelistContract::Flatrate(deps.api.addr_validate(&address).map(WhitelistUpdatableFlatrateContract)?)
-        }
+        WhitelistType::Updatable => WhitelistContract::Updatable(
+            deps.api
+                .addr_validate(&address)
+                .map(WhitelistUpdatableContract)?,
+        ),
+        WhitelistType::Flatrate => WhitelistContract::Flatrate(
+            deps.api
+                .addr_validate(&address)
+                .map(WhitelistUpdatableFlatrateContract)?,
+        ),
     };
 
     let mut lists = WHITELISTS.load(deps.storage)?;
@@ -282,7 +290,7 @@ pub fn execute_remove_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
-    whitelist_type: Option<WhitelistType>, 
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
@@ -343,11 +351,11 @@ fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
     name.find(invalid_char)
         .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))?;
 
-    if name.starts_with('-') || name.ends_with('-') {
+    (if name.starts_with('-') || name.ends_with('-') {
         Err(ContractError::InvalidName {})
     } else {
         Ok(())
-    }?;
+    })?;
 
     if len > 4 && name[2..4].contains("--") {
         return Err(ContractError::InvalidName {});
@@ -363,12 +371,14 @@ fn validate_payment(
     discount: Option<Decimal>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount: Uint128 = match name_len {
-        0..=2 => return Err(ContractError::NameTooShort {}),
+    let amount: Uint128 = (match name_len {
+        0..=2 => {
+            return Err(ContractError::NameTooShort {});
+        }
         3 => base_price * 100,
         4 => base_price * 10,
         _ => base_price,
-    }
+    })
     .into();
 
     let amount = discount
@@ -387,7 +397,7 @@ fn validate_payment(
 }
 
 fn invalid_char(c: char) -> bool {
-    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || (c == '-');
+    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || c == '-';
     !is_valid
 }
 
@@ -407,9 +417,11 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             let msg = WasmMsg::Execute {
                 contract_addr: collection_address.to_string(),
                 funds: vec![],
-                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
-                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-                })?,
+                msg: to_binary(
+                    &(SgNameExecuteMsg::SetNameMarketplace {
+                        address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+                    }),
+                )?,
             };
 
             Ok(Response::default()

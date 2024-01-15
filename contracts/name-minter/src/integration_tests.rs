@@ -1,30 +1,24 @@
-use crate::contract::{ execute, instantiate, reply };
-use crate::msg::{ ExecuteMsg, InstantiateMsg };
+use crate::contract::{execute, instantiate, reply};
+use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::query;
 use anyhow::Result as AnyResult;
-use cosmwasm_std::{ coins, Addr, Decimal, Timestamp, Uint128 };
-use cw721::{ NumTokensResponse, OwnerOfResponse };
+use cosmwasm_std::{coins, Addr, Decimal, Timestamp, Uint128};
+use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{
-    AppResponse,
-    BankSudo,
-    Contract,
-    ContractWrapper,
-    Executor,
-    SudoMsg as CwSudoMsg,
+    AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg,
 };
 use name_marketplace::msg::{
-    ExecuteMsg as MarketplaceExecuteMsg,
-    QueryMsg as MarketplaceQueryMsg,
+    ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
     SudoMsg as MarketplaceSudoMsg,
 };
 use name_marketplace::state::Bid;
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
-use sg_name::{ SgNameExecuteMsg, SgNameQueryMsg };
+use sg_name::{SgNameExecuteMsg, SgNameQueryMsg};
 use sg_name_common::SECONDS_PER_YEAR;
 use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
-use sg_std::{ StargazeMsgWrapper, NATIVE_DENOM };
-use whitelist_updatable::msg::{ ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg };
+use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
+use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -35,8 +29,9 @@ pub fn contract_marketplace() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         name_marketplace::execute::execute,
         name_marketplace::execute::instantiate,
-        name_marketplace::query::query
-    ).with_sudo(name_marketplace::sudo::sudo);
+        name_marketplace::query::query,
+    )
+    .with_sudo(name_marketplace::sudo::sudo);
     Box::new(contract)
 }
 
@@ -44,8 +39,9 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         sg721_name::entry::execute,
         sg721_name::entry::instantiate,
-        sg721_name::entry::query
-    ).with_sudo(sg721_name::sudo::sudo);
+        sg721_name::entry::query,
+    )
+    .with_sudo(sg721_name::sudo::sudo);
     Box::new(contract)
 }
 
@@ -53,7 +49,7 @@ pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         whitelist_updatable::contract::execute,
         whitelist_updatable::contract::instantiate,
-        whitelist_updatable::contract::query
+        whitelist_updatable::contract::query,
     );
     Box::new(contract)
 }
@@ -63,7 +59,7 @@ pub fn contract_nft() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         sg721_base::entry::execute,
         sg721_base::entry::instantiate,
-        sg721_base::entry::query
+        sg721_base::entry::query,
     );
     Box::new(contract)
 }
@@ -113,7 +109,7 @@ pub fn set_block_time(mut app: StargazeApp, time: Timestamp) -> StargazeApp {
 fn instantiate_contracts(
     creator: Option<String>,
     admin: Option<String>,
-    start_time: Option<Timestamp>
+    start_time: Option<Timestamp>,
 ) -> StargazeApp {
     let mut app = custom_mock_app(start_time);
     let mkt_id = app.store_code(contract_marketplace());
@@ -134,7 +130,7 @@ fn instantiate_contracts(
             &msg,
             &[],
             "Name-Marketplace",
-            admin.clone()
+            admin.clone(),
         )
         .unwrap();
 
@@ -157,7 +153,7 @@ fn instantiate_contracts(
             &msg,
             &[],
             "Name-Minter",
-            None
+            None,
         )
         .unwrap();
 
@@ -170,7 +166,7 @@ fn instantiate_contracts(
         Addr::unchecked(ADMIN.to_string()),
         marketplace.clone(),
         &msg,
-        &[]
+        &[],
     );
     assert!(res.is_ok());
 
@@ -188,7 +184,7 @@ fn instantiate_contracts(
             "addr0002".to_string(),
             USER.to_string(),
             USER4.to_string(),
-            ADMIN2.to_string()
+            ADMIN2.to_string(),
         ],
         mint_discount_bps: None,
     };
@@ -217,7 +213,7 @@ fn owner_of(app: &StargazeApp, token_id: String) -> String {
             &(sg721_base::msg::QueryMsg::OwnerOf {
                 token_id,
                 include_expired: None,
-            })
+            }),
         )
         .unwrap();
 
@@ -234,7 +230,7 @@ fn mint_and_list(
     app: &mut StargazeApp,
     name: &str,
     user: &str,
-    discount: Option<Decimal>
+    discount: Option<Decimal>,
 ) -> AnyResult<AppResponse> {
     // set approval for user, for all tokens
     // approve_all is needed because we don't know the token_id before-hand
@@ -246,37 +242,43 @@ fn mint_and_list(
         Addr::unchecked(user),
         Addr::unchecked(COLLECTION),
         &approve_all_msg,
-        &[]
+        &[],
     );
     assert!(res.is_ok());
 
-    let amount: Uint128 = (
-        match name.len() {
-            0..=2 => BASE_PRICE,
-            3 => BASE_PRICE * 100,
-            4 => BASE_PRICE * 10,
-            _ => BASE_PRICE,
-        }
-    ).into();
+    let amount: Uint128 = (match name.len() {
+        0..=2 => BASE_PRICE,
+        3 => BASE_PRICE * 100,
+        4 => BASE_PRICE * 10,
+        _ => BASE_PRICE,
+    })
+    .into();
 
-    let amount = discount.map(|d| amount * (Decimal::one() - d)).unwrap_or(amount);
+    let amount = discount
+        .map(|d| amount * (Decimal::one() - d))
+        .unwrap_or(amount);
 
     // give user some funds
     let name_fee = coins(amount.into(), NATIVE_DENOM);
-    app.sudo(
-        CwSudoMsg::Bank({ BankSudo::Mint {
-                to_address: user.to_string(),
-                amount: name_fee.clone(),
-            } })
-    )
-        .map_err(|err| println!("{:?}", err))
-        .ok();
+    app.sudo(CwSudoMsg::Bank({
+        BankSudo::Mint {
+            to_address: user.to_string(),
+            amount: name_fee.clone(),
+        }
+    }))
+    .map_err(|err| println!("{:?}", err))
+    .ok();
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
     };
 
-    app.execute_contract(Addr::unchecked(user), Addr::unchecked(MINTER), &msg, &name_fee)
+    app.execute_contract(
+        Addr::unchecked(user),
+        Addr::unchecked(MINTER),
+        &msg,
+        &name_fee,
+    )
 }
 
 fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
@@ -284,14 +286,14 @@ fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
 
     // give bidder some funds
     let amount = coins(amount, NATIVE_DENOM);
-    app.sudo(
-        CwSudoMsg::Bank({ BankSudo::Mint {
-                to_address: bidder.to_string(),
-                amount: amount.clone(),
-            } })
-    )
-        .map_err(|err| println!("{:?}", err))
-        .ok();
+    app.sudo(CwSudoMsg::Bank({
+        BankSudo::Mint {
+            to_address: bidder.to_string(),
+            amount: amount.clone(),
+        }
+    }))
+    .map_err(|err| println!("{:?}", err))
+    .ok();
 
     let msg = MarketplaceExecuteMsg::SetBid {
         token_id: name.to_string(),
@@ -307,7 +309,7 @@ fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
             &(MarketplaceQueryMsg::Bid {
                 token_id: name.to_string(),
                 bidder: bidder.to_string(),
-            })
+            }),
         )
         .unwrap();
     let bid = res.unwrap();
@@ -317,9 +319,9 @@ fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
 }
 
 mod execute {
-    use cosmwasm_std::{ attr, StdError };
-    use cw721::{ NftInfoResponse, OperatorsResponse };
-    use name_marketplace::state::{ Ask, SudoParams };
+    use cosmwasm_std::{attr, StdError};
+    use cw721::{NftInfoResponse, OperatorsResponse};
+    use name_marketplace::state::{Ask, SudoParams};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
     use sg_name::Metadata;
     use whitelist_updatable::msg::QueryMsg::IncludesAddress;
@@ -345,7 +347,7 @@ mod execute {
                     include_expired: None,
                     start_after: None,
                     limit: None,
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.operators.len(), 1);
@@ -365,7 +367,7 @@ mod execute {
                 MKT,
                 &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.unwrap().token_id, NAME);
@@ -375,7 +377,7 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &(sg721_base::msg::QueryMsg::NumTokens {})
+                &(sg721_base::msg::QueryMsg::NumTokens {}),
             )
             .unwrap();
 
@@ -401,7 +403,10 @@ mod execute {
         bid(&mut app, NAME, BIDDER, BID_AMOUNT);
 
         // user (owner) starts off with 0 internet funny money
-        let res = app.wrap().query_balance(USER.to_string(), NATIVE_DENOM).unwrap();
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
         assert_eq!(res.amount, Uint128::new(0));
 
         let msg = MarketplaceExecuteMsg::AcceptBid {
@@ -419,7 +424,7 @@ mod execute {
                 &(MarketplaceQueryMsg::Bid {
                     token_id: NAME.to_string(),
                     bidder: BIDDER.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -428,7 +433,10 @@ mod execute {
         assert_eq!(owner_of(&app, NAME.to_string()), BIDDER.to_string());
 
         // check if user got the bid amount
-        let res = app.wrap().query_balance(USER.to_string(), NATIVE_DENOM).unwrap();
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
         let protocol_fee = 20_000_000u128;
         assert_eq!(res.amount, Uint128::from(BID_AMOUNT - protocol_fee));
 
@@ -439,7 +447,7 @@ mod execute {
                 MKT,
                 &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         let ask = res.unwrap();
@@ -476,7 +484,7 @@ mod execute {
             Addr::unchecked(BIDDER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -502,7 +510,7 @@ mod execute {
             COLLECTION,
             &(SgNameQueryMsg::AssociatedAddress {
                 name: NAME.to_string(),
-            })
+            }),
         );
         assert!(res.is_err());
 
@@ -514,7 +522,7 @@ mod execute {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -525,7 +533,7 @@ mod execute {
                 COLLECTION,
                 &(SgNameQueryMsg::AssociatedAddress {
                     name: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, user.to_string());
@@ -546,7 +554,7 @@ mod execute {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -556,7 +564,7 @@ mod execute {
                 Addr::unchecked(COLLECTION),
                 &(SgNameQueryMsg::Name {
                     address: user.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, name2.to_string());
@@ -568,7 +576,7 @@ mod execute {
                 Addr::unchecked(COLLECTION),
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -580,7 +588,7 @@ mod execute {
                 Addr::unchecked(COLLECTION),
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: name2.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, Some(user.to_string()));
@@ -594,7 +602,7 @@ mod execute {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -605,7 +613,7 @@ mod execute {
                 Addr::unchecked(COLLECTION),
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -619,7 +627,7 @@ mod execute {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -628,7 +636,7 @@ mod execute {
             Addr::unchecked(COLLECTION),
             &(SgNameQueryMsg::Name {
                 address: user.to_string(),
-            })
+            }),
         );
         assert!(res.is_err());
     }
@@ -648,19 +656,17 @@ mod execute {
             Addr::unchecked(ADMIN2),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
-        res.unwrap()
-            .events.iter()
-            .for_each(|e| {
-                if e.ty == "wasm-associate-address" {
-                    assert_eq!(e.attributes[1], attr("name", NAME));
-                    assert_eq!(e.attributes[2], attr("owner", ADMIN2));
-                    assert_eq!(e.attributes[3], attr("address", MINTER));
-                }
-            });
+        res.unwrap().events.iter().for_each(|e| {
+            if e.ty == "wasm-associate-address" {
+                assert_eq!(e.attributes[1], attr("name", NAME));
+                assert_eq!(e.attributes[2], attr("owner", ADMIN2));
+                assert_eq!(e.attributes[3], attr("address", MINTER));
+            }
+        });
     }
 
     #[test]
@@ -678,7 +684,7 @@ mod execute {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_err());
     }
@@ -698,7 +704,7 @@ mod execute {
             Addr::unchecked(USER2),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_err());
     }
@@ -722,7 +728,7 @@ mod execute {
                     Addr::unchecked(whitelist.to_string()),
                     &(IncludesAddress {
                         address: USER.to_string(),
-                    })
+                    }),
                 )
                 .unwrap();
             dbg!(included, whitelist);
@@ -1013,7 +1019,7 @@ mod query {
                 MKT,
                 &(MarketplaceQueryMsg::RenewalQueue {
                     time: app.block_info().time.plus_seconds(SECONDS_PER_YEAR),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.len(), 2);
@@ -1029,12 +1035,13 @@ mod query {
         // mint 1000 funds to user
         let renewal_fee = coins(1000_u128, NATIVE_DENOM);
 
-        app.sudo(
-            CwSudoMsg::Bank({ BankSudo::Mint {
-                    to_address: USER.to_string(),
-                    amount: renewal_fee.clone(),
-                } })
-        ).unwrap();
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: renewal_fee.clone(),
+            }
+        }))
+        .unwrap();
 
         // user renew domain name
         let msg = MarketplaceExecuteMsg::FundRenewal {
@@ -1045,11 +1052,15 @@ mod query {
             Addr::unchecked(USER),
             Addr::unchecked(MKT),
             &msg,
-            &renewal_fee
-        ).unwrap();
+            &renewal_fee,
+        )
+        .unwrap();
 
         // verify user have no money
-        let res = app.wrap().query_balance(USER.to_string(), NATIVE_DENOM).unwrap();
+        let res = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
         assert_eq!(res.amount, Uint128::new(0));
 
         // user sends the nft to bob
@@ -1063,11 +1074,16 @@ mod query {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
-        ).unwrap();
+            &[],
+        )
+        .unwrap();
 
         // the renewal fee should refunded back to user
-        let user_balance = app.wrap().query_balance(USER.to_string(), NATIVE_DENOM).unwrap().amount;
+        let user_balance = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap()
+            .amount;
         assert_eq!(user_balance, renewal_fee[0].amount);
 
         let bob_balance = app.wrap().query_balance(bob, NATIVE_DENOM).unwrap().amount;
@@ -1086,7 +1102,7 @@ mod query {
             COLLECTION,
             &(SgNameQueryMsg::Name {
                 address: USER.to_string(),
-            })
+            }),
         );
         assert!(res.is_err());
 
@@ -1104,7 +1120,7 @@ mod query {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1114,7 +1130,7 @@ mod query {
                 COLLECTION,
                 &(SgNameQueryMsg::Name {
                     address: cosmos_address.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, "yoyo".to_string());
@@ -1130,18 +1146,20 @@ mod query {
             .unwrap();
         assert_eq!(
             res.start_trading_time.unwrap(),
-            app.block_info().time.plus_seconds(TRADING_START_TIME_OFFSET_IN_SECONDS)
+            app.block_info()
+                .time
+                .plus_seconds(TRADING_START_TIME_OFFSET_IN_SECONDS)
         );
     }
 }
 
 mod collection {
-    use cosmwasm_std::{ to_binary, StdResult };
+    use cosmwasm_std::{to_binary, StdResult};
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
     use name_marketplace::state::Ask;
-    use sg721_name::{ msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams };
-    use sg_name::{ Metadata, TextRecord, NFT };
+    use sg721_name::{msg::QueryMsg as Sg721NameQueryMsg, state::SudoParams};
+    use sg_name::{Metadata, TextRecord, NFT};
 
     use super::*;
 
@@ -1154,7 +1172,7 @@ mod collection {
             Addr::unchecked(from),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1177,7 +1195,7 @@ mod collection {
             Addr::unchecked(from),
             Addr::unchecked(COLLECTION),
             &send_msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1206,7 +1224,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1217,7 +1235,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1232,7 +1250,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         // fails cuz caller is not oracle verifier
         assert!(res.is_err());
@@ -1241,7 +1259,7 @@ mod collection {
             Addr::unchecked(VERIFIER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1256,7 +1274,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1281,7 +1299,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1295,7 +1313,7 @@ mod collection {
             Addr::unchecked(VERIFIER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1306,7 +1324,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1336,7 +1354,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1347,7 +1365,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1366,7 +1384,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1377,7 +1395,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1390,7 +1408,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1403,7 +1421,7 @@ mod collection {
                 COLLECTION,
                 &(Sg721NameQueryMsg::ImageNFT {
                     name: NAME.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -1450,7 +1468,7 @@ mod collection {
             Addr::unchecked(USER2),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1480,7 +1498,7 @@ mod collection {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1520,7 +1538,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_err());
 
@@ -1548,7 +1566,7 @@ mod collection {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_err());
 
@@ -1578,7 +1596,7 @@ mod collection {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1595,7 +1613,7 @@ mod collection {
             Addr::unchecked(user),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_err());
 
@@ -1635,8 +1653,8 @@ mod collection {
 }
 
 mod whitelist {
-    use crate::{ msg::QueryMsg, contract::WhitelistType };
-    use whitelist_updatable::{ msg::QueryMsg as WhitelistQueryMsg, state::Config };
+    use crate::{contract::WhitelistType, msg::QueryMsg};
+    use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;
 
@@ -1693,7 +1711,7 @@ mod whitelist {
                 "addr0002".to_string(),
                 USER.to_string(),
                 USER2.to_string(),
-                ADMIN2.to_string()
+                ADMIN2.to_string(),
             ],
             mint_discount_bps: None,
         };
@@ -1710,7 +1728,7 @@ mod whitelist {
             Addr::unchecked(ADMIN.to_string()),
             Addr::unchecked(MINTER.to_string()),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1726,7 +1744,7 @@ mod whitelist {
                 WHITELIST,
                 &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, 1);
@@ -1738,7 +1756,7 @@ mod whitelist {
                 WHITELIST2,
                 &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, 0);
@@ -1769,7 +1787,7 @@ mod whitelist {
                 "addr0002".to_string(),
                 USER.to_string(),
                 USER2.to_string(),
-                ADMIN2.to_string()
+                ADMIN2.to_string(),
             ],
             mint_discount_bps: Some(3500),
         };
@@ -1787,7 +1805,7 @@ mod whitelist {
             Addr::unchecked(ADMIN.to_string()),
             Addr::unchecked(MINTER.to_string()),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1827,7 +1845,7 @@ mod whitelist {
             Addr::unchecked(ADMIN2),
             Addr::unchecked(WHITELIST),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -1862,7 +1880,7 @@ mod public_start_time {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         // try pub mint with whitelists before start time
@@ -1890,7 +1908,7 @@ mod public_start_time {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         // remove whitelist(s)
@@ -1904,7 +1922,10 @@ mod public_start_time {
         // default start time is PUBLIC_MINT_START_TIME_IN_SECONDS
         let msg = QueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.public_mint_start_time, PUBLIC_MINT_START_TIME_IN_SECONDS);
+        assert_eq!(
+            res.public_mint_start_time,
+            PUBLIC_MINT_START_TIME_IN_SECONDS
+        );
 
         // update start time to PUBLIC_MINT_START_TIME_IN_SECONDS - 1
         let msg = ExecuteMsg::UpdateConfig {
@@ -1918,7 +1939,10 @@ mod public_start_time {
         // check start time
         let msg = QueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
-        assert_eq!(res.public_mint_start_time, PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1));
+        assert_eq!(
+            res.public_mint_start_time,
+            PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)
+        );
 
         // mint succeeds w new mint start time
         let res = mint_and_list(&mut app, NAME, USER, None);
@@ -1930,7 +1954,7 @@ mod public_start_time {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.plus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.plus_seconds(1)),
         );
 
         // mint succeeds w new mint start time
@@ -1944,14 +1968,14 @@ mod associate_address {
 
     use collection::transfer;
 
-    use sg721::{ CollectionInfo, InstantiateMsg as Sg721InstantiateMsg };
+    use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 
     #[test]
     fn transfer_to_eoa() {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         let nft_id = app.store_code(contract_nft());
@@ -1977,7 +2001,7 @@ mod associate_address {
                 &init_msg,
                 &[],
                 "NFT",
-                Some(ADMIN.to_string())
+                Some(ADMIN.to_string()),
             )
             .unwrap();
 
@@ -1996,7 +2020,7 @@ mod associate_address {
             Addr::unchecked(nft_addr.clone()),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
 
@@ -2011,7 +2035,7 @@ mod associate_address {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         let nft_id = app.store_code(contract_nft());
@@ -2042,7 +2066,7 @@ mod associate_address {
                 &creator_init_msg,
                 &[],
                 "NFT",
-                Some(USER.to_string())
+                Some(USER.to_string()),
             )
             .unwrap();
 
@@ -2078,7 +2102,7 @@ mod associate_address {
             Addr::unchecked(USER),
             Addr::unchecked(COLLECTION),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
     }
@@ -2087,7 +2111,7 @@ mod associate_address {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         let nft_id = app.store_code(contract_nft());
@@ -2118,7 +2142,7 @@ mod associate_address {
                 &creator_init_msg,
                 &[],
                 "NFT",
-                Some(USER.to_string())
+                Some(USER.to_string()),
             )
             .unwrap();
 
@@ -2151,10 +2175,18 @@ mod associate_address {
             address: Some(collection_with_no_admin_addr.to_string()),
         };
         let res = app
-            .execute_contract(Addr::unchecked(USER4), Addr::unchecked(COLLECTION), &msg, &[])
+            .execute_contract(
+                Addr::unchecked(USER4),
+                Addr::unchecked(COLLECTION),
+                &msg,
+                &[],
+            )
             .map_err(|e| e.downcast::<sg721_name::ContractError>().unwrap())
             .unwrap_err();
-        assert!(matches!(res, sg721_name::ContractError::UnauthorizedCreatorOrAdmin {}))
+        assert!(matches!(
+            res,
+            sg721_name::ContractError::UnauthorizedCreatorOrAdmin {}
+        ))
     }
 
     #[test]
@@ -2162,7 +2194,7 @@ mod associate_address {
         let mut app = instantiate_contracts(
             None,
             Some(ADMIN.to_string()),
-            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1))
+            Some(PUBLIC_MINT_START_TIME_IN_SECONDS.minus_seconds(1)),
         );
 
         let nft_id = app.store_code(contract_nft());
@@ -2189,7 +2221,7 @@ mod associate_address {
                 &creator_init_msg,
                 &[],
                 "NFT",
-                Some(USER.to_string())
+                Some(USER.to_string()),
             )
             .unwrap();
 
@@ -2202,9 +2234,17 @@ mod associate_address {
             address: Some(contract_with_an_admin.to_string()),
         };
         let res = app
-            .execute_contract(Addr::unchecked(USER4), Addr::unchecked(COLLECTION), &msg, &[])
+            .execute_contract(
+                Addr::unchecked(USER4),
+                Addr::unchecked(COLLECTION),
+                &msg,
+                &[],
+            )
             .map_err(|e| e.downcast::<sg721_name::ContractError>().unwrap())
             .unwrap_err();
-        assert!(matches!(res, sg721_name::ContractError::UnauthorizedCreatorOrAdmin {}))
+        assert!(matches!(
+            res,
+            sg721_name::ContractError::UnauthorizedCreatorOrAdmin {}
+        ))
     }
 }

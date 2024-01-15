@@ -1,4 +1,4 @@
-use cosmwasm_schema::{ cw_serde, QueryResponses };
+use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use crate::state::Config;
 
@@ -33,21 +33,22 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(Config)] Config {},
-    #[returns(bool)] IncludesAddress {
-        address: String,
-    },
-    #[returns(u64)] MintCount {
-        address: String,
-    },
+    #[returns(Config)]
+    Config {},
+    #[returns(bool)]
+    IncludesAddress { address: String },
+    #[returns(u64)]
+    MintCount { address: String },
     /// Avoid processing addresses that will fail. Includes address and under per address limit
     #[returns(bool)]
-    IsProcessable {
-        address: String,
-    },
-    #[returns(cw_controllers::AdminResponse)] Admin {},
-    #[returns(u64)] AddressCount {},
-    #[returns(u64)] PerAddressLimit {},
+    IsProcessable { address: String },
+    #[returns(cw_controllers::AdminResponse)]
+    Admin {},
+    #[returns(u64)]
+    AddressCount {},
+    #[returns(u64)]
+    PerAddressLimit {},
     // Mint discount converts bps to decimal percentage
-    #[returns(u64)] MintDiscountAmount {},
+    #[returns(u64)]
+    MintDiscountAmount {},
 }
