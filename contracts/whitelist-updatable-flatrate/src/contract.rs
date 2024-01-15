@@ -1,16 +1,27 @@
-use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
+use crate::state::{ Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
-    StdError, StdResult,
+    to_binary,
+    Addr,
+    Binary,
+    Decimal,
+    Deps,
+    DepsMut,
+    Empty,
+    Env,
+    Event,
+    MessageInfo,
+    Order,
+    StdError,
+    StdResult,
 };
 use cw2::set_contract_version;
 use semver::Version;
 use sg_name_minter::SgNameMinterQueryMsg;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ ExecuteMsg, InstantiateMsg, QueryMsg };
 use cw_utils::nonpayable;
 use sg_std::Response;
 
@@ -23,7 +34,7 @@ pub fn instantiate(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    mut msg: InstantiateMsg,
+    mut msg: InstantiateMsg
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -47,9 +58,11 @@ pub fn instantiate(
     TOTAL_ADDRESS_COUNT.save(deps.storage, &count)?;
     CONFIG.save(deps.storage, &config)?;
 
-    Ok(Response::default()
-        .add_attribute("action", "instantiate")
-        .add_attribute("whitelist_addr", env.contract.address.to_string()))
+    Ok(
+        Response::default()
+            .add_attribute("action", "instantiate")
+            .add_attribute("whitelist_addr", env.contract.address.to_string())
+    )
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -57,7 +70,7 @@ pub fn execute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: ExecuteMsg,
+    msg: ExecuteMsg
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateAdmin { new_admin } => execute_update_admin(deps, info, new_admin),
@@ -76,7 +89,7 @@ pub fn execute(
 pub fn execute_update_admin(
     deps: DepsMut,
     info: MessageInfo,
-    new_admin: String,
+    new_admin: String
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
@@ -95,7 +108,7 @@ pub fn execute_update_admin(
 pub fn execute_add_addresses(
     deps: DepsMut,
     info: MessageInfo,
-    mut addresses: Vec<String>,
+    mut addresses: Vec<String>
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
@@ -130,7 +143,7 @@ pub fn execute_add_addresses(
 pub fn execute_remove_addresses(
     deps: DepsMut,
     info: MessageInfo,
-    mut addresses: Vec<String>,
+    mut addresses: Vec<String>
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
@@ -166,16 +179,17 @@ pub fn execute_process_address(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    address: String,
+    address: String
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let minter = info.sender;
 
     // query whitelists from minter to see if this one exists...
-    let whitelists: Vec<Addr> = deps
-        .querier
-        .query_wasm_smart(&minter, &SgNameMinterQueryMsg::Whitelists {})?;
+    let whitelists: Vec<Addr> = deps.querier.query_wasm_smart(
+        &minter,
+        &(SgNameMinterQueryMsg::Whitelists {})
+    )?;
     if !whitelists.contains(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
@@ -204,7 +218,7 @@ pub fn execute_process_address(
 pub fn execute_update_per_address_limit(
     deps: DepsMut,
     info: MessageInfo,
-    limit: u32,
+    limit: u32
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
@@ -228,8 +242,7 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
         return Err(ContractError::Unauthorized {});
     }
 
-    let keys = WHITELIST
-        .keys(deps.as_ref().storage, None, None, Order::Ascending)
+    let keys = WHITELIST.keys(deps.as_ref().storage, None, None, Order::Ascending)
         .map(|x| x.unwrap())
         .collect::<Vec<_>>();
 
@@ -307,13 +320,12 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
     if current_version.contract != CONTRACT_NAME {
         return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
     }
-    let version: Version = current_version
-        .version
+    let version: Version = current_version.version
         .parse()
         .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-    let new_version: Version = CONTRACT_VERSION
-        .parse()
-        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
+    let new_version: Version = CONTRACT_VERSION.parse().map_err(|_|
+        StdError::generic_err("Invalid contract version")
+    )?;
 
     if version > new_version {
         return Err(StdError::generic_err("Cannot upgrade to a previous contract version").into());
