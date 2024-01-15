@@ -2,8 +2,8 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
-    StdError, StdResult,
+    to_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order, StdError,
+    StdResult,
 };
 use cw2::set_contract_version;
 use semver::Version;
