@@ -10,7 +10,9 @@ use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use schemars::JsonSchema;
 use semver::Version;
+use serde::{Deserialize, Serialize};
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
@@ -20,11 +22,12 @@ use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
+use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
+    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS, WhitelistContract,
 };
 
 // version info for migration info
@@ -53,6 +56,7 @@ pub fn instantiate(
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
         .map(WhitelistUpdatableContract)
+        .map(WhitelistContract::Updatable)
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -127,8 +131,8 @@ pub fn execute(
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
         ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
-        ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
-        ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
+        ExecuteMsg::AddWhitelist { address, whitelist_type } => execute_add_whitelist(deps, info, address, whitelist_type),
+        ExecuteMsg::RemoveWhitelist { address, whitelist_type} => execute_remove_whitelist(deps, info, address, whitelist_type),
         ExecuteMsg::UpdateConfig { config } => execute_update_config(deps, info, env, config),
     }
 }
@@ -154,10 +158,16 @@ pub fn execute_mint_and_list(
 
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
+
     let list = whitelists.iter().find(|whitelist| {
-        whitelist
-            .includes(&deps.querier, sender.to_string())
-            .unwrap_or(false)
+        match whitelist {
+            WhitelistContract::Updatable(updatable) => {
+                updatable.includes(&deps.querier, sender.to_string()).unwrap_or(false)
+            }
+            WhitelistContract::Flatrate(flatrate) => {
+                flatrate.includes(&deps.querier, sender.to_string()).unwrap_or(false)
+            }
+        }
     });
 
     // if not on any whitelist, check public mint start time
@@ -166,13 +176,20 @@ pub fn execute_mint_and_list(
     }
 
     let discount = list
-        .map(|list| {
-            res.messages
-                .push(SubMsg::new(list.process_address(sender)?));
-            list.mint_discount_percent(&deps.querier)
-        })
-        .transpose()?
-        .unwrap_or(None);
+    .map(|whitelist| {
+        match whitelist {
+            WhitelistContract::Updatable(updatable) => {
+                res.messages.push(SubMsg::new(updatable.process_address(sender)?));
+                updatable.mint_discount_percent(&deps.querier)
+            }
+            WhitelistContract::Flatrate(flatrate) => {
+                res.messages.push(SubMsg::new(flatrate.process_address(sender)?));
+                flatrate.mint_discount_amount(&deps.querier)
+            }
+        }
+    })
+    .transpose()?
+    .unwrap_or(None);
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
@@ -226,17 +243,32 @@ pub fn execute_pause(
     Ok(Response::new().add_event(event))
 }
 
+
+#[derive(PartialEq, Clone, JsonSchema, Deserialize, Debug, Serialize)]
+pub enum WhitelistType {
+    Updatable,
+    Flatrate,
+}
+
 pub fn execute_add_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps
-        .api
-        .addr_validate(&address)
-        .map(WhitelistUpdatableContract)?;
+    let whitelist_type = whitelist_type.unwrap_or(WhitelistType::Updatable);
+
+    let whitelist = match whitelist_type {
+        WhitelistType::Updatable => {
+            WhitelistContract::Updatable(deps.api.addr_validate(&address).map(WhitelistUpdatableContract)?)
+        }
+        WhitelistType::Flatrate => {
+            WhitelistContract::Flatrate(deps.api.addr_validate(&address).map(WhitelistUpdatableFlatrateContract)?)
+        }
+    };
+
     let mut lists = WHITELISTS.load(deps.storage)?;
     lists.push(whitelist);
 
@@ -250,12 +282,25 @@ pub fn execute_remove_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
+    whitelist_type: Option<WhitelistType>, 
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps.api.addr_validate(&address)?;
+    let whitelist_type = whitelist_type.unwrap_or(WhitelistType::Updatable);
+    let whitelist_addr = deps.api.addr_validate(&address)?;
+
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.retain(|addr| addr.addr() != whitelist);
+    lists.retain(|whitelist| {
+        let addr_matches = match whitelist {
+            WhitelistContract::Updatable(updatable) => updatable.addr() == whitelist_addr,
+            WhitelistContract::Flatrate(flatrate) => flatrate.addr() == whitelist_addr,
+        };
+        let type_matches = match whitelist {
+            WhitelistContract::Updatable(_) => whitelist_type == WhitelistType::Updatable,
+            WhitelistContract::Flatrate(_) => whitelist_type == WhitelistType::Flatrate,
+        };
+        !(addr_matches && type_matches)
+    });
 
     WHITELISTS.save(deps.storage, &lists)?;
 

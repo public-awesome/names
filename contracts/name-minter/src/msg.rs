@@ -2,6 +2,8 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Uint128};
 use sg_name_minter::{Config, SudoParams};
 
+use crate::contract::WhitelistType;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     /// Temporary admin for managing whitelists
@@ -27,9 +29,9 @@ pub enum ExecuteMsg {
     /// Admin can pause minting during whitelist switching
     Pause { pause: bool },
     /// Add a whitelist address
-    AddWhitelist { address: String },
+    AddWhitelist { address: String, whitelist_type: Option<WhitelistType> },
     /// Remove a whitelist address
-    RemoveWhitelist { address: String },
+    RemoveWhitelist { address: String, whitelist_type: Option<WhitelistType> },
     /// Update config, only callable by admin
     UpdateConfig { config: Config },
 }

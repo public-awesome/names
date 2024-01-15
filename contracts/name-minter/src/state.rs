@@ -4,7 +4,9 @@ use cw_storage_plus::Item;
 use sg_name_minter::{Config, SudoParams};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
 use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 pub enum WhitelistContract {
     Updatable(WhitelistUpdatableContract),
     Flatrate(WhitelistUpdatableFlatrateContract),

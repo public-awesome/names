@@ -196,6 +196,7 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());
@@ -1652,7 +1653,7 @@ mod collection {
 }
 
 mod whitelist {
-    use crate::msg::QueryMsg;
+    use crate::{msg::QueryMsg, contract::WhitelistType};
     use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;
@@ -1675,6 +1676,7 @@ mod whitelist {
         let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: None,
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -1686,6 +1688,7 @@ mod whitelist {
 
         let msg = ExecuteMsg::RemoveWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -1719,6 +1722,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -1795,6 +1799,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -1820,6 +1825,7 @@ mod whitelist {
 
         let msg = ExecuteMsg::AddWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -1887,6 +1893,7 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -1907,6 +1914,7 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
