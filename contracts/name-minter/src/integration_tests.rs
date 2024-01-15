@@ -1653,7 +1653,7 @@ mod collection {
 }
 
 mod whitelist {
-    use crate::{contract::WhitelistType, msg::QueryMsg};
+    use crate::msg::QueryMsg;
     use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;

@@ -248,7 +248,7 @@ pub fn execute_pause(
     Ok(Response::new().add_event(event))
 }
 
-#[derive(PartialEq, Clone, JsonSchema, Deserialize, Debug, Serialize)]
+#[derive(Eq, PartialEq, Clone, JsonSchema, Deserialize, Debug, Serialize)]
 pub enum WhitelistType {
     Updatable,
     Flatrate,
