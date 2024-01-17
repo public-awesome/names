@@ -5,8 +5,8 @@
 */
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
-import { Coin, StdFee } from "@cosmjs/amino";
-import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, QueryMsg, Addr, BidOffset, NullableAsk, Ask, HooksResponse, ArrayOfAsk, NullableBid, Bid, ArrayOfBid, ConfigResponse, Decimal, SudoParams } from "./NameMarketplace.types";
+import { StdFee } from "@cosmjs/amino";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -31,6 +31,22 @@ export interface NameMarketplaceReadOnlyInterface {
     seller: string;
     startAfter?: string;
   }) => Promise<ArrayOfAsk>;
+  asksByRenewTime: ({
+    limit,
+    maxTime,
+    startAfter
+  }: {
+    limit?: number;
+    maxTime: Timestamp;
+    startAfter?: Timestamp;
+  }) => Promise<ArrayOfAsk>;
+  askRenewPrice: ({
+    currentTime,
+    tokenId
+  }: {
+    currentTime: Timestamp;
+    tokenId: string;
+  }) => Promise<TupleOfNullableCoinAndNullableBid>;
   bid: ({
     bidder,
     tokenId
@@ -55,6 +71,13 @@ export interface NameMarketplaceReadOnlyInterface {
     limit?: number;
     startAfter?: string;
     tokenId: string;
+  }) => Promise<ArrayOfBid>;
+  legacyBids: ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: BidOffset;
   }) => Promise<ArrayOfBid>;
   bidsSortedByPrice: ({
     limit,
@@ -106,9 +129,12 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.asks = this.asks.bind(this);
     this.askCount = this.askCount.bind(this);
     this.asksBySeller = this.asksBySeller.bind(this);
+    this.asksByRenewTime = this.asksByRenewTime.bind(this);
+    this.askRenewPrice = this.askRenewPrice.bind(this);
     this.bid = this.bid.bind(this);
     this.bidsByBidder = this.bidsByBidder.bind(this);
     this.bids = this.bids.bind(this);
+    this.legacyBids = this.legacyBids.bind(this);
     this.bidsSortedByPrice = this.bidsSortedByPrice.bind(this);
     this.reverseBidsSortedByPrice = this.reverseBidsSortedByPrice.bind(this);
     this.bidsForSeller = this.bidsForSeller.bind(this);
@@ -168,6 +194,37 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       }
     });
   };
+  asksByRenewTime = async ({
+    limit,
+    maxTime,
+    startAfter
+  }: {
+    limit?: number;
+    maxTime: Timestamp;
+    startAfter?: Timestamp;
+  }): Promise<ArrayOfAsk> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      asks_by_renew_time: {
+        limit,
+        max_time: maxTime,
+        start_after: startAfter
+      }
+    });
+  };
+  askRenewPrice = async ({
+    currentTime,
+    tokenId
+  }: {
+    currentTime: Timestamp;
+    tokenId: string;
+  }): Promise<TupleOfNullableCoinAndNullableBid> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      ask_renew_price: {
+        current_time: currentTime,
+        token_id: tokenId
+      }
+    });
+  };
   bid = async ({
     bidder,
     tokenId
@@ -213,6 +270,20 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
         limit,
         start_after: startAfter,
         token_id: tokenId
+      }
+    });
+  };
+  legacyBids = async ({
+    limit,
+    startAfter
+  }: {
+    limit?: number;
+    startAfter?: BidOffset;
+  }): Promise<ArrayOfBid> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      legacy_bids: {
+        limit,
+        start_after: startAfter
       }
     });
   };
@@ -348,6 +419,11 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
     bidder: string;
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  migrateBids: ({
+    limit
+  }: {
+    limit: number;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   fundRenewal: ({
     tokenId
   }: {
@@ -358,10 +434,15 @@ export interface NameMarketplaceInterface extends NameMarketplaceReadOnlyInterfa
   }: {
     tokenId: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
-  processRenewals: ({
-    time
+  renew: ({
+    tokenId
   }: {
-    time: Timestamp;
+    tokenId: string;
+  }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
+  processRenewals: ({
+    limit
+  }: {
+    limit: number;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   setup: ({
     collection,
@@ -387,8 +468,10 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
+    this.migrateBids = this.migrateBids.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
+    this.renew = this.renew.bind(this);
     this.processRenewals = this.processRenewals.bind(this);
     this.setup = this.setup.bind(this);
   }
@@ -468,6 +551,17 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
       }
     }, fee, memo, funds);
   };
+  migrateBids = async ({
+    limit
+  }: {
+    limit: number;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      migrate_bids: {
+        limit
+      }
+    }, fee, memo, funds);
+  };
   fundRenewal = async ({
     tokenId
   }: {
@@ -490,14 +584,25 @@ export class NameMarketplaceClient extends NameMarketplaceQueryClient implements
       }
     }, fee, memo, funds);
   };
-  processRenewals = async ({
-    time
+  renew = async ({
+    tokenId
   }: {
-    time: Timestamp;
+    tokenId: string;
+  }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      renew: {
+        token_id: tokenId
+      }
+    }, fee, memo, funds);
+  };
+  processRenewals = async ({
+    limit
+  }: {
+    limit: number;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       process_renewals: {
-        time
+        limit
       }
     }, fee, memo, funds);
   };

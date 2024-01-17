@@ -5,10 +5,16 @@
 */
 
 export type Uint128 = string;
+export type Decimal = string;
 export interface InstantiateMsg {
   ask_interval: number;
+  max_renewals_per_block: number;
   min_price: Uint128;
+  operator: string;
+  renew_window: number;
+  renewal_bid_percentage: Decimal;
   trading_fee_bps: number;
+  valid_bid_query_limit: number;
 }
 export type ExecuteMsg = {
   set_ask: {
@@ -38,6 +44,10 @@ export type ExecuteMsg = {
     token_id: string;
   };
 } | {
+  migrate_bids: {
+    limit: number;
+  };
+} | {
   fund_renewal: {
     token_id: string;
   };
@@ -46,8 +56,12 @@ export type ExecuteMsg = {
     token_id: string;
   };
 } | {
+  renew: {
+    token_id: string;
+  };
+} | {
   process_renewals: {
-    time: Timestamp;
+    limit: number;
   };
 } | {
   setup: {
@@ -55,8 +69,6 @@ export type ExecuteMsg = {
     minter: string;
   };
 };
-export type Timestamp = Uint64;
-export type Uint64 = string;
 export type QueryMsg = {
   ask: {
     token_id: string;
@@ -75,6 +87,17 @@ export type QueryMsg = {
     start_after?: string | null;
   };
 } | {
+  asks_by_renew_time: {
+    limit?: number | null;
+    max_time: Timestamp;
+    start_after?: Timestamp | null;
+  };
+} | {
+  ask_renew_price: {
+    current_time: Timestamp;
+    token_id: string;
+  };
+} | {
   bid: {
     bidder: string;
     token_id: string;
@@ -90,6 +113,11 @@ export type QueryMsg = {
     limit?: number | null;
     start_after?: string | null;
     token_id: string;
+  };
+} | {
+  legacy_bids: {
+    limit?: number | null;
+    start_after?: BidOffset | null;
   };
 } | {
   bids_sorted_by_price: {
@@ -126,6 +154,8 @@ export type QueryMsg = {
 } | {
   config: {};
 };
+export type Timestamp = Uint64;
+export type Uint64 = string;
 export type Addr = string;
 export interface BidOffset {
   bidder: Addr;
@@ -143,22 +173,32 @@ export interface Ask {
 export interface HooksResponse {
   hooks: string[];
 }
-export type ArrayOfAsk = Ask[];
-export type NullableBid = Bid | null;
+export type TupleOfNullable_CoinAndNullable_Bid = [Coin | null, Bid | null];
+export interface Coin {
+  amount: Uint128;
+  denom: string;
+  [k: string]: unknown;
+}
 export interface Bid {
   amount: Uint128;
   bidder: Addr;
   created_time: Timestamp;
   token_id: string;
 }
+export type ArrayOfAsk = Ask[];
+export type NullableBid = Bid | null;
 export type ArrayOfBid = Bid[];
 export interface ConfigResponse {
   collection: Addr;
   minter: Addr;
 }
-export type Decimal = string;
 export interface SudoParams {
   ask_interval: number;
+  max_renewals_per_block: number;
   min_price: Uint128;
+  operator: Addr;
+  renew_window: number;
+  renewal_bid_percentage: Decimal;
   trading_fee_percent: Decimal;
+  valid_bid_query_limit: number;
 }

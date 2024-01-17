@@ -4,11 +4,10 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
-import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, InstantiateMsg, ExecuteMsg, Timestamp, Uint64, QueryMsg, Addr, BidOffset, NullableAsk, Ask, HooksResponse, ArrayOfAsk, NullableBid, Bid, ArrayOfBid, ConfigResponse, Decimal, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;
@@ -48,6 +47,11 @@ export interface NameMarketplaceMessage {
     bidder: string;
     tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  migrateBids: ({
+    limit
+  }: {
+    limit: number;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   fundRenewal: ({
     tokenId
   }: {
@@ -58,10 +62,15 @@ export interface NameMarketplaceMessage {
   }: {
     tokenId: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
-  processRenewals: ({
-    time
+  renew: ({
+    tokenId
   }: {
-    time: Timestamp;
+    tokenId: string;
+  }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
+  processRenewals: ({
+    limit
+  }: {
+    limit: number;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   setup: ({
     collection,
@@ -84,8 +93,10 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
     this.setBid = this.setBid.bind(this);
     this.removeBid = this.removeBid.bind(this);
     this.acceptBid = this.acceptBid.bind(this);
+    this.migrateBids = this.migrateBids.bind(this);
     this.fundRenewal = this.fundRenewal.bind(this);
     this.refundRenewal = this.refundRenewal.bind(this);
+    this.renew = this.renew.bind(this);
     this.processRenewals = this.processRenewals.bind(this);
     this.setup = this.setup.bind(this);
   }
@@ -213,6 +224,25 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
+  migrateBids = ({
+    limit
+  }: {
+    limit: number;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          migrate_bids: {
+            limit
+          }
+        })),
+        funds
+      })
+    };
+  };
   fundRenewal = ({
     tokenId
   }: {
@@ -251,10 +281,29 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
       })
     };
   };
-  processRenewals = ({
-    time
+  renew = ({
+    tokenId
   }: {
-    time: Timestamp;
+    tokenId: string;
+  }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          renew: {
+            token_id: tokenId
+          }
+        })),
+        funds
+      })
+    };
+  };
+  processRenewals = ({
+    limit
+  }: {
+    limit: number;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -263,7 +312,7 @@ export class NameMarketplaceMessageComposer implements NameMarketplaceMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           process_renewals: {
-            time
+            limit
           }
         })),
         funds
