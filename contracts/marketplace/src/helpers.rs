@@ -8,7 +8,7 @@ use crate::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    coins, ensure, to_binary, Addr, BankMsg, Deps, DepsMut, Env, Event, Order, QuerierWrapper,
+    coins, ensure, to_json_binary, Addr, BankMsg, Deps, DepsMut, Env, Event, Order, QuerierWrapper,
     QueryRequest, StdError, StdResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw721::Cw721ExecuteMsg;
@@ -27,7 +27,7 @@ impl NameMarketplaceContract {
     }
 
     pub fn call<T: Into<ExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
@@ -45,7 +45,7 @@ impl NameMarketplaceContract {
     pub fn highest_bid(&self, querier: &QuerierWrapper, token_id: &str) -> StdResult<Option<Bid>> {
         let res: Option<Bid> = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
-            msg: to_binary(&QueryMsg::HighestBid {
+            msg: to_json_binary(&QueryMsg::HighestBid {
                 token_id: token_id.to_string(),
             })?,
         }))?;
@@ -225,7 +225,7 @@ fn burn_name(
 ) -> Result<Response, ContractError> {
     response = response.add_message(WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_binary(&Cw721ExecuteMsg::Burn {
+        msg: to_json_binary(&Cw721ExecuteMsg::Burn {
             token_id: ask.token_id.to_string(),
         })?,
         funds: vec![],

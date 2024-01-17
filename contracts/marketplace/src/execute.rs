@@ -8,8 +8,8 @@ use crate::state::{
 };
 
 use cosmwasm_std::{
-    coin, coins, ensure, ensure_eq, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env,
-    Event, MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
+    coin, coins, ensure, ensure_eq, to_json_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty,
+    Env, Event, MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
@@ -624,7 +624,7 @@ pub fn finalize_sale(
 
     let exec_cw721_transfer = WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_binary(&cw721_transfer_msg)?,
+        msg: to_json_binary(&cw721_transfer_msg)?,
         funds: vec![],
     };
     res.messages.push(SubMsg::new(exec_cw721_transfer));
