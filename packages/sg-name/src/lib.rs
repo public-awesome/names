@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, to_json_vec};
+use cosmwasm_std::{to_json_vec, Addr};
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
 
