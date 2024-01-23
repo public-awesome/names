@@ -1331,7 +1331,7 @@ mod query {
         let ask = result.unwrap().unwrap();
 
         assert_eq!(ask.seller, USER.to_string());
-        assert_eq!(ask.renewal_fund, Uint128::zero());
+        assert_eq!(ask.renewal_fund, renewal_price.amount);
 
         let expected_renewal_time = app.block_info().time.plus_seconds(SECONDS_PER_YEAR);
         assert_eq!(ask.renewal_time, expected_renewal_time);
@@ -1443,7 +1443,7 @@ mod query {
     }
 
     #[test]
-    fn process_renewals_burn() {
+    fn process_renewals_renew_free() {
         let mut app = instantiate_contracts(None, None, None);
 
         mint_and_list(&mut app, NAME, USER, None).unwrap();
@@ -1496,7 +1496,7 @@ mod query {
             },
         );
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        assert!(result.unwrap().is_some());
     }
 
     #[test]

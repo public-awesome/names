@@ -182,15 +182,12 @@ pub fn sudo_end_block(mut deps: DepsMut, env: Env) -> Result<Response, ContractE
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let name_collection = NAME_COLLECTION.load(deps.storage)?;
-
     for renewable_ask in renewable_asks {
         response = process_renewal(
             deps.branch(),
             &env,
             &sudo_params,
             &name_minter_params,
-            &name_collection,
             renewable_ask,
             response,
         )?;

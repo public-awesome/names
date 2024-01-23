@@ -3,7 +3,7 @@ use std::cmp::max;
 use crate::{
     execute::{finalize_sale, store_ask},
     msg::{ExecuteMsg, QueryMsg},
-    state::{ask_key, asks, bid_key, bids, Ask, Bid, SudoParams, RENEWAL_QUEUE},
+    state::{bid_key, bids, Ask, Bid, SudoParams, RENEWAL_QUEUE},
     ContractError,
 };
 use cosmwasm_schema::cw_serde;
@@ -11,7 +11,6 @@ use cosmwasm_std::{
     coins, ensure, to_binary, Addr, BankMsg, Deps, DepsMut, Env, Event, Order, QuerierWrapper,
     QueryRequest, StdError, StdResult, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw721::Cw721ExecuteMsg;
 use cw_storage_plus::Bound;
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::SudoParams as NameMinterParams;
@@ -155,13 +154,15 @@ pub fn renew_name(
     renewal_price: Uint128,
     mut response: Response,
 ) -> Result<Response, ContractError> {
-    // Take renewal payment
-    ask.renewal_fund -= renewal_price;
-    charge_fees(
-        &mut response,
-        sudo_params.trading_fee_percent,
-        renewal_price,
-    );
+    if !renewal_price.is_zero() {
+        // Take renewal payment
+        ask.renewal_fund -= renewal_price;
+        charge_fees(
+            &mut response,
+            sudo_params.trading_fee_percent,
+            renewal_price,
+        );
+    }
 
     // Update renewal time
     RENEWAL_QUEUE.remove(deps.storage, (ask.renewal_time.seconds(), ask.id));
@@ -217,33 +218,11 @@ fn sell_name(
     Ok(response)
 }
 
-fn burn_name(
-    deps: DepsMut,
-    collection: &Addr,
-    ask: Ask,
-    mut response: Response,
-) -> Result<Response, ContractError> {
-    response = response.add_message(WasmMsg::Execute {
-        contract_addr: collection.to_string(),
-        msg: to_binary(&Cw721ExecuteMsg::Burn {
-            token_id: ask.token_id.to_string(),
-        })?,
-        funds: vec![],
-    });
-
-    // Delete ask
-    RENEWAL_QUEUE.remove(deps.storage, (ask.renewal_time.seconds(), ask.id));
-    asks().remove(deps.storage, ask_key(&ask.token_id))?;
-
-    Ok(response)
-}
-
 pub fn process_renewal(
     deps: DepsMut,
     env: &Env,
     sudo_params: &SudoParams,
     name_minter_params: &NameMinterParams,
-    collection: &Addr,
     mut ask: Ask,
     mut response: Response,
 ) -> Result<Response, ContractError> {
@@ -264,34 +243,33 @@ pub fn process_renewal(
         name_minter_params.base_price.u128(),
     )?;
 
-    // If the renewal fund is sufficient, renew it
-    if ask.renewal_fund >= renewal_price {
+    if let Some(bid) = valid_bid {
+        // If the renewal fund is sufficient, renew it
+        if ask.renewal_fund >= renewal_price {
+            process_renewal_event = process_renewal_event.add_attribute("action", "renew");
+            response = response.add_event(process_renewal_event);
+
+            renew_name(deps, env, sudo_params, ask, renewal_price, response)
+        } else {
+            // Renewal fund is insufficient, send it back to the owner
+            if !ask.renewal_fund.is_zero() {
+                response = response.add_message(BankMsg::Send {
+                    to_address: ask.seller.to_string(),
+                    amount: coins(ask.renewal_fund.u128(), NATIVE_DENOM),
+                });
+                ask.renewal_fund = Uint128::zero();
+            }
+
+            // The renewal fund is insufficient, sell to the highest bidder
+            process_renewal_event = process_renewal_event.add_attribute("action", "sell");
+            response = response.add_event(process_renewal_event);
+
+            sell_name(deps, env, ask, bid, response)
+        }
+    } else {
         process_renewal_event = process_renewal_event.add_attribute("action", "renew");
         response = response.add_event(process_renewal_event);
 
-        return renew_name(deps, env, sudo_params, ask, renewal_price, response);
-    }
-
-    // Renewal fund is insufficient, send it back to the owner
-    if !ask.renewal_fund.is_zero() {
-        response = response.add_message(BankMsg::Send {
-            to_address: ask.seller.to_string(),
-            amount: coins(ask.renewal_fund.u128(), NATIVE_DENOM),
-        });
-        ask.renewal_fund = Uint128::zero();
-    }
-
-    if let Some(bid) = valid_bid {
-        // The renewal fund is insufficient, sell to the highest bidder
-        process_renewal_event = process_renewal_event.add_attribute("action", "sell");
-        response = response.add_event(process_renewal_event);
-
-        sell_name(deps, env, ask, bid, response)
-    } else {
-        // The renewal fund is insufficient, and there is no valid bid, burn it
-        process_renewal_event = process_renewal_event.add_attribute("action", "burn");
-        response = response.add_event(process_renewal_event);
-
-        burn_name(deps, collection, ask, response)
+        renew_name(deps, env, sudo_params, ask, Uint128::zero(), response)
     }
 }
