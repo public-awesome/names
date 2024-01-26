@@ -27,8 +27,16 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    let mut admin_list: Vec<Addr> = vec![];
+    if let Some(admins) = &msg.admin_list {
+        admin_list = admins.iter().map(|addr| deps.api.addr_validate(addr)).collect::<Result<Vec<Addr>, _>>()?;
+    } else {
+        admin_list.push(info.sender.clone());
+    }
+
     let config = Config {
-        admin: info.sender,
+        admins: admin_list,
         per_address_limit: msg.per_address_limit,
         mint_discount_amount: msg.mint_discount_amount,
     };
@@ -60,7 +68,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateAdmin { new_admin } => execute_update_admin(deps, info, new_admin),
+        ExecuteMsg::UpdateAdmins { new_admin_list } => execute_update_admins(deps, info, new_admin_list),
         ExecuteMsg::AddAddresses { addresses } => execute_add_addresses(deps, info, addresses),
         ExecuteMsg::RemoveAddresses { addresses } => {
             execute_remove_addresses(deps, info, addresses)
@@ -73,21 +81,26 @@ pub fn execute(
     }
 }
 
-pub fn execute_update_admin(
+pub fn execute_update_admins(
     deps: DepsMut,
     info: MessageInfo,
-    new_admin: String,
+    new_admin_list: Vec<String>,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
+
+    if config.admins.contains(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.admin = deps.api.addr_validate(&new_admin)?;
+    config.admins = new_admin_list
+        .into_iter()
+        .map(|address| deps.api.addr_validate(&address))
+        .collect::<StdResult<Vec<Addr>>>()?;
+
     CONFIG.save(deps.storage, &config)?;
     let event = Event::new("update-admin")
-        .add_attribute("new_admin", config.admin)
+        .add_attribute("new_admin_list", config.admins.into_iter().map(|x| x.to_string()).collect::<String>())
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
 }
@@ -99,7 +112,7 @@ pub fn execute_add_addresses(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admin != info.sender {
+    if config.admins.contains(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -135,7 +148,7 @@ pub fn execute_remove_addresses(
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admin != info.sender {
+    if config.admins.contains(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -208,7 +221,7 @@ pub fn execute_update_per_address_limit(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
+    if config.admins.contains(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -224,7 +237,7 @@ pub fn execute_update_per_address_limit(
 pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
+    if config.admins.contains(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -251,7 +264,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_json_binary(&query_includes_address(deps, address)?)
         }
         QueryMsg::MintCount { address } => to_json_binary(&query_mint_count(deps, address)?),
-        QueryMsg::Admin {} => to_json_binary(&query_admin(deps)?),
+        QueryMsg::Admins {} => to_json_binary(&query_admins(deps)?),
         QueryMsg::AddressCount {} => to_json_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_json_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => {
@@ -274,9 +287,9 @@ pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
     WHITELIST.load(deps.storage, addr)
 }
 
-pub fn query_admin(deps: Deps) -> StdResult<String> {
+pub fn query_admins(deps: Deps) -> StdResult<String> {
     let config = CONFIG.load(deps.storage)?;
-    Ok(config.admin.to_string())
+    Ok(config.admins.into_iter().map(|x| x.to_string()).collect::<String>())
 }
 
 pub fn query_address_count(deps: Deps) -> StdResult<u64> {
