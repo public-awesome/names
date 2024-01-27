@@ -303,13 +303,13 @@ pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
     WHITELIST.load(deps.storage, addr)
 }
 
-pub fn query_admins(deps: Deps) -> StdResult<String> {
+pub fn query_admins(deps: Deps) -> StdResult<Vec<String>> {
     let config = CONFIG.load(deps.storage)?;
     Ok(config
         .admins
-        .into_iter()
+        .iter()
         .map(|x| x.to_string())
-        .collect::<String>())
+        .collect::<Vec<String>>())
 }
 
 pub fn query_address_count(deps: Deps) -> StdResult<u64> {
