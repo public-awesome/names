@@ -7,12 +7,13 @@ pub struct InstantiateMsg {
     pub addresses: Vec<String>,
     pub per_address_limit: u32,
     pub mint_discount_amount: Option<u64>,
+    pub admin_list: Option<Vec<String>>,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    UpdateAdmin {
-        new_admin: String,
+    UpdateAdmins {
+        new_admin_list: Vec<String>,
     },
     AddAddresses {
         addresses: Vec<String>,
@@ -43,7 +44,7 @@ pub enum QueryMsg {
     #[returns(bool)]
     IsProcessable { address: String },
     #[returns(cw_controllers::AdminResponse)]
-    Admin {},
+    Admins {},
     #[returns(u64)]
     AddressCount {},
     #[returns(u64)]

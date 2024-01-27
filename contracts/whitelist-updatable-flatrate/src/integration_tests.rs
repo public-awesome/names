@@ -11,6 +11,7 @@ mod tests {
     use sg_multi_test::StargazeApp;
 
     const CREATOR: &str = "creator";
+    const TEMP_ADMIN: &str = "temp_admin";
     const OTHER_ADMIN: &str = "other_admin";
     const PER_ADDRESS_LIMIT: u32 = 10;
 
@@ -63,7 +64,7 @@ mod tests {
 
     #[test]
     pub fn init() {
-        let addrs: Vec<String> = vec![
+        let addrs = vec![
             "addr0001".to_string(),
             "addr0002".to_string(),
             "addr0003".to_string(),
@@ -75,6 +76,7 @@ mod tests {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: addrs.clone(),
             mint_discount_amount: None,
+            admin_list: Some(vec![CREATOR.to_string(), TEMP_ADMIN.to_string()]),
         };
 
         let mut app = custom_mock_app();
@@ -106,11 +108,11 @@ mod tests {
             )
             .unwrap();
 
-        let admin: String = app
+        let admins: Vec<String> = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::Admins {})
             .unwrap();
-        assert_eq!(admin, CREATOR.to_string());
+        assert_eq!(admins, [CREATOR.to_string(), TEMP_ADMIN.to_string()]);
 
         let count: u64 = app
             .wrap()
@@ -174,7 +176,7 @@ mod tests {
 
     #[test]
     fn exec() {
-        let addrs: Vec<String> = vec![
+        let addrs = vec![
             "addr0001".to_string(),
             "addr0002".to_string(),
             "addr0003".to_string(),
@@ -186,6 +188,7 @@ mod tests {
             per_address_limit: 10,
             addresses: addrs,
             mint_discount_amount: None,
+            admin_list: None,
         };
 
         let mut app = custom_mock_app();
@@ -217,16 +220,18 @@ mod tests {
             )
             .unwrap();
 
-        let msg = ExecuteMsg::UpdateAdmin {
-            new_admin: OTHER_ADMIN.to_string(),
+        let msg = ExecuteMsg::UpdateAdmins {
+            new_admin_list: vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()],
         };
+        let res = app.execute_contract(Addr::unchecked(TEMP_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_err());
         let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
-        let res: String = app
+        let res: Vec<String> = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::Admins {})
             .unwrap();
-        assert_eq!(res, OTHER_ADMIN.to_string());
+        assert_eq!(res, [OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]);
 
         // add addresses
         let msg = ExecuteMsg::AddAddresses {
@@ -397,7 +402,10 @@ mod tests {
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
             .unwrap();
-        assert_eq!(res.admin, Addr::unchecked(OTHER_ADMIN).to_string());
+        assert_eq!(
+            res.admins,
+            vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]
+        );
         assert_eq!(res.per_address_limit, new_per_address_limit);
     }
 }
