@@ -1,10 +1,7 @@
 use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_json_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order, StdError,
-    StdResult,
-};
+use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order, StdError, StdResult, ensure};
 use cw2::set_contract_version;
 use semver::Version;
 use sg_name_minter::SgNameMinterQueryMsg;
@@ -28,12 +25,10 @@ pub fn instantiate(
     nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let mut admin_list: Vec<Addr> = vec![];
-    if let Some(admins) = &msg.admin_list {
-        admin_list = admins.iter().map(|addr| deps.api.addr_validate(addr)).collect::<Result<Vec<Addr>, _>>()?;
-    } else {
-        admin_list.push(info.sender.clone());
-    }
+    let admin_list: Vec<Addr> = msg.admin_list.as_ref().map_or_else(
+        || Ok(vec![info.sender.clone()]),
+        |admins| admins.iter().map(|addr| deps.api.addr_validate(addr)).collect(),
+    )?;
 
     let config = Config {
         admins: admin_list,
@@ -88,10 +83,7 @@ pub fn execute_update_admins(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-
-    if config.admins.contains(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(config.admins.contains(&info.sender), ContractError::Unauthorized {});
 
     config.admins = new_admin_list
         .into_iter()
@@ -112,9 +104,7 @@ pub fn execute_add_addresses(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admins.contains(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(config.admins.contains(&info.sender), ContractError::Unauthorized {});
 
     // dedupe
     addresses.sort_unstable();
@@ -148,9 +138,7 @@ pub fn execute_remove_addresses(
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admins.contains(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(config.admins.contains(&info.sender), ContractError::Unauthorized {});
 
     // dedupe
     addresses.sort_unstable();
@@ -221,9 +209,7 @@ pub fn execute_update_per_address_limit(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-    if config.admins.contains(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(config.admins.contains(&info.sender), ContractError::Unauthorized {});
 
     config.per_address_limit = limit;
     CONFIG.save(deps.storage, &config)?;
@@ -237,9 +223,7 @@ pub fn execute_update_per_address_limit(
 pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
-    if config.admins.contains(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(config.admins.contains(&info.sender), ContractError::Unauthorized {});
 
     let keys = WHITELIST
         .keys(deps.as_ref().storage, None, None, Order::Ascending)
