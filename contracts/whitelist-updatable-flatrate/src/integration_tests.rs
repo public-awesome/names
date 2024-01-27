@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     pub fn init() {
-        let addrs: Vec<String> = vec![
+        let addrs = vec![
             "addr0001".to_string(),
             "addr0002".to_string(),
             "addr0003".to_string(),
@@ -75,6 +75,7 @@ mod tests {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: addrs.clone(),
             mint_discount_amount: None,
+            admin_list: None,
         };
 
         let mut app = custom_mock_app();
@@ -108,7 +109,7 @@ mod tests {
 
         let admin: String = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::Admins {})
             .unwrap();
         assert_eq!(admin, CREATOR.to_string());
 
@@ -174,7 +175,7 @@ mod tests {
 
     #[test]
     fn exec() {
-        let addrs: Vec<String> = vec![
+        let addrs= vec![
             "addr0001".to_string(),
             "addr0002".to_string(),
             "addr0003".to_string(),
@@ -186,6 +187,7 @@ mod tests {
             per_address_limit: 10,
             addresses: addrs,
             mint_discount_amount: None,
+            admin_list: None,
         };
 
         let mut app = custom_mock_app();
@@ -217,14 +219,14 @@ mod tests {
             )
             .unwrap();
 
-        let msg = ExecuteMsg::UpdateAdmin {
-            new_admin: OTHER_ADMIN.to_string(),
+        let msg = ExecuteMsg::UpdateAdmins {
+            new_admin_list: vec![OTHER_ADMIN.to_string()],
         };
         let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
         let res: String = app
             .wrap()
-            .query_wasm_smart(&wl_addr, &QueryMsg::Admin {})
+            .query_wasm_smart(&wl_addr, &QueryMsg::Admins {})
             .unwrap();
         assert_eq!(res, OTHER_ADMIN.to_string());
 
@@ -397,7 +399,7 @@ mod tests {
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
             .unwrap();
-        assert_eq!(res.admin, Addr::unchecked(OTHER_ADMIN).to_string());
+        assert_eq!(res.admins, vec![OTHER_ADMIN.to_string()]);
         assert_eq!(res.per_address_limit, new_per_address_limit);
     }
 }
