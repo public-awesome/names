@@ -221,15 +221,17 @@ mod tests {
             .unwrap();
 
         let msg = ExecuteMsg::UpdateAdmins {
-            new_admin_list: vec![OTHER_ADMIN.to_string()],
+            new_admin_list: vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()],
         };
+        let res = app.execute_contract(Addr::unchecked(TEMP_ADMIN), wl_addr.clone(), &msg, &[]);
+        assert!(res.is_err());
         let res = app.execute_contract(Addr::unchecked(CREATOR), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
         let res: Vec<String> = app
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Admins {})
             .unwrap();
-        assert_eq!(res, [OTHER_ADMIN.to_string()]);
+        assert_eq!(res, [OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]);
 
         // add addresses
         let msg = ExecuteMsg::AddAddresses {
@@ -400,7 +402,10 @@ mod tests {
             .wrap()
             .query_wasm_smart(&wl_addr, &QueryMsg::Config {})
             .unwrap();
-        assert_eq!(res.admins, vec![OTHER_ADMIN.to_string()]);
+        assert_eq!(
+            res.admins,
+            vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]
+        );
         assert_eq!(res.per_address_limit, new_per_address_limit);
     }
 }
