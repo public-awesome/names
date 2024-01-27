@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn exec() {
-        let addrs= vec![
+        let addrs = vec![
             "addr0001".to_string(),
             "addr0002".to_string(),
             "addr0003".to_string(),
