@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use crate::{ msg::*, state::Config };
+    use crate::{msg::*, state::Config};
 
     use cosmwasm_std::Addr;
     use name_minter::msg::InstantiateMsg as NameMinterInstantiateMsg;
     use sg_std::StargazeMsgWrapper;
 
-    use cw_multi_test::{ Contract, ContractWrapper, Executor };
+    use cw_multi_test::{Contract, ContractWrapper, Executor};
 
     use sg_multi_test::StargazeApp;
 
@@ -23,7 +23,7 @@ mod tests {
         let contract = ContractWrapper::new(
             crate::contract::execute,
             crate::contract::instantiate,
-            crate::contract::query
+            crate::contract::query,
         );
         Box::new(contract)
     }
@@ -32,7 +32,7 @@ mod tests {
         let contract = ContractWrapper::new(
             sg721_name::entry::execute,
             sg721_name::entry::instantiate,
-            sg721_name::entry::query
+            sg721_name::entry::query,
         );
         Box::new(contract)
     }
@@ -41,10 +41,10 @@ mod tests {
         let contract = ContractWrapper::new(
             name_minter::contract::execute,
             name_minter::contract::instantiate,
-            name_minter::query::query
+            name_minter::query::query,
         )
-            .with_reply(name_minter::contract::reply)
-            .with_sudo(name_minter::sudo::sudo);
+        .with_reply(name_minter::contract::reply)
+        .with_sudo(name_minter::sudo::sudo);
         Box::new(contract)
     }
 
@@ -69,7 +69,7 @@ mod tests {
             "addr0002".to_string(),
             "addr0003".to_string(),
             "addr0004".to_string(),
-            "addr0005".to_string()
+            "addr0005".to_string(),
         ];
 
         let msg = InstantiateMsg {
@@ -91,7 +91,7 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -104,7 +104,7 @@ mod tests {
                 &msg,
                 &[],
                 "name-minter-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -126,7 +126,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IncludesAddress {
                     address: addrs[0].clone(),
-                })
+                }),
             )
             .unwrap();
         assert!(includes);
@@ -137,7 +137,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::MintCount {
                     address: addrs[0].clone(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(count, 0);
@@ -168,7 +168,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::MintCount {
                     address: addrs[0].clone(),
-                })
+                }),
             )
             .unwrap();
         assert_eq!(res, 1);
@@ -181,7 +181,7 @@ mod tests {
             "addr0002".to_string(),
             "addr0003".to_string(),
             "addr0004".to_string(),
-            "addr0005".to_string()
+            "addr0005".to_string(),
         ];
 
         let msg = InstantiateMsg {
@@ -203,7 +203,7 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -216,7 +216,7 @@ mod tests {
                 &msg,
                 &[],
                 "name-minter-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -240,7 +240,7 @@ mod tests {
                 "addr0002".to_string(),
                 "addr0003".to_string(),
                 "addr0004".to_string(),
-                "addr0006".to_string()
+                "addr0006".to_string(),
             ],
         };
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
@@ -251,11 +251,14 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IncludesAddress {
                     address: "addr0006".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(!res);
-        let res: u64 = app.wrap().query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {})).unwrap();
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {}))
+            .unwrap();
         assert_eq!(res, 5);
         let msg = ExecuteMsg::AddAddresses {
             addresses: vec!["addr0007".to_string(), "addr0006".to_string()],
@@ -268,11 +271,14 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IncludesAddress {
                     address: "addr0006".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(res);
-        let res: u64 = app.wrap().query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {})).unwrap();
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {}))
+            .unwrap();
         assert_eq!(res, 7);
 
         // remove addresses
@@ -283,7 +289,7 @@ mod tests {
                 "addr0002".to_string(),
                 "addr0003".to_string(),
                 "addr0004".to_string(),
-                "addr0006".to_string()
+                "addr0006".to_string(),
             ],
         };
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
@@ -294,7 +300,7 @@ mod tests {
                 "addr0002".to_string(),
                 "addr0003".to_string(),
                 "addr0004".to_string(),
-                "addr0006".to_string()
+                "addr0006".to_string(),
             ],
         };
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
@@ -305,11 +311,14 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IncludesAddress {
                     address: "addr0006".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(!res);
-        let res: u64 = app.wrap().query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {})).unwrap();
+        let res: u64 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {}))
+            .unwrap();
         assert_eq!(res, 2);
 
         // per address limit
@@ -337,7 +346,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IsProcessable {
                     address: "addr0007".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(res);
@@ -348,7 +357,7 @@ mod tests {
             Addr::unchecked(minter_addr.clone()),
             wl_addr.clone(),
             &msg,
-            &[]
+            &[],
         );
         assert!(res.is_ok());
         let res: bool = app
@@ -357,7 +366,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IsProcessable {
                     address: "addr0007".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(!res);
@@ -371,7 +380,10 @@ mod tests {
         let msg = ExecuteMsg::Purge {};
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
-        let res: u32 = app.wrap().query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {})).unwrap();
+        let res: u32 = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {}))
+            .unwrap();
         assert_eq!(res, 0);
         // does not include addr0007
         let res: bool = app
@@ -380,14 +392,20 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IncludesAddress {
                     address: "addr0007".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(!res);
 
         // query config
-        let res: Config = app.wrap().query_wasm_smart(&wl_addr, &(QueryMsg::Config {})).unwrap();
-        assert_eq!(res.admins, vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]);
+        let res: Config = app
+            .wrap()
+            .query_wasm_smart(&wl_addr, &(QueryMsg::Config {}))
+            .unwrap();
+        assert_eq!(
+            res.admins,
+            vec![OTHER_ADMIN.to_string(), TEMP_ADMIN.to_string()]
+        );
         assert_eq!(res.per_address_limit, new_per_address_limit);
     }
 
