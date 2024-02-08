@@ -398,7 +398,7 @@ mod tests {
             "addr0002".to_string(),
             "addr0003".to_string(),
             "addr0004".to_string(),
-            "addr0005".to_string()
+            "addr0005".to_string(),
         ];
 
         let msg = InstantiateMsg {
@@ -420,7 +420,7 @@ mod tests {
                 &msg,
                 &[],
                 "wl-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -433,7 +433,7 @@ mod tests {
                 &msg,
                 &[],
                 "name-minter-contract".to_string(),
-                None
+                None,
             )
             .unwrap();
 
@@ -449,7 +449,7 @@ mod tests {
                 &wl_addr,
                 &(QueryMsg::IsProcessable {
                     address: "addr0006".to_string(),
-                })
+                }),
             )
             .unwrap();
         assert!(!res);
