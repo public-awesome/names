@@ -586,8 +586,6 @@ pub fn execute_process_renewals(
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let name_collection = NAME_COLLECTION.load(deps.storage)?;
-
     let mut response = Response::new();
 
     for renewable_ask in renewable_asks {
@@ -596,7 +594,6 @@ pub fn execute_process_renewals(
             &env,
             &sudo_params,
             &name_minter_params,
-            &name_collection,
             renewable_ask,
             response,
         )?;
