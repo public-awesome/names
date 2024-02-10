@@ -159,6 +159,12 @@ pub enum QueryMsg {
         current_time: Timestamp,
         token_id: TokenId,
     },
+    /// Get renewal price for multiple names
+    #[returns(Vec<(TokenId, Coin, Option<Bid>)>)]
+    AskRenewalPrices {
+        current_time: Timestamp,
+        token_ids: Vec<TokenId>,
+    },
     /// Get data for a specific bid
     #[returns(Option<Bid>)]
     Bid { token_id: TokenId, bidder: Bidder },
