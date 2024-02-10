@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "cosmwasm";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfTupleOfStringAndCoinAndNullable_Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceMessage {
   contractAddress: string;
   sender: string;
