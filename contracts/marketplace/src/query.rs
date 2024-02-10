@@ -1,16 +1,42 @@
 use crate::helpers::get_renewal_price_and_bid;
-use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
+use crate::msg::{ BidOffset, Bidder, ConfigResponse, QueryMsg };
 use crate::state::{
-    ask_key, asks, bid_key, bids, legacy_bids, Ask, AskKey, Bid, Id, SudoParams, TokenId,
-    ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
+    ask_key,
+    asks,
+    bid_key,
+    bids,
+    legacy_bids,
+    Ask,
+    AskKey,
+    Bid,
+    Id,
+    SudoParams,
+    TokenId,
+    ASK_COUNT,
+    ASK_HOOKS,
+    BID_HOOKS,
+    NAME_COLLECTION,
+    NAME_MINTER,
+    RENEWAL_QUEUE,
+    SALE_HOOKS,
     SUDO_PARAMS,
 };
 
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
+    coin,
+    to_binary,
+    Addr,
+    Binary,
+    Coin,
+    Deps,
+    Env,
+    Order,
+    StdError,
+    StdResult,
+    Timestamp,
 };
 use cw_storage_plus::Bound;
-use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
+use sg_name_minter::{ SgNameMinterQueryMsg, SudoParams as NameMinterParams };
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -27,73 +53,38 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Ask { token_id } => to_binary(&query_ask(deps, token_id)?),
         QueryMsg::Asks { start_after, limit } => to_binary(&query_asks(deps, start_after, limit)?),
-        QueryMsg::AsksBySeller {
-            seller,
-            start_after,
-            limit,
-        } => to_binary(&query_asks_by_seller(
-            deps,
-            api.addr_validate(&seller)?,
-            start_after,
-            limit,
-        )?),
-        QueryMsg::AsksByRenewTime {
-            max_time,
-            start_after,
-            limit,
-        } => to_binary(&query_asks_by_renew_time(
-            deps,
-            max_time,
-            start_after,
-            limit,
-        )?),
-        QueryMsg::AskRenewPrice {
-            current_time,
-            token_id,
-        } => to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
+        QueryMsg::AsksBySeller { seller, start_after, limit } =>
+            to_binary(
+                &query_asks_by_seller(deps, api.addr_validate(&seller)?, start_after, limit)?
+            ),
+        QueryMsg::AsksByRenewTime { max_time, start_after, limit } =>
+            to_binary(&query_asks_by_renew_time(deps, max_time, start_after, limit)?),
+        QueryMsg::AskRenewPrice { current_time, token_id } =>
+            to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
+        QueryMsg::AskRenewalPrices { current_time, token_ids } =>
+            to_binary(&query_ask_renew_prices(deps, current_time, token_ids)?),
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
         }
-        QueryMsg::Bids {
-            token_id,
-            start_after,
-            limit,
-        } => to_binary(&query_bids(deps, token_id, start_after, limit)?),
+        QueryMsg::Bids { token_id, start_after, limit } =>
+            to_binary(&query_bids(deps, token_id, start_after, limit)?),
         QueryMsg::LegacyBids { start_after, limit } => {
             to_binary(&query_legacy_bids(deps, start_after, limit)?)
         }
-        QueryMsg::BidsByBidder {
-            bidder,
-            start_after,
-            limit,
-        } => to_binary(&query_bids_by_bidder(
-            deps,
-            api.addr_validate(&bidder)?,
-            start_after,
-            limit,
-        )?),
+        QueryMsg::BidsByBidder { bidder, start_after, limit } =>
+            to_binary(
+                &query_bids_by_bidder(deps, api.addr_validate(&bidder)?, start_after, limit)?
+            ),
         QueryMsg::BidsSortedByPrice { start_after, limit } => {
             to_binary(&query_bids_sorted_by_price(deps, start_after, limit)?)
         }
-        QueryMsg::ReverseBidsSortedByPrice {
-            start_before,
-            limit,
-        } => to_binary(&reverse_query_bids_sorted_by_price(
-            deps,
-            start_before,
-            limit,
-        )?),
-        QueryMsg::BidsForSeller {
-            seller,
-            start_after,
-            limit,
-        } => to_binary(&query_bids_for_seller(
-            deps,
-            api.addr_validate(&seller)?,
-            start_after,
-            limit,
-        )?),
+        QueryMsg::ReverseBidsSortedByPrice { start_before, limit } =>
+            to_binary(&reverse_query_bids_sorted_by_price(deps, start_before, limit)?),
+        QueryMsg::BidsForSeller { seller, start_after, limit } =>
+            to_binary(
+                &query_bids_for_seller(deps, api.addr_validate(&seller)?, start_after, limit)?
+            ),
         QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
         QueryMsg::Params {} => to_binary(&query_params(deps)?),
         QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
@@ -112,8 +103,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_renewal_queue(deps: Deps, time: Timestamp) -> StdResult<Vec<Ask>> {
-    let names = RENEWAL_QUEUE
-        .prefix(time.seconds())
+    let names = RENEWAL_QUEUE.prefix(time.seconds())
         .range(deps.storage, None, None, Order::Ascending)
         .map(|item| item.map(|item| item.1))
         .collect::<StdResult<Vec<_>>>()?;
@@ -128,13 +118,11 @@ pub fn query_asks(deps: Deps, start_after: Option<Id>, limit: Option<u32>) -> St
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     asks()
-        .idx
-        .id
-        .range(
+        .idx.id.range(
             deps.storage,
             Some(Bound::exclusive(start_after.unwrap_or_default())),
             None,
-            Order::Ascending,
+            Order::Ascending
         )
         .take(limit)
         .map(|res| res.map(|item| item.1))
@@ -150,16 +138,14 @@ pub fn query_asks_by_seller(
     deps: Deps,
     seller: Addr,
     start_after: Option<TokenId>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Ask>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     let start = start_after.map(|start| Bound::exclusive(ask_key(&start)));
 
     asks()
-        .idx
-        .seller
-        .prefix(seller)
+        .idx.seller.prefix(seller)
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|res| res.map(|item| item.1))
@@ -170,18 +156,16 @@ pub fn query_asks_by_renew_time(
     deps: Deps,
     max_time: Timestamp,
     start_after: Option<Timestamp>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Ask>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT) as usize;
 
     let renewable_asks = asks()
-        .idx
-        .renewal_time
-        .range(
+        .idx.renewal_time.range(
             deps.storage,
             start_after.map(|start| Bound::inclusive((start.seconds() + 1, "".to_string()))),
             Some(Bound::exclusive((max_time.seconds() + 1, "".to_string()))),
-            Order::Ascending,
+            Order::Ascending
         )
         .take(limit)
         .map(|item| item.map(|(_, v)| v))
@@ -193,7 +177,7 @@ pub fn query_asks_by_renew_time(
 pub fn query_ask_renew_price(
     deps: Deps,
     current_time: Timestamp,
-    token_id: String,
+    token_id: String
 ) -> StdResult<(Option<Coin>, Option<Bid>)> {
     let ask = asks().load(deps.storage, ask_key(&token_id))?;
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
@@ -205,20 +189,31 @@ pub fn query_ask_renew_price(
     }
 
     let name_minter = NAME_MINTER.load(deps.storage)?;
-    let name_minter_params = deps
-        .querier
-        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+    let name_minter_params = deps.querier.query_wasm_smart::<NameMinterParams>(
+        name_minter,
+        &(SgNameMinterQueryMsg::Params {})
+    )?;
 
     let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps,
         &current_time,
         &sudo_params,
         &ask.token_id,
-        name_minter_params.base_price.u128(),
-    )
-    .map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
+        name_minter_params.base_price.u128()
+    ).map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
 
     Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid))
+}
+
+pub fn query_ask_renew_prices(
+    deps: Deps,
+    current_time: Timestamp,
+    token_ids: Vec<String>
+) -> StdResult<Vec<(Option<Coin>, Option<Bid>)>> {
+    token_ids
+        .iter()
+        .map(|token_id| query_ask_renew_price(deps, current_time, token_id.to_string()))
+        .collect::<StdResult<Vec<_>>>()
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
@@ -233,16 +228,14 @@ pub fn query_bids_by_bidder(
     deps: Deps,
     bidder: Addr,
     start_after: Option<TokenId>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
     let start = start_after.map(|start| Bound::exclusive((start, bidder.clone())));
 
     bids()
-        .idx
-        .bidder
-        .prefix(bidder)
+        .idx.bidder.prefix(bidder)
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|item| item.map(|(_, b)| b))
@@ -253,19 +246,18 @@ pub fn query_bids_for_seller(
     deps: Deps,
     seller: Addr,
     start_after: Option<BidOffset>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
     // Query seller asks, then collect bids starting after token_id
     // Limitation: Can not collect bids in the middle using `start_after: token_id` pattern
     // This leads to imprecise pagination based on token id and not bid count
-    let start_token_id =
-        start_after.map(|start| Bound::<AskKey>::exclusive(ask_key(&start.token_id)));
+    let start_token_id = start_after.map(|start|
+        Bound::<AskKey>::exclusive(ask_key(&start.token_id))
+    );
 
     let bids = asks()
-        .idx
-        .seller
-        .prefix(seller)
+        .idx.seller.prefix(seller)
         .range(deps.storage, start_token_id, None, Order::Ascending)
         .take(limit)
         .map(|res| res.map(|item| item.0).unwrap())
@@ -285,7 +277,7 @@ pub fn query_bids(
     deps: Deps,
     token_id: TokenId,
     start_after: Option<Bidder>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
     let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
@@ -301,12 +293,13 @@ pub fn query_bids(
 pub fn query_legacy_bids(
     deps: Deps,
     start_after: Option<BidOffset>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
-    let start =
-        start_after.map(|offset| Bound::exclusive(bid_key(&offset.token_id, &offset.bidder)));
+    let start = start_after.map(|offset|
+        Bound::exclusive(bid_key(&offset.token_id, &offset.bidder))
+    );
 
     legacy_bids()
         .range(deps.storage, start, None, Order::Ascending)
@@ -317,9 +310,7 @@ pub fn query_legacy_bids(
 
 pub fn query_highest_bid(deps: Deps, token_id: TokenId) -> StdResult<Option<Bid>> {
     let bid = bids()
-        .idx
-        .price
-        .range(deps.storage, None, None, Order::Descending)
+        .idx.price.range(deps.storage, None, None, Order::Descending)
         .filter_map(|item| {
             let (key, bid) = item.unwrap();
             if key.0 == token_id {
@@ -339,7 +330,7 @@ pub fn query_highest_bid(deps: Deps, token_id: TokenId) -> StdResult<Option<Bid>
 pub fn query_bids_sorted_by_price(
     deps: Deps,
     start_after: Option<BidOffset>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
@@ -351,9 +342,7 @@ pub fn query_bids_sorted_by_price(
     });
 
     bids()
-        .idx
-        .price
-        .range(deps.storage, start, None, Order::Ascending)
+        .idx.price.range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|item| item.map(|(_, b)| b))
         .collect::<StdResult<Vec<_>>>()
@@ -362,7 +351,7 @@ pub fn query_bids_sorted_by_price(
 pub fn reverse_query_bids_sorted_by_price(
     deps: Deps,
     start_before: Option<BidOffset>,
-    limit: Option<u32>,
+    limit: Option<u32>
 ) -> StdResult<Vec<Bid>> {
     let limit = limit.unwrap_or(DEFAULT_QUERY_LIMIT).min(MAX_QUERY_LIMIT) as usize;
 
@@ -374,9 +363,7 @@ pub fn reverse_query_bids_sorted_by_price(
     });
 
     bids()
-        .idx
-        .price
-        .range(deps.storage, None, end, Order::Descending)
+        .idx.price.range(deps.storage, None, end, Order::Descending)
         .take(limit)
         .map(|item| item.map(|(_, b)| b))
         .collect::<StdResult<Vec<_>>>()
