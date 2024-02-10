@@ -81,6 +81,7 @@ const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
+const NAME2: &str = "mccool";
 const VERIFIER: &str = "verifier";
 const OPERATOR: &str = "operator";
 
@@ -1189,6 +1190,35 @@ mod query {
 
         let expect_price = Uint128::from(bid_amount) * params.renewal_bid_percentage;
         assert_eq!(renewal_price.unwrap().amount, expect_price);
+    }
+
+    #[test]
+    fn multiple_renew_prices() {
+        // test that QueryRenewPrices returns multiple entires
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+        mint_and_list(&mut app, NAME2, USER, None).unwrap();
+
+        // Amount to make it just above the char price
+        let bid_amount = 1_000_000_000u128 * 201u128;
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 31));
+
+        bid(&mut app, NAME, BIDDER, bid_amount);
+        bid(&mut app, NAME2, BIDDER, bid_amount);
+
+        update_block_time(&mut app, 60 * 60 * 24 * 31);
+
+        let result = app.wrap().query_wasm_smart::<Vec<(Coin, Bid)>>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewalPrices {
+                current_time: app.block_info().time,
+                token_ids: vec![NAME.to_string(), NAME2.to_string()],
+            },
+        );
+        println!("{:?}", result);
+        assert!(result.is_ok());
     }
 
     #[test]

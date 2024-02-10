@@ -7,7 +7,7 @@ use crate::state::{
 };
 
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
+    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp, Uint128
 };
 use cw_storage_plus::Bound;
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
@@ -229,10 +229,25 @@ pub fn query_ask_renew_prices(
     deps: Deps,
     current_time: Timestamp,
     token_ids: Vec<String>,
-) -> StdResult<Vec<(Option<Coin>, Option<Bid>)>> {
+) -> StdResult<Vec<(Coin, Bid)>> {
     token_ids
         .iter()
-        .map(|token_id| query_ask_renew_price(deps, current_time, token_id.to_string()))
+        .map(|token_id| {
+            let (coin_option, bid_option) = query_ask_renew_price(deps, current_time, token_id.to_string())
+            .map_err(|e| StdError::generic_err(format!("Failed to query ask renew price for token_id {}: {}", token_id, e)))?;
+            let coin = coin_option.unwrap_or(Coin {
+                denom: "".to_string(),
+                amount: Uint128::zero(),
+            });
+            let bid = bid_option.unwrap_or(Bid {
+                // Fill in the fields of Bid with default values
+                token_id: "".to_string(),
+                bidder: Addr::unchecked(""),
+                amount: Uint128::zero(),
+                created_time: Timestamp::from_seconds(0),             
+            });
+            Ok((coin, bid))
+        })
         .collect::<StdResult<Vec<_>>>()
 }
 
