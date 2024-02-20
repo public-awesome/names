@@ -1,10 +1,11 @@
 use crate::helpers::get_renewal_price_and_bid;
-use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
+use crate::msg::{AskRenewPriceResponse, BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, legacy_bids, Ask, AskKey, Bid, Id, SudoParams, TokenId,
     ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
     SUDO_PARAMS,
 };
+use crate::ContractError;
 
 use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp, Uint128,
@@ -229,29 +230,17 @@ pub fn query_ask_renew_prices(
     deps: Deps,
     current_time: Timestamp,
     token_ids: Vec<String>,
-) -> StdResult<Vec<(Coin, Bid)>> {
+) -> StdResult<Vec<AskRenewPriceResponse>> {
     token_ids
         .iter()
         .map(|token_id| {
             let (coin_option, bid_option) =
-                query_ask_renew_price(deps, current_time, token_id.to_string()).map_err(|e| {
-                    StdError::generic_err(format!(
-                        "Failed to query ask renew price for token_id {}: {}",
-                        token_id, e
-                    ))
-                })?;
-            let coin = coin_option.unwrap_or(Coin {
-                denom: "".to_string(),
-                amount: Uint128::zero(),
-            });
-            let bid = bid_option.unwrap_or(Bid {
-                // Fill in the fields of Bid with default values
-                token_id: "".to_string(),
-                bidder: Addr::unchecked(""),
-                amount: Uint128::zero(),
-                created_time: Timestamp::from_seconds(0),
-            });
-            Ok((coin, bid))
+                query_ask_renew_price(deps, current_time, token_id.to_string())?;
+            Ok(AskRenewPriceResponse {
+                token_id: token_id.to_string(),
+                price: coin_option.unwrap_or_default(),
+                bid: bid_option,
+            })
         })
         .collect::<StdResult<Vec<_>>>()
 }
