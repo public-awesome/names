@@ -190,7 +190,12 @@ export interface Bid {
   created_time: Timestamp;
   token_id: string;
 }
-export type ArrayOfTupleOfStringAndCoinAndNullable_Bid = [string, Coin, Bid | null][];
+export type ArrayOfAskRenewPriceResponse = AskRenewPriceResponse[];
+export interface AskRenewPriceResponse {
+  bid?: Bid | null;
+  price: Coin;
+  token_id: string;
+}
 export type ArrayOfAsk = Ask[];
 export type NullableBid = Bid | null;
 export type ArrayOfBid = Bid[];

@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfTupleOfStringAndCoinAndNullable_Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAskRenewPriceResponse, AskRenewPriceResponse, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -53,7 +53,7 @@ export interface NameMarketplaceReadOnlyInterface {
   }: {
     currentTime: Timestamp;
     tokenIds: string[];
-  }) => Promise<ArrayOfTupleOfStringAndCoinAndNullableBid>;
+  }) => Promise<ArrayOfAskRenewPriceResponse>;
   bid: ({
     bidder,
     tokenId
@@ -239,7 +239,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
   }: {
     currentTime: Timestamp;
     tokenIds: string[];
-  }): Promise<ArrayOfTupleOfStringAndCoinAndNullableBid> => {
+  }): Promise<ArrayOfAskRenewPriceResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       ask_renewal_prices: {
         current_time: currentTime,
