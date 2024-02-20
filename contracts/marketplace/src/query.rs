@@ -5,10 +5,9 @@ use crate::state::{
     ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
     SUDO_PARAMS,
 };
-use crate::ContractError;
 
 use cosmwasm_std::{
-    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp, Uint128,
+    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
 };
 use cw_storage_plus::Bound;
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
