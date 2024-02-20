@@ -862,6 +862,7 @@ mod query {
     use cosmwasm_std::coin;
     use cosmwasm_std::Coin;
     use cosmwasm_std::StdResult;
+    use name_marketplace::msg::AskRenewPriceResponse;
     use name_marketplace::msg::BidOffset;
     use name_marketplace::state::Ask;
     use sg721_base::msg::CollectionInfoResponse;
@@ -1210,7 +1211,7 @@ mod query {
 
         update_block_time(&mut app, 60 * 60 * 24 * 31);
 
-        let result = app.wrap().query_wasm_smart::<Vec<(Coin, Bid)>>(
+        let result = app.wrap().query_wasm_smart::<Vec<AskRenewPriceResponse>>(
             MKT,
             &MarketplaceQueryMsg::AskRenewalPrices {
                 current_time: app.block_info().time,
