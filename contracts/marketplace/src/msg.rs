@@ -125,6 +125,13 @@ impl BidOffset {
 }
 
 #[cw_serde]
+pub struct AskRenewPriceResponse {
+    pub token_id: TokenId,
+    pub price: Coin,
+    pub bid: Option<Bid>,
+}
+
+#[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Get the current ask for specific name
@@ -160,7 +167,7 @@ pub enum QueryMsg {
         token_id: TokenId,
     },
     /// Get renewal price for multiple names
-    #[returns(Vec<(TokenId, Coin, Option<Bid>)>)]
+    #[returns(Vec<AskRenewPriceResponse>)]
     AskRenewalPrices {
         current_time: Timestamp,
         token_ids: Vec<TokenId>,
