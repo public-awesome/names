@@ -1157,35 +1157,41 @@
     },
     "ask_renewal_prices": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Array_of_Tuple_of_String_and_Coin_and_Nullable_Bid",
+      "title": "Array_of_AskRenewPriceResponse",
       "type": "array",
       "items": {
-        "type": "array",
-        "items": [
-          {
-            "type": "string"
-          },
-          {
-            "$ref": "#/definitions/Coin"
-          },
-          {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/Bid"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        ],
-        "maxItems": 3,
-        "minItems": 3
+        "$ref": "#/definitions/AskRenewPriceResponse"
       },
       "definitions": {
         "Addr": {
           "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
           "type": "string"
+        },
+        "AskRenewPriceResponse": {
+          "type": "object",
+          "required": [
+            "price",
+            "token_id"
+          ],
+          "properties": {
+            "bid": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Bid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "price": {
+              "$ref": "#/definitions/Coin"
+            },
+            "token_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         "Bid": {
           "description": "Represents a bid (offer) on the marketplace",
