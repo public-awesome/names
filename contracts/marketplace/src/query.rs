@@ -5,6 +5,7 @@ use crate::state::{
     ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
     SUDO_PARAMS,
 };
+use crate::ContractError;
 
 use cosmwasm_std::{
     coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
@@ -50,11 +51,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AskRenewPrice {
             current_time,
             token_id,
-        } => to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
+        } => to_binary(&query_ask_renew_price(deps, current_time, token_id)),
         QueryMsg::AskRenewalPrices {
             current_time,
             token_ids,
-        } => to_binary(&query_ask_renew_prices(deps, current_time, token_ids)?),
+        } => to_binary(&query_ask_renew_prices(deps, current_time, token_ids)),
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
@@ -198,7 +199,7 @@ pub fn query_ask_renew_price(
     deps: Deps,
     current_time: Timestamp,
     token_id: String,
-) -> StdResult<(Option<Coin>, Option<Bid>)> {
+) -> Result<(Option<Coin>, Option<Bid>), ContractError> {
     let ask = asks().load(deps.storage, ask_key(&token_id))?;
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
@@ -213,35 +214,42 @@ pub fn query_ask_renew_price(
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &(SgNameMinterQueryMsg::Params {}))?;
 
+    // Here i've replaced the generic error with
     let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps,
         &current_time,
         &sudo_params,
         &ask.token_id,
         name_minter_params.base_price.u128(),
-    )
-    .map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
+    ).unwrap();
+    match (renewal_price, valid_bid) {
+        (renewal_price, valid_bid) => Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid)),
+        ContractError => Err(ContractError::CannotFindRenewalPrice {}),
+    }
+    // .map_err(|_| Err(ContractError::CannotFindRenewalPrice {}));
 
-    Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid))
+    // Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid))
 }
 
 pub fn query_ask_renew_prices(
     deps: Deps,
     current_time: Timestamp,
     token_ids: Vec<String>,
-) -> StdResult<Vec<AskRenewPriceResponse>> {
+) -> Result<Vec<AskRenewPriceResponse>, ContractError> {
     token_ids
         .iter()
         .map(|token_id| {
-            let (coin_option, bid_option) =
-                query_ask_renew_price(deps, current_time, token_id.to_string())?;
-            Ok(AskRenewPriceResponse {
+            let (coin_option, bid_option) = query_ask_renew_price(deps, current_time, token_id.to_string()).unwrap();
+                match (coin_option, bid_option) {
+                    (coin_option, bid_option) => Ok(AskRenewPriceResponse {
                 token_id: token_id.to_string(),
                 price: coin_option.unwrap_or_default(),
                 bid: bid_option,
-            })
+            }),
+            ContractError => Err(ContractError::CannotFindRenewalPrice {}),
+        }
         })
-        .collect::<StdResult<Vec<_>>>()
+        .collect::<Result<Vec<_>, ContractError>>()
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {
