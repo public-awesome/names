@@ -4,8 +4,8 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    ensure, to_json_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event,
-    MessageInfo, StdError, StdResult, WasmMsg,
+    ensure, to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
+    StdError, StdResult, WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
@@ -195,7 +195,7 @@ fn update_ask_on_marketplace(
     let update_ask_msg = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
         funds: vec![],
-        msg: to_json_binary(&msg)?,
+        msg: to_binary(&msg)?,
     };
     Ok(update_ask_msg)
 }

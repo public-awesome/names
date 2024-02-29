@@ -7,7 +7,7 @@ use crate::state::{
 };
 
 use cosmwasm_std::{
-    coin, to_json_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
+    coin, to_binary, Addr, Binary, Coin, Deps, Env, Order, StdError, StdResult, Timestamp,
 };
 use cw_storage_plus::Bound;
 use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
@@ -25,15 +25,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let api = deps.api;
 
     match msg {
-        QueryMsg::Ask { token_id } => to_json_binary(&query_ask(deps, token_id)?),
-        QueryMsg::Asks { start_after, limit } => {
-            to_json_binary(&query_asks(deps, start_after, limit)?)
-        }
+        QueryMsg::Ask { token_id } => to_binary(&query_ask(deps, token_id)?),
+        QueryMsg::Asks { start_after, limit } => to_binary(&query_asks(deps, start_after, limit)?),
         QueryMsg::AsksBySeller {
             seller,
             start_after,
             limit,
-        } => to_json_binary(&query_asks_by_seller(
+        } => to_binary(&query_asks_by_seller(
             deps,
             api.addr_validate(&seller)?,
             start_after,
@@ -43,7 +41,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             max_time,
             start_after,
             limit,
-        } => to_json_binary(&query_asks_by_renew_time(
+        } => to_binary(&query_asks_by_renew_time(
             deps,
             max_time,
             start_after,
@@ -52,36 +50,36 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AskRenewPrice {
             current_time,
             token_id,
-        } => to_json_binary(&query_ask_renew_price(deps, current_time, token_id)?),
-        QueryMsg::AskCount {} => to_json_binary(&query_ask_count(deps)?),
+        } => to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
+        QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
-            to_json_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
+            to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
         }
         QueryMsg::Bids {
             token_id,
             start_after,
             limit,
-        } => to_json_binary(&query_bids(deps, token_id, start_after, limit)?),
+        } => to_binary(&query_bids(deps, token_id, start_after, limit)?),
         QueryMsg::LegacyBids { start_after, limit } => {
-            to_json_binary(&query_legacy_bids(deps, start_after, limit)?)
+            to_binary(&query_legacy_bids(deps, start_after, limit)?)
         }
         QueryMsg::BidsByBidder {
             bidder,
             start_after,
             limit,
-        } => to_json_binary(&query_bids_by_bidder(
+        } => to_binary(&query_bids_by_bidder(
             deps,
             api.addr_validate(&bidder)?,
             start_after,
             limit,
         )?),
         QueryMsg::BidsSortedByPrice { start_after, limit } => {
-            to_json_binary(&query_bids_sorted_by_price(deps, start_after, limit)?)
+            to_binary(&query_bids_sorted_by_price(deps, start_after, limit)?)
         }
         QueryMsg::ReverseBidsSortedByPrice {
             start_before,
             limit,
-        } => to_json_binary(&reverse_query_bids_sorted_by_price(
+        } => to_binary(&reverse_query_bids_sorted_by_price(
             deps,
             start_before,
             limit,
@@ -90,19 +88,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             seller,
             start_after,
             limit,
-        } => to_json_binary(&query_bids_for_seller(
+        } => to_binary(&query_bids_for_seller(
             deps,
             api.addr_validate(&seller)?,
             start_after,
             limit,
         )?),
-        QueryMsg::HighestBid { token_id } => to_json_binary(&query_highest_bid(deps, token_id)?),
-        QueryMsg::Params {} => to_json_binary(&query_params(deps)?),
-        QueryMsg::AskHooks {} => to_json_binary(&ASK_HOOKS.query_hooks(deps)?),
-        QueryMsg::BidHooks {} => to_json_binary(&BID_HOOKS.query_hooks(deps)?),
-        QueryMsg::SaleHooks {} => to_json_binary(&SALE_HOOKS.query_hooks(deps)?),
-        QueryMsg::RenewalQueue { time } => to_json_binary(&query_renewal_queue(deps, time)?),
-        QueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::HighestBid { token_id } => to_binary(&query_highest_bid(deps, token_id)?),
+        QueryMsg::Params {} => to_binary(&query_params(deps)?),
+        QueryMsg::AskHooks {} => to_binary(&ASK_HOOKS.query_hooks(deps)?),
+        QueryMsg::BidHooks {} => to_binary(&BID_HOOKS.query_hooks(deps)?),
+        QueryMsg::SaleHooks {} => to_binary(&SALE_HOOKS.query_hooks(deps)?),
+        QueryMsg::RenewalQueue { time } => to_binary(&query_renewal_queue(deps, time)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
     }
 }
 

@@ -1,7 +1,7 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_json, to_json_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps,
-    Querier, QuerierResult, QueryRequest, StdError, SystemError, SystemResult, WasmQuery,
+    from_json, to_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
+    QuerierResult, QueryRequest, StdError, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
@@ -55,7 +55,7 @@ impl CustomMockQuerier {
                 let mut response = ContractInfoResponse::default();
                 response.code_id = 1;
                 response.creator = CREATOR.to_string();
-                SystemResult::Ok(ContractResult::Ok(to_json_binary(&response).unwrap()))
+                SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
             }
             _ => self.base.handle_query(request),
         }

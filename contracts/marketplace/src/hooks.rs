@@ -55,7 +55,7 @@ pub fn prepare_ask_hook(deps: Deps, ask: &Ask, action: HookAction) -> StdResult<
         let msg = AskHookMsg { ask: ask.clone() };
         let execute = WasmMsg::Execute {
             contract_addr: h.to_string(),
-            msg: msg.into_json_binary(action.clone())?,
+            msg: msg.into_binary(action.clone())?,
             funds: vec![],
         };
         Ok(SubMsg::reply_on_error(execute, HookReply::Ask as u64))
@@ -73,7 +73,7 @@ pub fn prepare_sale_hook(deps: Deps, ask: &Ask, buyer: Addr) -> StdResult<Vec<Su
         };
         let execute = WasmMsg::Execute {
             contract_addr: h.to_string(),
-            msg: msg.into_json_binary()?,
+            msg: msg.into_binary()?,
             funds: vec![],
         };
         Ok(SubMsg::reply_on_error(execute, HookReply::Sale as u64))
@@ -87,7 +87,7 @@ pub fn prepare_bid_hook(deps: Deps, bid: &Bid, action: HookAction) -> StdResult<
         let msg = BidHookMsg { bid: bid.clone() };
         let execute = WasmMsg::Execute {
             contract_addr: h.to_string(),
-            msg: msg.into_json_binary(action.clone())?,
+            msg: msg.into_binary(action.clone())?,
             funds: vec![],
         };
         Ok(SubMsg::reply_on_error(execute, HookReply::Bid as u64))

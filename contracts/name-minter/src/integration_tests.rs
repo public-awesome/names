@@ -1564,7 +1564,7 @@ mod query {
 }
 
 mod collection {
-    use cosmwasm_std::{to_json_binary, StdResult};
+    use cosmwasm_std::{to_binary, StdResult};
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
     use name_marketplace::state::Ask;
@@ -1594,7 +1594,7 @@ mod collection {
     }
 
     fn send(app: &mut StargazeApp, from: &str, to: &str) {
-        let msg = to_json_binary("You now have the melting power").unwrap();
+        let msg = to_binary("You now have the melting power").unwrap();
         let target = to.to_string();
         let send_msg = Sg721NameExecuteMsg::SendNft {
             contract: target,

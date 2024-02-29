@@ -3,8 +3,8 @@ use std::vec;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_json_binary, Addr, Coin, Decimal, DepsMut, Empty, Env, Event, MessageInfo, Reply,
-    StdError, Uint128, WasmMsg,
+    coin, to_binary, Addr, Coin, Decimal, DepsMut, Empty, Env, Event, MessageInfo, Reply, StdError,
+    Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
@@ -104,7 +104,7 @@ pub fn instantiate(
     };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_json_binary(&name_collection_init_msg)?,
+        msg: to_binary(&name_collection_init_msg)?,
         funds: info.funds,
         admin: Some(info.sender.to_string()),
         label: "Name Collection".to_string(),
@@ -210,7 +210,7 @@ pub fn execute_mint_and_list(
     });
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_json_binary(&mint_msg)?,
+        msg: to_binary(&mint_msg)?,
         funds: vec![],
     };
 
@@ -220,7 +220,7 @@ pub fn execute_mint_and_list(
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),
-        msg: to_json_binary(&ask_msg)?,
+        msg: to_binary(&ask_msg)?,
         funds: vec![],
     };
 
@@ -417,7 +417,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             let msg = WasmMsg::Execute {
                 contract_addr: collection_address.to_string(),
                 funds: vec![],
-                msg: to_json_binary(
+                msg: to_binary(
                     &(SgNameExecuteMsg::SetNameMarketplace {
                         address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
                     }),
