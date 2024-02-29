@@ -108,7 +108,7 @@ fn mint_and_update() {
 
     // retrieve max record count
     let params: SudoParams =
-        from_slice(query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
+        from_slice(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
     let max_record_count = params.max_record_count;
 
     // mint token
@@ -144,7 +144,7 @@ fn mint_and_update() {
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), update_image_msg).unwrap();
     let nft_value = res.events[0].attributes[2].value.clone().into_bytes();
-    let nft: NFT = from_slice(nft_value).unwrap();
+    let nft: NFT = from_slice(&nft_value).unwrap();
     assert_eq!(nft, new_nft);
 
     // add text record
@@ -159,7 +159,7 @@ fn mint_and_update() {
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg).unwrap();
     let record_value = res.events[0].attributes[2].value.clone().into_bytes();
-    let record: TextRecord = from_slice(record_value).unwrap();
+    let record: TextRecord = from_slice(&record_value).unwrap();
     assert_eq!(record, new_record);
 
     let records = query_text_records(deps.as_ref(), token_id).unwrap();
