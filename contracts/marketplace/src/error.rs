@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{Coin, StdError, Uint128};
 use cw_utils::PaymentError;
 use sg_controllers::HookError;
 use thiserror::Error;
@@ -50,10 +50,13 @@ pub enum ContractError {
     #[error("CannotProcessFutureRenewal")]
     CannotProcessFutureRenewal {},
 
+    #[error("InsufficientRenewalFunds: expected {expected}, actual {actual}")]
+    InsufficientRenewalFunds { expected: Coin, actual: Coin },
+
     #[error("Cannot remove ask with existing bids")]
     ExistingBids {},
 
-    #[error("PriceTooSmall: {0}")]
+    #[error("PriceTooSmall: minimum {0}")]
     PriceTooSmall(Uint128),
 
     #[error("InvalidListingFee: {0}")]
