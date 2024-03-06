@@ -98,6 +98,11 @@ export type QueryMsg = {
     token_id: string;
   };
 } | {
+  ask_renewal_prices: {
+    current_time: Timestamp;
+    token_ids: string[];
+  };
+} | {
   bid: {
     bidder: string;
     token_id: string;
@@ -183,6 +188,12 @@ export interface Bid {
   amount: Uint128;
   bidder: Addr;
   created_time: Timestamp;
+  token_id: string;
+}
+export type ArrayOfAskRenewPriceResponse = AskRenewPriceResponse[];
+export interface AskRenewPriceResponse {
+  bid?: Bid | null;
+  price: Coin;
   token_id: string;
 }
 export type ArrayOfAsk = Ask[];

@@ -1,5 +1,5 @@
 use crate::helpers::get_renewal_price_and_bid;
-use crate::msg::{BidOffset, Bidder, ConfigResponse, QueryMsg};
+use crate::msg::{AskRenewPriceResponse, BidOffset, Bidder, ConfigResponse, QueryMsg};
 use crate::state::{
     ask_key, asks, bid_key, bids, legacy_bids, Ask, AskKey, Bid, Id, SudoParams, TokenId,
     ASK_COUNT, ASK_HOOKS, BID_HOOKS, NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SALE_HOOKS,
@@ -51,6 +51,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             current_time,
             token_id,
         } => to_binary(&query_ask_renew_price(deps, current_time, token_id)?),
+        QueryMsg::AskRenewalPrices {
+            current_time,
+            token_ids,
+        } => to_binary(&query_ask_renew_prices(deps, current_time, token_ids)?),
         QueryMsg::AskCount {} => to_binary(&query_ask_count(deps)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
@@ -207,7 +211,7 @@ pub fn query_ask_renew_price(
     let name_minter = NAME_MINTER.load(deps.storage)?;
     let name_minter_params = deps
         .querier
-        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+        .query_wasm_smart::<NameMinterParams>(name_minter, &(SgNameMinterQueryMsg::Params {}))?;
 
     let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps,
@@ -219,6 +223,25 @@ pub fn query_ask_renew_price(
     .map_err(|_| StdError::generic_err("failed to fetch renewal price".to_string()))?;
 
     Ok((Some(coin(renewal_price.u128(), NATIVE_DENOM)), valid_bid))
+}
+
+pub fn query_ask_renew_prices(
+    deps: Deps,
+    current_time: Timestamp,
+    token_ids: Vec<String>,
+) -> StdResult<Vec<AskRenewPriceResponse>> {
+    token_ids
+        .iter()
+        .map(|token_id| {
+            let (coin_option, bid_option) =
+                query_ask_renew_price(deps, current_time, token_id.to_string())?;
+            Ok(AskRenewPriceResponse {
+                token_id: token_id.to_string(),
+                price: coin_option.unwrap_or_default(),
+                bid: bid_option,
+            })
+        })
+        .collect::<StdResult<Vec<_>>>()
 }
 
 pub fn query_ask(deps: Deps, token_id: TokenId) -> StdResult<Option<Ask>> {

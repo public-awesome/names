@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
+import { Uint128, Decimal, InstantiateMsg, ExecuteMsg, QueryMsg, Timestamp, Uint64, Addr, BidOffset, NullableAsk, Ask, HooksResponse, TupleOfNullable_CoinAndNullable_Bid, Coin, Bid, ArrayOfAskRenewPriceResponse, AskRenewPriceResponse, ArrayOfAsk, NullableBid, ArrayOfBid, ConfigResponse, SudoParams } from "./NameMarketplace.types";
 export interface NameMarketplaceReadOnlyInterface {
   contractAddress: string;
   ask: ({
@@ -47,6 +47,13 @@ export interface NameMarketplaceReadOnlyInterface {
     currentTime: Timestamp;
     tokenId: string;
   }) => Promise<TupleOfNullableCoinAndNullableBid>;
+  askRenewalPrices: ({
+    currentTime,
+    tokenIds
+  }: {
+    currentTime: Timestamp;
+    tokenIds: string[];
+  }) => Promise<ArrayOfAskRenewPriceResponse>;
   bid: ({
     bidder,
     tokenId
@@ -131,6 +138,7 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
     this.asksBySeller = this.asksBySeller.bind(this);
     this.asksByRenewTime = this.asksByRenewTime.bind(this);
     this.askRenewPrice = this.askRenewPrice.bind(this);
+    this.askRenewalPrices = this.askRenewalPrices.bind(this);
     this.bid = this.bid.bind(this);
     this.bidsByBidder = this.bidsByBidder.bind(this);
     this.bids = this.bids.bind(this);
@@ -222,6 +230,20 @@ export class NameMarketplaceQueryClient implements NameMarketplaceReadOnlyInterf
       ask_renew_price: {
         current_time: currentTime,
         token_id: tokenId
+      }
+    });
+  };
+  askRenewalPrices = async ({
+    currentTime,
+    tokenIds
+  }: {
+    currentTime: Timestamp;
+    tokenIds: string[];
+  }): Promise<ArrayOfAskRenewPriceResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      ask_renewal_prices: {
+        current_time: currentTime,
+        token_ids: tokenIds
       }
     });
   };
