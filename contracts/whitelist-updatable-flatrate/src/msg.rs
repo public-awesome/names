@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 
 use crate::state::Config;
 
@@ -37,7 +38,9 @@ pub enum QueryMsg {
     #[returns(Config)]
     Config {},
     #[returns(bool)]
-    IncludesAddress { address: String },
+    IncludesAddress { address: String, updatable_whitelist: Addr },
+    #[returns(bool)]
+    IncludesAddressFlatrate { address: String },
     #[returns(u64)]
     MintCount { address: String },
     /// Avoid processing addresses that will fail. Includes address and under per address limit

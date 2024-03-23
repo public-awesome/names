@@ -276,7 +276,8 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
+        QueryMsg::IncludesAddress { address, updatable_whitelist: Addr } => to_binary(&query_includes_address(deps, address)?),
+        QueryMsg::IncludesAddressFlatrate { address } => to_binary(&query_includes_address(deps, address)?),
         QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
         QueryMsg::Admins {} => to_binary(&query_admins(deps)?),
         QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
