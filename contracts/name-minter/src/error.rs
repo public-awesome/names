@@ -43,4 +43,7 @@ pub enum ContractError {
 
     #[error("Reply error")]
     ReplyOnSuccess {},
+
+    #[error("Invalid Whitelist Type")]
+    InvalidWhitelistType {},
 }

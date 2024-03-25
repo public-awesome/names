@@ -196,7 +196,18 @@ pub fn execute_mint_and_list(
         .transpose()?
         .unwrap_or(None);
 
-    let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
+    let whitelist_type = list.map(|whitelist| match whitelist {
+        WhitelistContract::Updatable(_) => Some(WhitelistType::Updatable),
+        WhitelistContract::Flatrate(_) => Some(WhitelistType::Flatrate),
+    });
+
+    let price = validate_payment(
+        name.len(),
+        &info,
+        params.base_price.u128(),
+        discount,
+        whitelist_type.unwrap(),
+    )?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
@@ -369,9 +380,10 @@ fn validate_payment(
     info: &MessageInfo,
     base_price: u128,
     discount: Option<Decimal>,
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount: Uint128 = (match name_len {
+    let mut amount: Uint128 = (match name_len {
         0..=2 => {
             return Err(ContractError::NameTooShort {});
         }
@@ -381,9 +393,23 @@ fn validate_payment(
     })
     .into();
 
-    let amount = discount
-        .map(|d| amount * (Decimal::one() - d))
-        .unwrap_or(amount);
+    amount = match whitelist_type {
+        Some(WhitelistType::Updatable) => discount
+            .map(|d| amount * (Decimal::one() - d))
+            .unwrap_or(amount),
+        Some(WhitelistType::Flatrate) => {
+            // we assume that discount is a flat amount and
+            // not a percentage and is a whole number
+            discount
+                .map(|d| amount - (d * Uint128::from(1u128)))
+                .unwrap_or(amount)
+        }
+        None => return Err(ContractError::InvalidWhitelistType {}),
+    };
+
+    // let amount = discount
+    //     .map(|d| amount * (Decimal::one() - d))
+    //     .unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
@@ -463,7 +489,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 mod tests {
     use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
 
-    use crate::contract::validate_name;
+    use crate::contract::{validate_name, WhitelistType};
 
     use super::validate_payment;
 
@@ -508,7 +534,7 @@ mod tests {
             funds: vec![coin(base_price, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price, None)
+            validate_payment(5, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -520,7 +546,7 @@ mod tests {
             funds: vec![coin(base_price * 10, "ustars")],
         };
         assert_eq!(
-            validate_payment(4, &info, base_price, None)
+            validate_payment(4, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -532,7 +558,7 @@ mod tests {
             funds: vec![coin(base_price * 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(3, &info, base_price, None)
+            validate_payment(3, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -549,11 +575,40 @@ mod tests {
             funds: vec![coin(base_price / 2, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price, Some(Decimal::percent(50)))
-                .unwrap()
-                .amount
-                .u128(),
+            validate_payment(
+                5,
+                &info,
+                base_price,
+                Some(Decimal::percent(50)),
+                Some(WhitelistType::Updatable)
+            )
+            .unwrap()
+            .amount
+            .u128(),
             base_price / 2
+        );
+    }
+    #[test]
+    fn check_validate_payment_with_flatrate_discount() {
+        let base_price = 100_000_000;
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(base_price - 100, "ustars")],
+        };
+        assert_eq!(
+            // we treat the discount as a flat amount given as 100.0
+            validate_payment(
+                5,
+                &info,
+                base_price,
+                Some(Decimal::from_ratio(10000u128, 100u128)),
+                Some(WhitelistType::Flatrate)
+            )
+            .unwrap()
+            .amount
+            .u128(),
+            base_price - 100
         );
     }
 }
