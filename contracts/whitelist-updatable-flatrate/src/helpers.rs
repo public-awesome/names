@@ -51,7 +51,7 @@ impl WhitelistUpdatableFlatrateContract {
         Ok(res)
     }
 
-    pub fn mint_discount_amount(&self, querier: &QuerierWrapper) -> StdResult<Option<Decimal>> {
+    pub fn mint_discount_amount(&self, querier: &QuerierWrapper) -> StdResult<Option<u64>> {
         querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&QueryMsg::MintDiscountAmount {})?,
