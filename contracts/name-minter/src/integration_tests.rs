@@ -187,7 +187,7 @@ fn instantiate_contracts(
 
     let res: Addr = app
         .wrap()
-        .query_wasm_smart(COLLECTION, &SgNameQueryMsg::NameMarketplace {})
+        .query_wasm_smart(COLLECTION, &(SgNameQueryMsg::NameMarketplace {}))
         .unwrap();
     assert_eq!(res, marketplace.to_string());
 
@@ -211,6 +211,7 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());
@@ -224,10 +225,10 @@ fn owner_of(app: &StargazeApp, token_id: String) -> String {
         .wrap()
         .query_wasm_smart(
             COLLECTION,
-            &sg721_base::msg::QueryMsg::OwnerOf {
+            &(sg721_base::msg::QueryMsg::OwnerOf {
                 token_id,
                 include_expired: None,
-            },
+            }),
         )
         .unwrap();
 
@@ -260,12 +261,12 @@ fn mint_and_list(
     );
     assert!(res.is_ok());
 
-    let amount: Uint128 = match name.len() {
+    let amount: Uint128 = (match name.len() {
         0..=2 => BASE_PRICE,
         3 => BASE_PRICE * 100,
         4 => BASE_PRICE * 10,
         _ => BASE_PRICE,
-    }
+    })
     .into();
 
     let amount = discount
@@ -320,10 +321,10 @@ fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
         .wrap()
         .query_wasm_smart(
             MKT,
-            &MarketplaceQueryMsg::Bid {
+            &(MarketplaceQueryMsg::Bid {
                 token_id: name.to_string(),
                 bidder: bidder.to_string(),
-            },
+            }),
         )
         .unwrap();
     let bid = res.unwrap();
@@ -356,12 +357,12 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &sg721_base::msg::QueryMsg::AllOperators {
+                &(sg721_base::msg::QueryMsg::AllOperators {
                     owner: USER.to_string(),
                     include_expired: None,
                     start_after: None,
                     limit: None,
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.operators.len(), 1);
@@ -379,9 +380,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Ask {
+                &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.unwrap().token_id, NAME);
@@ -391,7 +392,7 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &sg721_base::msg::QueryMsg::NumTokens {},
+                &(sg721_base::msg::QueryMsg::NumTokens {}),
             )
             .unwrap();
 
@@ -435,10 +436,10 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Bid {
+                &(MarketplaceQueryMsg::Bid {
                     token_id: NAME.to_string(),
                     bidder: BIDDER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -459,9 +460,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Ask {
+                &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         let ask = res.unwrap();
@@ -522,9 +523,9 @@ mod execute {
         // when no associated address, query should throw error
         let res: Result<String, cosmwasm_std::StdError> = app.wrap().query_wasm_smart(
             COLLECTION,
-            &SgNameQueryMsg::AssociatedAddress {
+            &(SgNameQueryMsg::AssociatedAddress {
                 name: NAME.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
 
@@ -545,9 +546,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &SgNameQueryMsg::AssociatedAddress {
+                &(SgNameQueryMsg::AssociatedAddress {
                     name: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, user.to_string());
@@ -576,9 +577,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &SgNameQueryMsg::Name {
+                &(SgNameQueryMsg::Name {
                     address: user.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, name2.to_string());
@@ -588,9 +589,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -600,9 +601,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: name2.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, Some(user.to_string()));
@@ -625,9 +626,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -648,9 +649,9 @@ mod execute {
         // confirm removed from reverse names map
         let res: Result<String, StdError> = app.wrap().query_wasm_smart(
             Addr::unchecked(COLLECTION),
-            &SgNameQueryMsg::Name {
+            &(SgNameQueryMsg::Name {
                 address: user.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
     }
@@ -730,7 +731,7 @@ mod execute {
         // verify addr in wl
         let whitelists: Vec<Addr> = app
             .wrap()
-            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
             .unwrap();
 
         assert_eq!(whitelists.len(), 1);
@@ -740,9 +741,9 @@ mod execute {
                 .wrap()
                 .query_wasm_smart(
                     Addr::unchecked(whitelist.to_string()),
-                    &IncludesAddress {
+                    &(IncludesAddress {
                         address: USER.to_string(),
-                    },
+                    }),
                 )
                 .unwrap();
             dbg!(included, whitelist);
@@ -778,7 +779,7 @@ mod execute {
 
         let res: SudoParams = app
             .wrap()
-            .query_wasm_smart(Addr::unchecked(MKT), &QueryMsg::Params {})
+            .query_wasm_smart(Addr::unchecked(MKT), &(QueryMsg::Params {}))
             .unwrap();
         let params = res;
 
@@ -1034,9 +1035,9 @@ mod query {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::RenewalQueue {
+                &(MarketplaceQueryMsg::RenewalQueue {
                     time: app.block_info().time.plus_seconds(SECONDS_PER_YEAR),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.len(), 2);
@@ -1540,9 +1541,9 @@ mod query {
         // fails with "user" string, has to be a bech32 address
         let res: StdResult<String> = app.wrap().query_wasm_smart(
             COLLECTION,
-            &SgNameQueryMsg::Name {
+            &(SgNameQueryMsg::Name {
                 address: USER.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
 
@@ -1568,9 +1569,9 @@ mod query {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &SgNameQueryMsg::Name {
+                &(SgNameQueryMsg::Name {
                     address: cosmos_address.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, "yoyo".to_string());
@@ -1582,7 +1583,7 @@ mod query {
 
         let res: CollectionInfoResponse = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721QueryMsg::CollectionInfo {})
+            .query_wasm_smart(COLLECTION, &(Sg721QueryMsg::CollectionInfo {}))
             .unwrap();
         assert_eq!(
             res.start_trading_time.unwrap(),
@@ -1673,9 +1674,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1712,9 +1713,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1762,9 +1763,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1803,9 +1804,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1833,9 +1834,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1846,9 +1847,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1859,9 +1860,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::ImageNFT {
+                &(Sg721NameQueryMsg::ImageNFT {
                     name: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -2075,7 +2076,7 @@ mod collection {
         let mut app = instantiate_contracts(None, None, None);
         let params: SudoParams = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .query_wasm_smart(COLLECTION, &(Sg721NameQueryMsg::Params {}))
             .unwrap();
         let max_record_count = params.max_record_count;
 
@@ -2086,7 +2087,7 @@ mod collection {
         assert!(res.is_ok());
         let params: SudoParams = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .query_wasm_smart(COLLECTION, &(Sg721NameQueryMsg::Params {}))
             .unwrap();
         assert_eq!(params.max_record_count, max_record_count + 1);
     }
@@ -2111,11 +2112,12 @@ mod whitelist {
 
         let whitelists: Vec<Addr> = app
             .wrap()
-            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
             .unwrap();
         let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: None,
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -2127,6 +2129,7 @@ mod whitelist {
 
         let msg = ExecuteMsg::RemoveWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2160,6 +2163,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2179,9 +2183,9 @@ mod whitelist {
             .wrap()
             .query_wasm_smart(
                 WHITELIST,
-                &WhitelistQueryMsg::MintCount {
+                &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, 1);
@@ -2191,9 +2195,9 @@ mod whitelist {
             .wrap()
             .query_wasm_smart(
                 WHITELIST2,
-                &WhitelistQueryMsg::MintCount {
+                &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, 0);
@@ -2236,6 +2240,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2249,7 +2254,7 @@ mod whitelist {
         // query discount, pass to mint_and_list
         let discount: Decimal = app
             .wrap()
-            .query_wasm_smart(wl2, &WhitelistQueryMsg::MintDiscountPercent {})
+            .query_wasm_smart(wl2, &(WhitelistQueryMsg::MintDiscountPercent {}))
             .unwrap();
         let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
         assert!(res.is_ok());
@@ -2261,6 +2266,7 @@ mod whitelist {
 
         let msg = ExecuteMsg::AddWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2328,6 +2334,7 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2348,6 +2355,7 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());

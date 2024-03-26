@@ -10,7 +10,9 @@ use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+use schemars::JsonSchema;
 use semver::Version;
+use serde::{Deserialize, Serialize};
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
@@ -20,11 +22,13 @@ use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
 use whitelist_updatable::helpers::WhitelistUpdatableContract;
+use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
+    WhitelistContract, ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS,
+    WHITELISTS,
 };
 
 // version info for migration info
@@ -53,6 +57,7 @@ pub fn instantiate(
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
         .map(WhitelistUpdatableContract)
+        .map(WhitelistContract::Updatable)
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -127,8 +132,14 @@ pub fn execute(
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
         ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
-        ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
-        ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
+        ExecuteMsg::AddWhitelist {
+            address,
+            whitelist_type,
+        } => execute_add_whitelist(deps, info, address, whitelist_type),
+        ExecuteMsg::RemoveWhitelist {
+            address,
+            whitelist_type,
+        } => execute_remove_whitelist(deps, info, address, whitelist_type),
         ExecuteMsg::UpdateConfig { config } => execute_update_config(deps, info, env, config),
     }
 }
@@ -154,10 +165,14 @@ pub fn execute_mint_and_list(
 
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
-    let list = whitelists.iter().find(|whitelist| {
-        whitelist
+
+    let list = whitelists.iter().find(|whitelist| match whitelist {
+        WhitelistContract::Updatable(updatable) => updatable
             .includes(&deps.querier, sender.to_string())
-            .unwrap_or(false)
+            .unwrap_or(false),
+        WhitelistContract::Flatrate(flatrate) => flatrate
+            .includes(&deps.querier, sender.to_string())
+            .unwrap_or(false),
     });
 
     // if not on any whitelist, check public mint start time
@@ -166,15 +181,33 @@ pub fn execute_mint_and_list(
     }
 
     let discount = list
-        .map(|list| {
-            res.messages
-                .push(SubMsg::new(list.process_address(sender)?));
-            list.mint_discount_percent(&deps.querier)
+        .map(|whitelist| match whitelist {
+            WhitelistContract::Updatable(updatable) => {
+                res.messages
+                    .push(SubMsg::new(updatable.process_address(sender)?));
+                updatable.mint_discount_percent(&deps.querier)
+            }
+            WhitelistContract::Flatrate(flatrate) => {
+                res.messages
+                    .push(SubMsg::new(flatrate.process_address(sender)?));
+                flatrate.mint_discount_amount(&deps.querier)
+            }
         })
         .transpose()?
         .unwrap_or(None);
 
-    let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
+    let whitelist_type = list.map(|whitelist| match whitelist {
+        WhitelistContract::Updatable(_) => Some(WhitelistType::Updatable),
+        WhitelistContract::Flatrate(_) => Some(WhitelistType::Flatrate),
+    });
+
+    let price = validate_payment(
+        name.len(),
+        &info,
+        params.base_price.u128(),
+        discount,
+        whitelist_type.unwrap_or(None),
+    )?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
@@ -226,17 +259,35 @@ pub fn execute_pause(
     Ok(Response::new().add_event(event))
 }
 
+#[derive(Eq, PartialEq, Clone, JsonSchema, Deserialize, Debug, Serialize)]
+pub enum WhitelistType {
+    Updatable,
+    Flatrate,
+}
+
 pub fn execute_add_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps
-        .api
-        .addr_validate(&address)
-        .map(WhitelistUpdatableContract)?;
+    let whitelist_type = whitelist_type.unwrap_or(WhitelistType::Updatable);
+
+    let whitelist = match whitelist_type {
+        WhitelistType::Updatable => WhitelistContract::Updatable(
+            deps.api
+                .addr_validate(&address)
+                .map(WhitelistUpdatableContract)?,
+        ),
+        WhitelistType::Flatrate => WhitelistContract::Flatrate(
+            deps.api
+                .addr_validate(&address)
+                .map(WhitelistUpdatableFlatrateContract)?,
+        ),
+    };
+
     let mut lists = WHITELISTS.load(deps.storage)?;
     lists.push(whitelist);
 
@@ -250,12 +301,25 @@ pub fn execute_remove_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
-    let whitelist = deps.api.addr_validate(&address)?;
+    let whitelist_type = whitelist_type.unwrap_or(WhitelistType::Updatable);
+    let whitelist_addr = deps.api.addr_validate(&address)?;
+
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.retain(|addr| addr.addr() != whitelist);
+    lists.retain(|whitelist| {
+        let addr_matches = match whitelist {
+            WhitelistContract::Updatable(updatable) => updatable.addr() == whitelist_addr,
+            WhitelistContract::Flatrate(flatrate) => flatrate.addr() == whitelist_addr,
+        };
+        let type_matches = match whitelist {
+            WhitelistContract::Updatable(_) => whitelist_type == WhitelistType::Updatable,
+            WhitelistContract::Flatrate(_) => whitelist_type == WhitelistType::Flatrate,
+        };
+        !(addr_matches && type_matches)
+    });
 
     WHITELISTS.save(deps.storage, &lists)?;
 
@@ -298,11 +362,11 @@ fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
     name.find(invalid_char)
         .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))?;
 
-    if name.starts_with('-') || name.ends_with('-') {
+    (if name.starts_with('-') || name.ends_with('-') {
         Err(ContractError::InvalidName {})
     } else {
         Ok(())
-    }?;
+    })?;
 
     if len > 4 && name[2..4].contains("--") {
         return Err(ContractError::InvalidName {});
@@ -316,19 +380,36 @@ fn validate_payment(
     info: &MessageInfo,
     base_price: u128,
     discount: Option<Decimal>,
+    whitelist_type: Option<WhitelistType>,
 ) -> Result<Coin, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount: Uint128 = match name_len {
-        0..=2 => return Err(ContractError::NameTooShort {}),
+    let mut amount: Uint128 = (match name_len {
+        0..=2 => {
+            return Err(ContractError::NameTooShort {});
+        }
         3 => base_price * 100,
         4 => base_price * 10,
         _ => base_price,
-    }
+    })
     .into();
 
-    let amount = discount
-        .map(|d| amount * (Decimal::one() - d))
-        .unwrap_or(amount);
+    amount = match whitelist_type {
+        Some(WhitelistType::Updatable) => discount
+            .map(|d| amount * (Decimal::one() - d))
+            .unwrap_or(amount),
+        Some(WhitelistType::Flatrate) => {
+            // we assume that discount is a flat amount and
+            // not a percentage and is a whole number
+            discount
+                .map(|d| amount - (d * Uint128::from(1u128)))
+                .unwrap_or(amount)
+        }
+        None => amount,
+    };
+
+    // let amount = discount
+    //     .map(|d| amount * (Decimal::one() - d))
+    //     .unwrap_or(amount);
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
@@ -342,7 +423,7 @@ fn validate_payment(
 }
 
 fn invalid_char(c: char) -> bool {
-    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || (c == '-');
+    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || c == '-';
     !is_valid
 }
 
@@ -362,9 +443,11 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             let msg = WasmMsg::Execute {
                 contract_addr: collection_address.to_string(),
                 funds: vec![],
-                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
-                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-                })?,
+                msg: to_binary(
+                    &(SgNameExecuteMsg::SetNameMarketplace {
+                        address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+                    }),
+                )?,
             };
 
             Ok(Response::default()
@@ -406,7 +489,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 mod tests {
     use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
 
-    use crate::contract::validate_name;
+    use crate::contract::{validate_name, WhitelistType};
 
     use super::validate_payment;
 
@@ -451,7 +534,7 @@ mod tests {
             funds: vec![coin(base_price, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price, None)
+            validate_payment(5, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -463,7 +546,7 @@ mod tests {
             funds: vec![coin(base_price * 10, "ustars")],
         };
         assert_eq!(
-            validate_payment(4, &info, base_price, None)
+            validate_payment(4, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -475,7 +558,7 @@ mod tests {
             funds: vec![coin(base_price * 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(3, &info, base_price, None)
+            validate_payment(3, &info, base_price, None, None)
                 .unwrap()
                 .amount
                 .u128(),
@@ -492,11 +575,40 @@ mod tests {
             funds: vec![coin(base_price / 2, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price, Some(Decimal::percent(50)))
-                .unwrap()
-                .amount
-                .u128(),
+            validate_payment(
+                5,
+                &info,
+                base_price,
+                Some(Decimal::percent(50)),
+                Some(WhitelistType::Updatable)
+            )
+            .unwrap()
+            .amount
+            .u128(),
             base_price / 2
+        );
+    }
+    #[test]
+    fn check_validate_payment_with_flatrate_discount() {
+        let base_price = 100_000_000;
+
+        let info = MessageInfo {
+            sender: Addr::unchecked("sender"),
+            funds: vec![coin(base_price - 100, "ustars")],
+        };
+        assert_eq!(
+            // we treat the discount as a flat amount given as 100.0
+            validate_payment(
+                5,
+                &info,
+                base_price,
+                Some(Decimal::from_ratio(10000u128, 100u128)),
+                Some(WhitelistType::Flatrate)
+            )
+            .unwrap()
+            .amount
+            .u128(),
+            base_price - 100
         );
     }
 }
