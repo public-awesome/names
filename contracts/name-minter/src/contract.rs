@@ -206,7 +206,7 @@ pub fn execute_mint_and_list(
         &info,
         params.base_price.u128(),
         discount,
-        whitelist_type.unwrap(),
+        whitelist_type.unwrap_or(None),
     )?;
     charge_fees(&mut res, params.fair_burn_percent, price.amount);
 
@@ -404,7 +404,7 @@ fn validate_payment(
                 .map(|d| amount - (d * Uint128::from(1u128)))
                 .unwrap_or(amount)
         }
-        None => return Err(ContractError::InvalidWhitelistType {}),
+        None => amount,
     };
 
     // let amount = discount
