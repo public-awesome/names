@@ -177,8 +177,6 @@ pub fn execute_mint_and_list(
         .transpose()?
         .unwrap_or(None);
 
-    println!("discount: {:?}", discount);
-
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     if price.clone().is_some() {
         charge_fees(
@@ -343,10 +341,14 @@ fn validate_payment(
     })
     .into();
 
-    if discount.is_some() && amount.ge(&Uint128::from(discount.unwrap())) {
-        amount = amount
-            .checked_sub(Uint128::from(discount.unwrap()))
-            .unwrap();
+    if let Some(discount_value) = discount {
+        let discount_amount = Uint128::from(discount_value);
+        // TODO: should we handle the case where discount > amount (eg 1,000 discount but buying a 100 name)
+        if amount.ge(&discount_amount) {
+            amount = amount
+                .checked_sub(discount_amount)
+                .map_err(|_| StdError::generic_err("invalid discount amount"))?;
+        }
     }
 
     if amount.is_zero() {
