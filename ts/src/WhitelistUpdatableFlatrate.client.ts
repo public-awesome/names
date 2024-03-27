@@ -28,7 +28,7 @@ export interface WhitelistUpdatableFlatrateReadOnlyInterface {
   admins: () => Promise<AdminResponse>;
   addressCount: () => Promise<Uint64>;
   perAddressLimit: () => Promise<Uint64>;
-  mintDiscountAmount: () => Promise<NullableUint64>;
+  mintDiscountAmount: () => Promise<Nullableuint64>;
 }
 export class WhitelistUpdatableFlatrateQueryClient implements WhitelistUpdatableFlatrateReadOnlyInterface {
   client: CosmWasmClient;
@@ -100,7 +100,7 @@ export class WhitelistUpdatableFlatrateQueryClient implements WhitelistUpdatable
       per_address_limit: {}
     });
   };
-  mintDiscountAmount = async (): Promise<NullableUint64> => {
+  mintDiscountAmount = async (): Promise<Nullableuint64> => {
     return this.client.queryContractSmart(this.contractAddress, {
       mint_discount_amount: {}
     });
