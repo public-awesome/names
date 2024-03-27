@@ -135,11 +135,7 @@ pub fn execute_add_addresses(
 
     for address in addresses.into_iter() {
         let addr = deps.api.addr_validate(&address.clone())?;
-        if WHITELIST.has(deps.storage, addr.clone()) {
-            return Err(ContractError::AddressAlreadyExists {
-                addr: addr.to_string(),
-            });
-        } else {
+        if !WHITELIST.has(deps.storage, addr.clone()) {
             WHITELIST.save(deps.storage, addr, &0u32)?;
             count += 1;
         }
