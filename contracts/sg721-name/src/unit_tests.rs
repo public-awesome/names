@@ -1,8 +1,7 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, StdError, SystemError, SystemResult,
-    WasmQuery,
+    from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
+    QuerierResult, QueryRequest, StdError, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
@@ -109,7 +108,7 @@ fn mint_and_update() {
 
     // retrieve max record count
     let params: SudoParams =
-        from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
+        from_slice(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
     let max_record_count = params.max_record_count;
 
     // mint token

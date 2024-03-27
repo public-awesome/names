@@ -49,6 +49,7 @@ sg-name-common = { path = "../../packages/sg-name-common" }
 sg-name-minter = { path = "../../packages/sg-name-minter" }
 sg-std = { workspace = true }
 thiserror = { workspace = true }
+whitelist-updatable-flatrate = { path = "../whitelist-updatable-flatrate", features = ["library"]}
 whitelist-updatable = { path = "../whitelist-updatable", features = [
   "library",
 ] }

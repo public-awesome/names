@@ -150,7 +150,6 @@ jobs:
             - /usr/local/cargo/registry
             - target
           key: cargocache-sg-name-rust:1.72.1-{{ checksum "~/project/Cargo.lock" }}
-
   lint:
     docker:
       - image: rust:1.72.1

@@ -511,7 +511,7 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
         .load(deps.storage, token_id)?
         .owner;
 
-    if &owner != sender {
+    if owner != sender {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -603,7 +603,7 @@ pub fn transcode(address: &str) -> StdResult<String> {
 
 fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, ContractError> {
     // we have an EOA registration
-    if sender == &addr {
+    if sender == addr {
         return Ok(addr);
     }
 
