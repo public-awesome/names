@@ -1,6 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, Addr, Decimal, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery,
+    to_json_binary, to_json_binary, Addr, Decimal, QuerierWrapper, QueryRequest, StdResult,
+    WasmMsg, WasmQuery,
 };
 use sg_std::CosmosMsg;
 
@@ -19,7 +20,7 @@ impl WhitelistUpdatableContract {
     }
 
     pub fn call<T: Into<ExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
+        let msg = to_json_binary(&msg.into())?;
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
@@ -37,7 +38,7 @@ impl WhitelistUpdatableContract {
     pub fn includes(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
         let includes: bool = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
-            msg: to_binary(&QueryMsg::IncludesAddress { address })?,
+            msg: to_json_binary(&QueryMsg::IncludesAddress { address })?,
         }))?;
         Ok(includes)
     }
@@ -45,7 +46,7 @@ impl WhitelistUpdatableContract {
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<Config> {
         let res: Config = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
-            msg: to_binary(&QueryMsg::Config {})?,
+            msg: to_json_binary(&QueryMsg::Config {})?,
         }))?;
 
         Ok(res)
@@ -54,7 +55,7 @@ impl WhitelistUpdatableContract {
     pub fn mint_discount_percent(&self, querier: &QuerierWrapper) -> StdResult<Option<Decimal>> {
         querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
-            msg: to_binary(&QueryMsg::MintDiscountPercent {})?,
+            msg: to_json_binary(&QueryMsg::MintDiscountPercent {})?,
         }))
     }
 }
