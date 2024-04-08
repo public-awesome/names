@@ -1,7 +1,7 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
-    from_slice, to_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps, Querier,
-    QuerierResult, QueryRequest, StdError, SystemError, SystemResult, WasmQuery,
+    from_json, to_json_binary, Addr, ContractInfoResponse, ContractResult, Empty, OwnedDeps,
+    Querier, QuerierResult, QueryRequest, StdError, SystemError, SystemResult, WasmQuery,
 };
 use cw721::Cw721Query;
 use cw721_base::MintMsg;
@@ -34,7 +34,7 @@ pub struct CustomMockQuerier {
 
 impl Querier for CustomMockQuerier {
     fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
-        let request: QueryRequest<Empty> = match from_slice(bin_request) {
+        let request: QueryRequest<Empty> = match from_json(bin_request) {
             Ok(v) => v,
             Err(e) => {
                 return SystemResult::Err(SystemError::InvalidRequest {
@@ -55,7 +55,7 @@ impl CustomMockQuerier {
                 let mut response = ContractInfoResponse::default();
                 response.code_id = 1;
                 response.creator = CREATOR.to_string();
-                SystemResult::Ok(ContractResult::Ok(to_binary(&response).unwrap()))
+                SystemResult::Ok(ContractResult::Ok(to_json_binary(&response).unwrap()))
             }
             _ => self.base.handle_query(request),
         }
@@ -108,7 +108,7 @@ fn mint_and_update() {
 
     // retrieve max record count
     let params: SudoParams =
-        from_slice(&query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
+        from_json(query(deps.as_ref(), mock_env(), QueryMsg::Params {}).unwrap()).unwrap();
     let max_record_count = params.max_record_count;
 
     // mint token
@@ -144,7 +144,7 @@ fn mint_and_update() {
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), update_image_msg).unwrap();
     let nft_value = res.events[0].attributes[2].value.clone().into_bytes();
-    let nft: NFT = from_slice(&nft_value).unwrap();
+    let nft: NFT = from_json(nft_value).unwrap();
     assert_eq!(nft, new_nft);
 
     // add text record
@@ -159,7 +159,7 @@ fn mint_and_update() {
     };
     let res = execute(deps.as_mut(), mock_env(), info.clone(), update_record_msg).unwrap();
     let record_value = res.events[0].attributes[2].value.clone().into_bytes();
-    let record: TextRecord = from_slice(&record_value).unwrap();
+    let record: TextRecord = from_json(record_value).unwrap();
     assert_eq!(record, new_record);
 
     let records = query_text_records(deps.as_ref(), token_id).unwrap();

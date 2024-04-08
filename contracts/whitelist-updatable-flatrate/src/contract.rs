@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, to_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
+    ensure, to_json_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
     StdError, StdResult,
 };
 use cw2::set_contract_version;
@@ -275,14 +275,18 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
-        QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
-        QueryMsg::Admins {} => to_binary(&query_admins(deps)?),
-        QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
-        QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
-        QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
-        QueryMsg::MintDiscountAmount {} => to_binary(&query_mint_discount_amount(deps)?),
+        QueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::IncludesAddress { address } => {
+            to_json_binary(&query_includes_address(deps, address)?)
+        }
+        QueryMsg::MintCount { address } => to_json_binary(&query_mint_count(deps, address)?),
+        QueryMsg::Admins {} => to_json_binary(&query_admins(deps)?),
+        QueryMsg::AddressCount {} => to_json_binary(&query_address_count(deps)?),
+        QueryMsg::PerAddressLimit {} => to_json_binary(&query_per_address_limit(deps)?),
+        QueryMsg::IsProcessable { address } => {
+            to_json_binary(&query_is_processable(deps, address)?)
+        }
+        QueryMsg::MintDiscountAmount {} => to_json_binary(&query_mint_discount_amount(deps)?),
     }
 }
 

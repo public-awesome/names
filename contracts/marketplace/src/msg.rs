@@ -1,6 +1,6 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_binary, Addr, Binary, Coin, Decimal, StdResult, Timestamp, Uint128};
+use cosmwasm_std::{to_json_binary, Addr, Binary, Coin, Decimal, StdResult, Timestamp, Uint128};
 use sg_controllers::HooksResponse;
 
 #[cw_serde]
@@ -247,9 +247,9 @@ impl SaleHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self) -> StdResult<Binary> {
+    pub fn into_json_binary(self) -> StdResult<Binary> {
         let msg = SaleExecuteMsg::SaleHook(self);
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 
@@ -277,13 +277,13 @@ impl AskHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self, action: HookAction) -> StdResult<Binary> {
+    pub fn into_json_binary(self, action: HookAction) -> StdResult<Binary> {
         let msg = match action {
             HookAction::Create => AskHookExecuteMsg::AskCreatedHook(self),
             HookAction::Update => AskHookExecuteMsg::AskUpdatedHook(self),
             HookAction::Delete => AskHookExecuteMsg::AskDeletedHook(self),
         };
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 
@@ -306,13 +306,13 @@ impl BidHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self, action: HookAction) -> StdResult<Binary> {
+    pub fn into_json_binary(self, action: HookAction) -> StdResult<Binary> {
         let msg = match action {
             HookAction::Create => BidExecuteMsg::BidCreatedHook(self),
             HookAction::Update => BidExecuteMsg::BidUpdatedHook(self),
             HookAction::Delete => BidExecuteMsg::BidDeletedHook(self),
         };
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 
