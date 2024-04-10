@@ -57,7 +57,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AskRenewalPrices {
             current_time,
             token_ids,
-        } => to_binary(&query_ask_renew_prices(deps, current_time, token_ids)?),
+        } => to_json_binary(&query_ask_renew_prices(deps, current_time, token_ids)?),
         QueryMsg::Bid { token_id, bidder } => {
             to_json_binary(&query_bid(deps, token_id, api.addr_validate(&bidder)?)?)
         }
