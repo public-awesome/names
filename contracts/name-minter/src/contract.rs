@@ -10,9 +10,9 @@ use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
-use schemars::JsonSchema;
+
 use semver::Version;
-use serde::{Deserialize, Serialize};
+
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
