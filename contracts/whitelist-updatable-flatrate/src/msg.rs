@@ -50,6 +50,6 @@ pub enum QueryMsg {
     #[returns(u64)]
     PerAddressLimit {},
     // Mint discount converts bps to decimal percentage
-    #[returns(u64)]
+    #[returns(Option<u64>)]
     MintDiscountAmount {},
 }

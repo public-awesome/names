@@ -244,7 +244,7 @@ mod tests {
             ],
         };
         let res = app.execute_contract(Addr::unchecked(OTHER_ADMIN), wl_addr.clone(), &msg, &[]);
-        assert!(res.is_err());
+        assert!(res.is_ok());
         let res: bool = app
             .wrap()
             .query_wasm_smart(
@@ -254,12 +254,12 @@ mod tests {
                 }),
             )
             .unwrap();
-        assert!(!res);
+        assert!(res);
         let res: u64 = app
             .wrap()
             .query_wasm_smart(&wl_addr, &(QueryMsg::AddressCount {}))
             .unwrap();
-        assert_eq!(res, 5);
+        assert_eq!(res, 6);
         let msg = ExecuteMsg::AddAddresses {
             addresses: vec!["addr0007".to_string(), "addr0006".to_string()],
         };

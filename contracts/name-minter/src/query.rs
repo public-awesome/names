@@ -5,7 +5,7 @@ use sg_name_minter::{Config, SudoParams};
 
 use crate::{
     msg::QueryMsg,
-    state::{WhitelistContract, ADMIN, CONFIG, NAME_COLLECTION, SUDO_PARAMS, WHITELISTS},
+    state::{ADMIN, CONFIG, NAME_COLLECTION, SUDO_PARAMS, WHITELISTS},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -21,13 +21,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_whitelists(deps: Deps) -> StdResult<Vec<Addr>> {
     let whitelists = WHITELISTS.load(deps.storage)?;
-    Ok(whitelists
-        .iter()
-        .map(|w| match w {
-            WhitelistContract::Updatable(contract) => contract.addr(),
-            WhitelistContract::Flatrate(contract) => contract.addr(),
-        })
-        .collect())
+    Ok(whitelists.iter().map(|w| w.addr()).collect())
 }
 
 fn query_collection(deps: Deps) -> StdResult<Addr> {

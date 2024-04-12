@@ -26,7 +26,9 @@ use sg_name_minter::{
     SgNameMinterQueryMsg, SudoParams as NameMinterParams, PUBLIC_MINT_START_TIME_IN_SECONDS,
 };
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
-use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
+use whitelist_updatable_flatrate::msg::{
+    ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg,
+};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -55,9 +57,9 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 
 pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
-        whitelist_updatable::contract::execute,
-        whitelist_updatable::contract::instantiate,
-        whitelist_updatable::contract::query,
+        whitelist_updatable_flatrate::contract::execute,
+        whitelist_updatable_flatrate::contract::instantiate,
+        whitelist_updatable_flatrate::contract::query,
     );
     Box::new(contract)
 }
@@ -192,7 +194,7 @@ fn instantiate_contracts(
     assert_eq!(res, marketplace.to_string());
 
     // 4. Instantiate Whitelist
-    let msg = whitelist_updatable::msg::InstantiateMsg {
+    let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
         addresses: vec![
             "addr0001".to_string(),
@@ -201,7 +203,8 @@ fn instantiate_contracts(
             USER4.to_string(),
             ADMIN2.to_string(),
         ],
-        mint_discount_bps: None,
+        mint_discount_amount: None,
+        admin_list: None,
     };
     let wl = app
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
@@ -211,7 +214,6 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());
@@ -275,14 +277,16 @@ fn mint_and_list(
 
     // give user some funds
     let name_fee = coins(amount.into(), NATIVE_DENOM);
-    app.sudo(CwSudoMsg::Bank({
-        BankSudo::Mint {
-            to_address: user.to_string(),
-            amount: name_fee.clone(),
-        }
-    }))
-    .map_err(|err| println!("{:?}", err))
-    .ok();
+    if amount > Uint128::from(0u128) {
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: user.to_string(),
+                amount: name_fee.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+    }
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
@@ -339,7 +343,7 @@ mod execute {
     use name_marketplace::state::{Ask, SudoParams};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
     use sg_name::Metadata;
-    use whitelist_updatable::msg::QueryMsg::IncludesAddress;
+    use whitelist_updatable_flatrate::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
 
@@ -790,7 +794,7 @@ mod execute {
 }
 
 mod admin {
-    use whitelist_updatable::state::Config;
+    use whitelist_updatable_flatrate::state::Config;
 
     use crate::msg::QueryMsg;
 
@@ -830,7 +834,7 @@ mod admin {
 
         let msg = WhitelistQueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.admin, ADMIN2.to_string());
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
@@ -2095,7 +2099,7 @@ mod collection {
 
 mod whitelist {
     use crate::msg::QueryMsg;
-    use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
+    use whitelist_updatable_flatrate::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;
 
@@ -2117,7 +2121,6 @@ mod whitelist {
         let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
-            whitelist_type: None,
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -2129,7 +2132,6 @@ mod whitelist {
 
         let msg = ExecuteMsg::RemoveWhitelist {
             address: "whitelist".to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2145,7 +2147,7 @@ mod whitelist {
         let wl_id = app.store_code(contract_whitelist());
 
         // instantiate wl2
-        let msg = whitelist_updatable::msg::InstantiateMsg {
+        let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: vec![
                 "addr0001".to_string(),
@@ -2154,7 +2156,8 @@ mod whitelist {
                 USER2.to_string(),
                 ADMIN2.to_string(),
             ],
-            mint_discount_bps: None,
+            mint_discount_amount: None,
+            admin_list: None,
         };
         let wl2 = app
             .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
@@ -2163,7 +2166,6 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2221,7 +2223,7 @@ mod whitelist {
         let wl_id = app.store_code(contract_whitelist());
 
         // instantiate wl2
-        let msg = whitelist_updatable::msg::InstantiateMsg {
+        let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: vec![
                 "addr0001".to_string(),
@@ -2230,7 +2232,8 @@ mod whitelist {
                 USER2.to_string(),
                 ADMIN2.to_string(),
             ],
-            mint_discount_bps: Some(3500),
+            mint_discount_amount: Some(BASE_PRICE as u64),
+            admin_list: None,
         };
 
         let wl2 = app
@@ -2240,7 +2243,6 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2252,11 +2254,20 @@ mod whitelist {
 
         // mint and list with discount
         // query discount, pass to mint_and_list
-        let discount: Decimal = app
+        let discount: u64 = app
             .wrap()
-            .query_wasm_smart(wl2, &(WhitelistQueryMsg::MintDiscountPercent {}))
+            .query_wasm_smart(wl2, &(WhitelistQueryMsg::MintDiscountAmount {}))
             .unwrap();
-        let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
+        let res = mint_and_list(
+            &mut app,
+            NAME,
+            USER2,
+            Some(Decimal::from_ratio(
+                discount,
+                Uint128::from(1_000_000_000u128),
+            )),
+        );
+        println!("result: {:?}", res);
         assert!(res.is_ok());
     }
 
@@ -2266,7 +2277,6 @@ mod whitelist {
 
         let msg = ExecuteMsg::AddWhitelist {
             address: WHITELIST.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2292,7 +2302,7 @@ mod whitelist {
 
         let msg = WhitelistQueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.admin, ADMIN2.to_string());
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
@@ -2334,7 +2344,6 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -2355,7 +2364,6 @@ mod public_start_time {
         // remove whitelist(s)
         let msg = ExecuteMsg::RemoveWhitelist {
             address: WHITELIST.to_string(),
-            whitelist_type: None,
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
