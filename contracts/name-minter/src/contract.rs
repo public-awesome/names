@@ -431,7 +431,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
+    use cosmwasm_std::{coin, Addr, MessageInfo};
 
     use crate::contract::validate_name;
 
