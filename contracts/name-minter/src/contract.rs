@@ -3,14 +3,16 @@ use std::vec;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_binary, Addr, Coin, Decimal, DepsMut, Empty, Env, Event, MessageInfo, Reply, StdError,
-    Uint128, WasmMsg,
+    coin, to_json_binary, Addr, Coin, Decimal, DepsMut, Empty, Env, Event, MessageInfo, Reply,
+    StdError, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721_base::MintMsg;
 use cw_utils::{maybe_addr, must_pay, parse_reply_instantiate_data};
 use name_marketplace::msg::ExecuteMsg as MarketplaceExecuteMsg;
+
 use semver::Version;
+
 use sg721::{CollectionInfo, InstantiateMsg as Sg721InstantiateMsg};
 use sg721_name::msg::{
     ExecuteMsg as NameCollectionExecuteMsg, InstantiateMsg as NameCollectionInstantiateMsg,
@@ -19,7 +21,7 @@ use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
-use whitelist_updatable::helpers::WhitelistUpdatableContract;
+use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -52,7 +54,7 @@ pub fn instantiate(
         .whitelists
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
-        .map(WhitelistUpdatableContract)
+        .map(WhitelistUpdatableFlatrateContract)
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -99,7 +101,7 @@ pub fn instantiate(
     };
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
-        msg: to_binary(&name_collection_init_msg)?,
+        msg: to_json_binary(&name_collection_init_msg)?,
         funds: info.funds,
         admin: Some(info.sender.to_string()),
         label: "Name Collection".to_string(),
@@ -154,6 +156,7 @@ pub fn execute_mint_and_list(
 
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
+
     let list = whitelists.iter().find(|whitelist| {
         whitelist
             .includes(&deps.querier, sender.to_string())
@@ -169,13 +172,19 @@ pub fn execute_mint_and_list(
         .map(|list| {
             res.messages
                 .push(SubMsg::new(list.process_address(sender)?));
-            list.mint_discount_percent(&deps.querier)
+            list.mint_discount_amount(&deps.querier)
         })
         .transpose()?
         .unwrap_or(None);
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
-    charge_fees(&mut res, params.fair_burn_percent, price.amount);
+    if price.clone().is_some() {
+        charge_fees(
+            &mut res,
+            params.fair_burn_percent,
+            price.clone().unwrap().amount,
+        );
+    }
 
     let collection = NAME_COLLECTION.load(deps.storage)?;
     let marketplace = NAME_MARKETPLACE.load(deps.storage)?;
@@ -188,7 +197,7 @@ pub fn execute_mint_and_list(
     });
     let mint_msg_exec = WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_binary(&mint_msg)?,
+        msg: to_json_binary(&mint_msg)?,
         funds: vec![],
     };
 
@@ -198,14 +207,17 @@ pub fn execute_mint_and_list(
     };
     let list_msg_exec = WasmMsg::Execute {
         contract_addr: marketplace.to_string(),
-        msg: to_binary(&ask_msg)?,
+        msg: to_json_binary(&ask_msg)?,
         funds: vec![],
     };
 
     let event = Event::new("mint-and-list")
         .add_attribute("name", name)
         .add_attribute("owner", sender)
-        .add_attribute("price", price.amount.to_string());
+        .add_attribute(
+            "price",
+            price.unwrap_or(coin(0, NATIVE_DENOM)).amount.to_string(),
+        );
     Ok(res
         .add_event(event)
         .add_message(mint_msg_exec)
@@ -236,7 +248,8 @@ pub fn execute_add_whitelist(
     let whitelist = deps
         .api
         .addr_validate(&address)
-        .map(WhitelistUpdatableContract)?;
+        .map(WhitelistUpdatableFlatrateContract)?;
+
     let mut lists = WHITELISTS.load(deps.storage)?;
     lists.push(whitelist);
 
@@ -298,11 +311,11 @@ fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
     name.find(invalid_char)
         .map_or(Ok(()), |_| Err(ContractError::InvalidName {}))?;
 
-    if name.starts_with('-') || name.ends_with('-') {
+    (if name.starts_with('-') || name.ends_with('-') {
         Err(ContractError::InvalidName {})
     } else {
         Ok(())
-    }?;
+    })?;
 
     if len > 4 && name[2..4].contains("--") {
         return Err(ContractError::InvalidName {});
@@ -315,20 +328,32 @@ fn validate_payment(
     name_len: usize,
     info: &MessageInfo,
     base_price: u128,
-    discount: Option<Decimal>,
-) -> Result<Coin, ContractError> {
+    discount: Option<u64>,
+) -> Result<Option<Coin>, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
-    let amount: Uint128 = match name_len {
-        0..=2 => return Err(ContractError::NameTooShort {}),
+    let mut amount: Uint128 = (match name_len {
+        0..=2 => {
+            return Err(ContractError::NameTooShort {});
+        }
         3 => base_price * 100,
         4 => base_price * 10,
         _ => base_price,
-    }
+    })
     .into();
 
-    let amount = discount
-        .map(|d| amount * (Decimal::one() - d))
-        .unwrap_or(amount);
+    if let Some(discount_value) = discount {
+        let discount_amount = Uint128::from(discount_value);
+        // TODO: should we handle the case where discount > amount (eg 1,000 discount but buying a 100 name)
+        if amount.ge(&discount_amount) {
+            amount = amount
+                .checked_sub(discount_amount)
+                .map_err(|_| StdError::generic_err("invalid discount amount"))?;
+        }
+    }
+
+    if amount.is_zero() {
+        return Ok(None);
+    }
 
     let payment = must_pay(info, NATIVE_DENOM)?;
     if payment != amount {
@@ -338,11 +363,11 @@ fn validate_payment(
         });
     }
 
-    Ok(coin(amount.u128(), NATIVE_DENOM))
+    Ok(Some(coin(amount.u128(), NATIVE_DENOM)))
 }
 
 fn invalid_char(c: char) -> bool {
-    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || (c == '-');
+    let is_valid = c.is_ascii_digit() || c.is_ascii_lowercase() || c == '-';
     !is_valid
 }
 
@@ -362,9 +387,11 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             let msg = WasmMsg::Execute {
                 contract_addr: collection_address.to_string(),
                 funds: vec![],
-                msg: to_binary(&SgNameExecuteMsg::SetNameMarketplace {
-                    address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
-                })?,
+                msg: to_json_binary(
+                    &(SgNameExecuteMsg::SetNameMarketplace {
+                        address: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
+                    }),
+                )?,
             };
 
             Ok(Response::default()
@@ -404,7 +431,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coin, Addr, Decimal, MessageInfo};
+    use cosmwasm_std::{coin, Addr, MessageInfo};
 
     use crate::contract::validate_name;
 
@@ -453,6 +480,7 @@ mod tests {
         assert_eq!(
             validate_payment(5, &info, base_price, None)
                 .unwrap()
+                .unwrap()
                 .amount
                 .u128(),
             base_price
@@ -464,6 +492,7 @@ mod tests {
         };
         assert_eq!(
             validate_payment(4, &info, base_price, None)
+                .unwrap()
                 .unwrap()
                 .amount
                 .u128(),
@@ -477,6 +506,7 @@ mod tests {
         assert_eq!(
             validate_payment(3, &info, base_price, None)
                 .unwrap()
+                .unwrap()
                 .amount
                 .u128(),
             base_price * 100
@@ -484,19 +514,21 @@ mod tests {
     }
 
     #[test]
-    fn check_validate_payment_with_discount() {
+    fn check_validate_payment_with_flatrate_discount() {
         let base_price = 100_000_000;
 
         let info = MessageInfo {
             sender: Addr::unchecked("sender"),
-            funds: vec![coin(base_price / 2, "ustars")],
+            funds: vec![coin(base_price - 100, "ustars")],
         };
         assert_eq!(
-            validate_payment(5, &info, base_price, Some(Decimal::percent(50)))
+            // we treat the discount as a flat amount given as 100.0
+            validate_payment(5, &info, base_price, Some(100),)
+                .unwrap()
                 .unwrap()
                 .amount
                 .u128(),
-            base_price / 2
+            base_price - 100
         );
     }
 }

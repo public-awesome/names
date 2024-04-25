@@ -43,7 +43,7 @@ pub mod entry {
         query_associated_address, query_name, query_name_marketplace, query_params,
     };
     use cosmwasm_std::{
-        to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, StdError, StdResult,
+        to_json_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, StdError, StdResult,
     };
     use cw2::set_contract_version;
     use cw_utils::maybe_addr;
@@ -134,17 +134,17 @@ pub mod entry {
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         match msg {
-            QueryMsg::Params {} => to_binary(&query_params(deps)?),
-            QueryMsg::NameMarketplace {} => to_binary(&query_name_marketplace(deps)?),
-            QueryMsg::Name { address } => to_binary(&query_name(deps, address)?),
-            QueryMsg::Verifier {} => to_binary(&VERIFIER.query_admin(deps)?),
+            QueryMsg::Params {} => to_json_binary(&query_params(deps)?),
+            QueryMsg::NameMarketplace {} => to_json_binary(&query_name_marketplace(deps)?),
+            QueryMsg::Name { address } => to_json_binary(&query_name(deps, address)?),
+            QueryMsg::Verifier {} => to_json_binary(&VERIFIER.query_admin(deps)?),
             QueryMsg::AssociatedAddress { name } => {
-                to_binary(&query_associated_address(deps, &name)?)
+                to_json_binary(&query_associated_address(deps, &name)?)
             }
-            QueryMsg::ImageNFT { name } => to_binary(&query_image_nft(deps, &name)?),
-            QueryMsg::TextRecords { name } => to_binary(&query_text_records(deps, &name)?),
+            QueryMsg::ImageNFT { name } => to_json_binary(&query_image_nft(deps, &name)?),
+            QueryMsg::TextRecords { name } => to_json_binary(&query_text_records(deps, &name)?),
             QueryMsg::IsTwitterVerified { name } => {
-                to_binary(&query_is_twitter_verified(deps, &name)?)
+                to_json_binary(&query_is_twitter_verified(deps, &name)?)
             }
             _ => Sg721NameContract::default().query(deps, env, msg.into()),
         }

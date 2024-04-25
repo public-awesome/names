@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_json_binary, Addr, Decimal, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery,
+    to_json_binary, Addr, QuerierWrapper, QueryRequest, StdResult, WasmMsg, WasmQuery,
 };
 use sg_std::CosmosMsg;
 
@@ -11,9 +11,9 @@ use crate::{
 
 /// WhitelistUpdatableContract is a wrapper around Addr that provides a lot of helpers
 #[cw_serde]
-pub struct WhitelistUpdatableContract(pub Addr);
+pub struct WhitelistUpdatableFlatrateContract(pub Addr);
 
-impl WhitelistUpdatableContract {
+impl WhitelistUpdatableFlatrateContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()
     }
@@ -51,10 +51,10 @@ impl WhitelistUpdatableContract {
         Ok(res)
     }
 
-    pub fn mint_discount_percent(&self, querier: &QuerierWrapper) -> StdResult<Option<Decimal>> {
+    pub fn mint_discount_amount(&self, querier: &QuerierWrapper) -> StdResult<Option<u64>> {
         querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: self.addr().into(),
-            msg: to_json_binary(&QueryMsg::MintDiscountPercent {})?,
+            msg: to_json_binary(&QueryMsg::MintDiscountAmount {})?,
         }))
     }
 }

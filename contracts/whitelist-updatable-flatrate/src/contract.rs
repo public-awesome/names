@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Addr, Binary, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
+    ensure, to_json_binary, Addr, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
     StdError, StdResult,
 };
 use cw2::set_contract_version;
@@ -15,7 +15,7 @@ use cw_utils::nonpayable;
 use sg_std::Response;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:whitelist-updatable";
+const CONTRACT_NAME: &str = "crates.io:whitelist-updatable-flatrate";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -27,11 +27,21 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    let admin_list: Vec<Addr> = msg.admin_list.as_ref().map_or_else(
+        || Ok(vec![info.sender.clone()]),
+        |admins| {
+            admins
+                .iter()
+                .map(|addr| deps.api.addr_validate(addr))
+                .collect()
+        },
+    )?;
+
     let config = Config {
-        admin: info.sender,
+        admins: admin_list,
         per_address_limit: msg.per_address_limit,
-        // 1% = 100, 50% = 5000
-        mint_discount_bps: msg.mint_discount_bps,
+        mint_discount_amount: msg.mint_discount_amount,
     };
 
     // remove duplicate addresses
@@ -61,7 +71,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateAdmin { new_admin } => execute_update_admin(deps, info, new_admin),
+        ExecuteMsg::UpdateAdmins { new_admin_list } => {
+            execute_update_admins(deps, info, new_admin_list)
+        }
         ExecuteMsg::AddAddresses { addresses } => execute_add_addresses(deps, info, addresses),
         ExecuteMsg::RemoveAddresses { addresses } => {
             execute_remove_addresses(deps, info, addresses)
@@ -74,21 +86,33 @@ pub fn execute(
     }
 }
 
-pub fn execute_update_admin(
+pub fn execute_update_admins(
     deps: DepsMut,
     info: MessageInfo,
-    new_admin: String,
+    new_admin_list: Vec<String>,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(
+        config.admins.contains(&info.sender),
+        ContractError::Unauthorized {}
+    );
 
-    config.admin = deps.api.addr_validate(&new_admin)?;
+    config.admins = new_admin_list
+        .into_iter()
+        .map(|address| deps.api.addr_validate(&address))
+        .collect::<StdResult<Vec<Addr>>>()?;
+
     CONFIG.save(deps.storage, &config)?;
     let event = Event::new("update-admin")
-        .add_attribute("new_admin", config.admin)
+        .add_attribute(
+            "new_admin_list",
+            config
+                .admins
+                .into_iter()
+                .map(|x| x.to_string())
+                .collect::<String>(),
+        )
         .add_attribute("sender", info.sender);
     Ok(Response::new().add_event(event))
 }
@@ -100,9 +124,10 @@ pub fn execute_add_addresses(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(
+        config.admins.contains(&info.sender),
+        ContractError::Unauthorized {}
+    );
 
     // dedupe
     addresses.sort_unstable();
@@ -110,11 +135,7 @@ pub fn execute_add_addresses(
 
     for address in addresses.into_iter() {
         let addr = deps.api.addr_validate(&address.clone())?;
-        if WHITELIST.has(deps.storage, addr.clone()) {
-            return Err(ContractError::AddressAlreadyExists {
-                addr: addr.to_string(),
-            });
-        } else {
+        if !WHITELIST.has(deps.storage, addr.clone()) {
             WHITELIST.save(deps.storage, addr, &0u32)?;
             count += 1;
         }
@@ -136,9 +157,10 @@ pub fn execute_remove_addresses(
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
     let mut count = TOTAL_ADDRESS_COUNT.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(
+        config.admins.contains(&info.sender),
+        ContractError::Unauthorized {}
+    );
 
     // dedupe
     addresses.sort_unstable();
@@ -209,9 +231,10 @@ pub fn execute_update_per_address_limit(
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let mut config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(
+        config.admins.contains(&info.sender),
+        ContractError::Unauthorized {}
+    );
 
     config.per_address_limit = limit;
     CONFIG.save(deps.storage, &config)?;
@@ -225,9 +248,10 @@ pub fn execute_update_per_address_limit(
 pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     nonpayable(&info)?;
     let config = CONFIG.load(deps.storage)?;
-    if config.admin != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    ensure!(
+        config.admins.contains(&info.sender),
+        ContractError::Unauthorized {}
+    );
 
     let keys = WHITELIST
         .keys(deps.as_ref().storage, None, None, Order::Ascending)
@@ -252,13 +276,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_json_binary(&query_includes_address(deps, address)?)
         }
         QueryMsg::MintCount { address } => to_json_binary(&query_mint_count(deps, address)?),
-        QueryMsg::Admin {} => to_json_binary(&query_admin(deps)?),
+        QueryMsg::Admins {} => to_json_binary(&query_admins(deps)?),
         QueryMsg::AddressCount {} => to_json_binary(&query_address_count(deps)?),
         QueryMsg::PerAddressLimit {} => to_json_binary(&query_per_address_limit(deps)?),
         QueryMsg::IsProcessable { address } => {
             to_json_binary(&query_is_processable(deps, address)?)
         }
-        QueryMsg::MintDiscountPercent {} => to_json_binary(&query_mint_discount_percent(deps)?),
+        QueryMsg::MintDiscountAmount {} => to_json_binary(&query_mint_discount_amount(deps)?),
     }
 }
 
@@ -275,9 +299,13 @@ pub fn query_mint_count(deps: Deps, address: String) -> StdResult<u32> {
     WHITELIST.load(deps.storage, addr)
 }
 
-pub fn query_admin(deps: Deps) -> StdResult<String> {
+pub fn query_admins(deps: Deps) -> StdResult<Vec<String>> {
     let config = CONFIG.load(deps.storage)?;
-    Ok(config.admin.to_string())
+    Ok(config
+        .admins
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>())
 }
 
 pub fn query_address_count(deps: Deps) -> StdResult<u64> {
@@ -301,11 +329,9 @@ pub fn query_is_processable(deps: Deps, address: String) -> StdResult<bool> {
     Ok(count < config.per_address_limit)
 }
 
-pub fn query_mint_discount_percent(deps: Deps) -> StdResult<Option<Decimal>> {
+pub fn query_mint_discount_amount(deps: Deps) -> StdResult<Option<u64>> {
     let config = CONFIG.load(deps.storage)?;
-    Ok(config
-        .mint_discount_bps
-        .map(|x| Decimal::from_ratio(x, 10_000u128)))
+    Ok(config.mint_discount_amount)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

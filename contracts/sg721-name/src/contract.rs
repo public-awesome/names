@@ -4,8 +4,8 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    ensure, to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
-    StdError, StdResult, WasmMsg,
+    ensure, to_json_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event,
+    MessageInfo, StdError, StdResult, WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
@@ -195,7 +195,7 @@ fn update_ask_on_marketplace(
     let update_ask_msg = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
         funds: vec![],
-        msg: to_binary(&msg)?,
+        msg: to_json_binary(&msg)?,
     };
     Ok(update_ask_msg)
 }
@@ -511,7 +511,7 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
         .load(deps.storage, token_id)?
         .owner;
 
-    if &owner != sender {
+    if owner != sender {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -603,7 +603,7 @@ pub fn transcode(address: &str) -> StdResult<String> {
 
 fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, ContractError> {
     // we have an EOA registration
-    if sender == &addr {
+    if sender == addr {
         return Ok(addr);
     }
 
