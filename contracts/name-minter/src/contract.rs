@@ -216,7 +216,10 @@ pub fn execute_mint_and_list(
         .add_attribute("owner", sender)
         .add_attribute(
             "price",
-            price.unwrap_or_else(|| coin(0, NATIVE_DENOM)).amount.to_string(),
+            price
+                .unwrap_or_else(|| coin(0, NATIVE_DENOM))
+                .amount
+                .to_string(),
         );
     Ok(res
         .add_event(event)
