@@ -12,6 +12,7 @@ use cw721_base::{state::TokenInfo, MintMsg};
 use cw_utils::{nonpayable, Expiration};
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
+use sg721_base::msg::CollectionInfoResponse;
 use sg721_base::ContractError::{Claimed, Unauthorized};
 use sg_name::{Metadata, TextRecord, MAX_TEXT_LENGTH, NFT};
 use sg_name_market::SgNameMarketplaceExecuteMsg;
@@ -605,6 +606,18 @@ fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, Contr
     // we have an EOA registration
     if sender == addr {
         return Ok(addr);
+    }
+
+    let contract_details = cw2::query_contract_info(&deps.querier, addr.to_string())?;
+    if contract_details.contract.contains("sg721-base")
+        || contract_details.contract.contains("sg721-updatable")
+    {
+        let collection_info: CollectionInfoResponse = deps
+            .querier
+            .query_wasm_smart(&addr, &sg721_base::msg::QueryMsg::CollectionInfo {})?;
+        if collection_info.creator == sender.to_string() {
+            return Ok(addr);
+        }
     }
 
     let ContractInfoResponse { admin, creator, .. } =
