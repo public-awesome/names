@@ -31,11 +31,11 @@ sg-metadata      = "0.22.9"
 sg-multi-test    = "0.22.9"
 sg-std           = "0.22.9"
 thiserror        = "1.0.31"
-sg-name-common   = { version = "1.2.5", path = "./packages/sg-name-common" }
-sg-name          = { version = "1.2.5", path = "./packages/sg-name" }
-sg-name-market   = { version = "1.2.5", path = "./packages/sg-name-market" }
-sg-name-minter   = { version = "1.2.5", path = "./packages/sg-name-minter" }
-name-marketplace = { version = "1.2.5", path = "./contracts/marketplace", features = ["library"] }
+sg-name-common   = { path = "./packages/sg-name-common" }
+sg-name          = { path = "./packages/sg-name" }
+sg-name-market   = { path = "./packages/sg-name-market" }
+sg-name-minter   = { path = "./packages/sg-name-minter" }
+name-marketplace = { path = "./contracts/marketplace", features = ["library"] }
 name-minter      = { path = "./contracts/name-minter", features = ["library"] }
 sg721-name       = { path = "./contracts/sg721-name", features = ["library"] }
 
