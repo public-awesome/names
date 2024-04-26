@@ -421,7 +421,7 @@ mod tests {
 
         let msg = InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
-            addresses: addrs.clone(),
+            addresses: addrs,
             mint_discount_amount: None,
             admin_list: Some(vec![CREATOR.to_string(), TEMP_ADMIN.to_string()]),
         };
@@ -458,7 +458,7 @@ mod tests {
         let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
             address: wl_addr.to_string(),
         };
-        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
+        let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr, &msg, &[]);
         assert!(res.is_ok());
 
         let res: bool = app

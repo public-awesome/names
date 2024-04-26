@@ -615,7 +615,7 @@ fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, Contr
         let collection_info: CollectionInfoResponse = deps
             .querier
             .query_wasm_smart(&addr, &sg721_base::msg::QueryMsg::CollectionInfo {})?;
-        if collection_info.creator == sender.to_string() {
+        if collection_info.creator == *sender.to_string() {
             return Ok(addr);
         }
     }

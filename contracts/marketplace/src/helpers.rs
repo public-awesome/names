@@ -209,7 +209,7 @@ fn sell_name(
         deps.as_ref(),
         ask.clone(),
         bid.amount,
-        bid.bidder.clone(),
+        bid.bidder,
         &mut response,
     )?;
 
