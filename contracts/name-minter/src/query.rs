@@ -21,7 +21,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_whitelists(deps: Deps) -> StdResult<Vec<Addr>> {
     let whitelists = WHITELISTS.load(deps.storage)?;
-    Ok(whitelists.iter().map(|w| w.addr()).collect())
+    Ok(whitelists.iter().map(|w| w.addr.clone()).collect())
 }
 
 fn query_collection(deps: Deps) -> StdResult<Addr> {

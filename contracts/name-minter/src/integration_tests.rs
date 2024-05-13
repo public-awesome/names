@@ -214,6 +214,7 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string()
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());
@@ -2121,6 +2122,7 @@ mod whitelist {
         let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -2166,6 +2168,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2243,6 +2246,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -2277,6 +2281,7 @@ mod whitelist {
 
         let msg = ExecuteMsg::AddWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());

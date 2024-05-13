@@ -21,12 +21,14 @@ use sg_name::{Metadata, SgNameExecuteMsg};
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
 use sg_name_minter::{Config, SudoParams, PUBLIC_MINT_START_TIME_IN_SECONDS};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
+use whitelist_updatable::helpers::WhitelistUpdatableContract;
 use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{
-    ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE, PAUSED, SUDO_PARAMS, WHITELISTS,
+    WhitelistContract, WhitelistContractType, ADMIN, CONFIG, NAME_COLLECTION, NAME_MARKETPLACE,
+    PAUSED, SUDO_PARAMS, WHITELISTS,
 };
 
 // version info for migration info
@@ -54,7 +56,10 @@ pub fn instantiate(
         .whitelists
         .iter()
         .filter_map(|addr| api.addr_validate(addr).ok())
-        .map(WhitelistUpdatableFlatrateContract)
+        .map(|addr| WhitelistContract {
+            contract_type: WhitelistContractType::UpdatableFlatrateDiscount,
+            addr,
+        })
         .collect::<Vec<_>>();
 
     WHITELISTS.save(deps.storage, &lists)?;
@@ -99,6 +104,7 @@ pub fn instantiate(
         verifier: msg.verifier,
         base_init_msg: collection_init_msg,
     };
+
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.collection_code_id,
         msg: to_json_binary(&name_collection_init_msg)?,
@@ -129,7 +135,10 @@ pub fn execute(
             Ok(ADMIN.execute_update_admin(deps, info, maybe_addr(api, admin)?)?)
         }
         ExecuteMsg::Pause { pause } => execute_pause(deps, info, pause),
-        ExecuteMsg::AddWhitelist { address } => execute_add_whitelist(deps, info, address),
+        ExecuteMsg::AddWhitelist {
+            address,
+            whitelist_type,
+        } => execute_add_whitelist(deps, info, address, whitelist_type),
         ExecuteMsg::RemoveWhitelist { address } => execute_remove_whitelist(deps, info, address),
         ExecuteMsg::UpdateConfig { config } => execute_update_config(deps, info, env, config),
     }
@@ -157,25 +166,63 @@ pub fn execute_mint_and_list(
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
 
-    let list = whitelists.iter().find(|whitelist| {
-        whitelist
-            .includes(&deps.querier, sender.to_string())
-            .unwrap_or(false)
-    });
+    let list = whitelists
+        .iter()
+        .find(|whitelist| match whitelist.contract_type {
+            WhitelistContractType::UpdatableFlatrateDiscount => {
+                let contract = WhitelistUpdatableFlatrateContract(whitelist.addr.clone());
+                contract
+                    .includes(&deps.querier, sender.to_string())
+                    .unwrap_or(false)
+            }
+            WhitelistContractType::UpdatablePercentDiscount => {
+                let contract = WhitelistUpdatableContract(whitelist.addr.clone());
+                contract
+                    .includes(&deps.querier, sender.to_string())
+                    .unwrap_or(false)
+            }
+        });
 
     // if not on any whitelist, check public mint start time
     if list.is_none() && env.block.time < config.public_mint_start_time {
         return Err(ContractError::MintingNotStarted {});
     }
 
-    let discount = list
-        .map(|list| {
-            res.messages
-                .push(SubMsg::new(list.process_address(sender)?));
-            list.mint_discount_amount(&deps.querier)
-        })
-        .transpose()?
-        .unwrap_or(None);
+    for list in list.iter() {
+        match list.contract_type {
+            WhitelistContractType::UpdatableFlatrateDiscount => {
+                let contract = WhitelistUpdatableFlatrateContract(list.addr.clone());
+                res.messages
+                    .push(SubMsg::new(contract.process_address(sender)?));
+            }
+            WhitelistContractType::UpdatablePercentDiscount => {
+                let contract = WhitelistUpdatableContract(list.addr.clone());
+                res.messages
+                    .push(SubMsg::new(contract.process_address(sender)?));
+            }
+        }
+    }
+
+    let discount = list.map(|list| match list.contract_type {
+        WhitelistContractType::UpdatableFlatrateDiscount => {
+            let contract = WhitelistUpdatableFlatrateContract(list.addr.clone());
+            return Discount::Flatrate(
+                contract
+                    .mint_discount_amount(&deps.querier)
+                    .unwrap()
+                    .unwrap(),
+            );
+        }
+        WhitelistContractType::UpdatablePercentDiscount => {
+            let contract = WhitelistUpdatableContract(list.addr.clone());
+            return Discount::Percent(
+                contract
+                    .mint_discount_percent(&deps.querier)
+                    .unwrap()
+                    .unwrap(),
+            );
+        }
+    });
 
     let price = validate_payment(name.len(), &info, params.base_price.u128(), discount)?;
     if price.is_some() {
@@ -245,6 +292,7 @@ pub fn execute_add_whitelist(
     deps: DepsMut,
     info: MessageInfo,
     address: String,
+    whitelist_type: String,
 ) -> Result<Response, ContractError> {
     ADMIN.assert_admin(deps.as_ref(), &info.sender)?;
 
@@ -254,7 +302,21 @@ pub fn execute_add_whitelist(
         .map(WhitelistUpdatableFlatrateContract)?;
 
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.push(whitelist);
+    match whitelist_type.as_str() {
+        "FlatrateDiscount" => {
+            lists.push(WhitelistContract {
+                contract_type: WhitelistContractType::UpdatableFlatrateDiscount,
+                addr: whitelist.addr(),
+            });
+        }
+        "PercentDiscount" => {
+            lists.push(WhitelistContract {
+                contract_type: WhitelistContractType::UpdatablePercentDiscount,
+                addr: whitelist.addr(),
+            });
+        }
+        _ => return Err(ContractError::InvalidWhitelistType {}),
+    }
 
     WHITELISTS.save(deps.storage, &lists)?;
 
@@ -271,7 +333,7 @@ pub fn execute_remove_whitelist(
 
     let whitelist = deps.api.addr_validate(&address)?;
     let mut lists = WHITELISTS.load(deps.storage)?;
-    lists.retain(|addr| addr.addr() != whitelist);
+    lists.retain(|whitelist_contract| whitelist_contract.addr != whitelist);
 
     WHITELISTS.save(deps.storage, &lists)?;
 
@@ -327,11 +389,16 @@ fn validate_name(name: &str, min: u32, max: u32) -> Result<(), ContractError> {
     Ok(())
 }
 
+pub enum Discount {
+    Flatrate(u64),
+    Percent(Decimal),
+}
+
 fn validate_payment(
     name_len: usize,
     info: &MessageInfo,
     base_price: u128,
-    discount: Option<u64>,
+    discount: Option<Discount>,
 ) -> Result<Option<Coin>, ContractError> {
     // Because we know we are left with ASCII chars, a simple byte count is enough
     let mut amount: Uint128 = (match name_len {
@@ -344,15 +411,22 @@ fn validate_payment(
     })
     .into();
 
-    if let Some(discount_value) = discount {
-        let discount_amount = Uint128::from(discount_value);
-        // TODO: should we handle the case where discount > amount (eg 1,000 discount but buying a 100 name)
-        if amount.ge(&discount_amount) {
-            amount = amount
-                .checked_sub(discount_amount)
-                .map_err(|_| StdError::generic_err("invalid discount amount"))?;
+        match discount {
+            Some(Discount::Flatrate(discount)) => {
+                let discount = Uint128::from(discount);
+                if amount.ge(&discount) {
+                    amount = amount
+                        .checked_sub(discount)
+                        .map_err(|_| StdError::generic_err("invalid discount amount"))?;
+                }
+            }
+            Some(Discount::Percent(discount)) => {
+                amount = amount * (Decimal::one() - discount);
+            }
+            None => {
+                amount = amount;
+            }
         }
-    }
 
     if amount.is_zero() {
         return Ok(None);
@@ -436,7 +510,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
 mod tests {
     use cosmwasm_std::{coin, Addr, MessageInfo};
 
-    use crate::contract::validate_name;
+    use crate::contract::{self, validate_name};
 
     use super::validate_payment;
 
@@ -526,11 +600,16 @@ mod tests {
         };
         assert_eq!(
             // we treat the discount as a flat amount given as 100.0
-            validate_payment(5, &info, base_price, Some(100),)
-                .unwrap()
-                .unwrap()
-                .amount
-                .u128(),
+            validate_payment(
+                5,
+                &info,
+                base_price,
+                Some(contract::Discount::Flatrate(100)),
+            )
+            .unwrap()
+            .unwrap()
+            .amount
+            .u128(),
             base_price - 100
         );
     }
