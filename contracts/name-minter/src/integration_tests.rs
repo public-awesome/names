@@ -2112,7 +2112,7 @@ mod whitelist {
     }
 
     #[test]
-    fn add_remove_whitelist() {
+    fn add_remove_flatrate_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         let whitelists: Vec<Addr> = app
@@ -2123,6 +2123,39 @@ mod whitelist {
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
             whitelist_type: "FlatrateDiscount".to_string(),
+        };
+
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count + 1);
+
+        let msg = ExecuteMsg::RemoveWhitelist {
+            address: "whitelist".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count);
+    }
+
+
+    #[test]
+    fn add_remove_percent_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let whitelists: Vec<Addr> = app
+            .wrap()
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
+            .unwrap();
+        let wl_count = whitelists.len();
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "whitelist".to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -2276,7 +2309,67 @@ mod whitelist {
     }
 
     #[test]
-    fn mint_from_whitelist() {
+    fn mint_from_incorrect_whitelist_type() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: WHITELIST.to_string(),
+            whitelist_type: "FakeDiscount".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert_eq!(res.is_ok(), false);
+    }
+
+    #[test]
+    fn mint_from_percent_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: WHITELIST.to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), 2);
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(wl_addr_count, 5);
+
+        let msg = WhitelistExecuteMsg::AddAddresses {
+            addresses: vec![USER3.to_string()],
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(WHITELIST),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = WhitelistQueryMsg::Config {};
+        let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res, wl_addr_count + 1);
+
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER3.to_string(),
+        };
+        let res: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(res);
+
+        let res = mint_and_list(&mut app, NAME, USER3, None);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn mint_from_flatrate_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         let msg = ExecuteMsg::AddWhitelist {
