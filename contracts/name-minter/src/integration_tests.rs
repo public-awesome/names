@@ -2143,7 +2143,6 @@ mod whitelist {
         assert_eq!(whitelists.len(), wl_count);
     }
 
-
     #[test]
     fn add_remove_percent_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
