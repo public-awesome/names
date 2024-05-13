@@ -214,7 +214,7 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
-            whitelist_type: "FlatrateDiscount".to_string()
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());

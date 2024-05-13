@@ -151,6 +151,7 @@ mod tests {
         // add wl_addr to minter
         let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
             address: wl_addr.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
@@ -337,6 +338,7 @@ mod tests {
         // surpass limit
         let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
             address: wl_addr.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr.clone(), &msg, &[]);
         assert!(res.is_ok());
@@ -457,6 +459,7 @@ mod tests {
 
         let msg = sg_name_minter::SgNameMinterExecuteMsg::AddWhitelist {
             address: wl_addr.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(CREATOR), minter_addr, &msg, &[]);
         assert!(res.is_ok());

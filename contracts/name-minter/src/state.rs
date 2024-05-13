@@ -5,15 +5,13 @@ use cw_storage_plus::Item;
 use serde::{Deserialize, Serialize};
 use sg_name_minter::{Config, SudoParams};
 
-use whitelist_updatable_flatrate::helpers::WhitelistUpdatableFlatrateContract;
-
 #[derive(Serialize, Deserialize)]
 pub struct WhitelistContract {
     pub contract_type: WhitelistContractType,
     pub addr: Addr,
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum WhitelistContractType {
     UpdatableFlatrateDiscount,
     UpdatablePercentDiscount,

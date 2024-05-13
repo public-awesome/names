@@ -188,7 +188,7 @@ pub fn execute_mint_and_list(
         return Err(ContractError::MintingNotStarted {});
     }
 
-    for list in list.iter() {
+    if let Some(list) = list {
         match list.contract_type {
             WhitelistContractType::UpdatableFlatrateDiscount => {
                 let contract = WhitelistUpdatableFlatrateContract(list.addr.clone());
@@ -206,21 +206,21 @@ pub fn execute_mint_and_list(
     let discount = list.map(|list| match list.contract_type {
         WhitelistContractType::UpdatableFlatrateDiscount => {
             let contract = WhitelistUpdatableFlatrateContract(list.addr.clone());
-            return Discount::Flatrate(
+            Discount::Flatrate(
                 contract
                     .mint_discount_amount(&deps.querier)
                     .unwrap()
-                    .unwrap(),
-            );
+                    .unwrap_or(0u64),
+            )
         }
         WhitelistContractType::UpdatablePercentDiscount => {
             let contract = WhitelistUpdatableContract(list.addr.clone());
-            return Discount::Percent(
+            Discount::Percent(
                 contract
                     .mint_discount_percent(&deps.querier)
                     .unwrap()
-                    .unwrap(),
-            );
+                    .unwrap_or(Decimal::zero()),
+            )
         }
     });
 
@@ -411,22 +411,20 @@ fn validate_payment(
     })
     .into();
 
-        match discount {
-            Some(Discount::Flatrate(discount)) => {
-                let discount = Uint128::from(discount);
-                if amount.ge(&discount) {
-                    amount = amount
-                        .checked_sub(discount)
-                        .map_err(|_| StdError::generic_err("invalid discount amount"))?;
-                }
-            }
-            Some(Discount::Percent(discount)) => {
-                amount = amount * (Decimal::one() - discount);
-            }
-            None => {
-                amount = amount;
+    match discount {
+        Some(Discount::Flatrate(discount)) => {
+            let discount = Uint128::from(discount);
+            if amount.ge(&discount) {
+                amount = amount
+                    .checked_sub(discount)
+                    .map_err(|_| StdError::generic_err("invalid discount amount"))?;
             }
         }
+        Some(Discount::Percent(discount)) => {
+            amount = amount * (Decimal::one() - discount);
+        }
+        None => {}
+    }
 
     if amount.is_zero() {
         return Ok(None);
