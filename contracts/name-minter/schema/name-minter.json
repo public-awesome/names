@@ -151,10 +151,14 @@
           "add_whitelist": {
             "type": "object",
             "required": [
-              "address"
+              "address",
+              "whitelist_type"
             ],
             "properties": {
               "address": {
+                "type": "string"
+              },
+              "whitelist_type": {
                 "type": "string"
               }
             },
