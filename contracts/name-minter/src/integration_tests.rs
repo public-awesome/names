@@ -26,6 +26,7 @@ use sg_name_minter::{
     SgNameMinterQueryMsg, SudoParams as NameMinterParams, PUBLIC_MINT_START_TIME_IN_SECONDS,
 };
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
+use whitelist_updatable::msg::QueryMsg as PercentWhitelistQueryMsg;
 use whitelist_updatable_flatrate::msg::{
     ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg,
 };
@@ -60,6 +61,15 @@ pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
         whitelist_updatable_flatrate::contract::execute,
         whitelist_updatable_flatrate::contract::instantiate,
         whitelist_updatable_flatrate::contract::query,
+    );
+    Box::new(contract)
+}
+
+pub fn contract_whitelist_percent() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
+        whitelist_updatable::contract::execute,
+        whitelist_updatable::contract::instantiate,
+        whitelist_updatable::contract::query,
     );
     Box::new(contract)
 }
@@ -2303,6 +2313,52 @@ mod whitelist {
                 Uint128::from(1_000_000_000u128),
             )),
         );
+        println!("result: {:?}", res);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn discount2() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+        let wl_id = app.store_code(contract_whitelist_percent());
+
+        // instantiate wl2
+        let msg = whitelist_updatable::msg::InstantiateMsg {
+            per_address_limit: PER_ADDRESS_LIMIT,
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                USER.to_string(),
+                USER2.to_string(),
+                ADMIN2.to_string(),
+            ],
+            mint_discount_bps: Some(1000u64),
+        };
+
+        let wl2 = app
+            .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
+            .unwrap();
+
+        // add wl2 to minter
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl2.to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN.to_string()),
+            Addr::unchecked(MINTER.to_string()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // mint and list with discount
+        // query discount, pass to mint_and_list
+        let discount: Decimal = app
+            .wrap()
+            .query_wasm_smart(wl2, &(PercentWhitelistQueryMsg::MintDiscountPercent {}))
+            .unwrap();
+        let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
         println!("result: {:?}", res);
         assert!(res.is_ok());
     }
