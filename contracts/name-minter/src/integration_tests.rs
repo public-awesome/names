@@ -2372,7 +2372,7 @@ mod whitelist {
             whitelist_type: "FakeDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
-        assert_eq!(res.is_ok(), false);
+        assert!(!res.is_ok());
     }
 
     #[test]
