@@ -165,7 +165,7 @@ pub fn execute_mint_and_list(
 
     // Assumes no duplicate addresses between whitelists
     // Otherwise there will be edge cases with per addr limit between the whitelists
-
+    // currently this is going to match the _first_ WL they appear in...
     let list = whitelists
         .iter()
         .find(|whitelist| match whitelist.contract_type {
