@@ -28,9 +28,11 @@ export interface NameMinterMessage {
     pause: boolean;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   addWhitelist: ({
-    address
+    address,
+    whitelistType
   }: {
     address: string;
+    whitelistType: string;
   }, funds?: Coin[]) => MsgExecuteContractEncodeObject;
   removeWhitelist: ({
     address
@@ -116,9 +118,11 @@ export class NameMinterMessageComposer implements NameMinterMessage {
     };
   };
   addWhitelist = ({
-    address
+    address,
+    whitelistType
   }: {
     address: string;
+    whitelistType: string;
   }, funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -127,7 +131,8 @@ export class NameMinterMessageComposer implements NameMinterMessage {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           add_whitelist: {
-            address
+            address,
+            whitelist_type: whitelistType
           }
         })),
         funds

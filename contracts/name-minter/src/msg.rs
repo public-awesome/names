@@ -27,7 +27,10 @@ pub enum ExecuteMsg {
     /// Admin can pause minting during whitelist switching
     Pause { pause: bool },
     /// Add a whitelist address
-    AddWhitelist { address: String },
+    AddWhitelist {
+        address: String,
+        whitelist_type: String,
+    },
     /// Remove a whitelist address
     RemoveWhitelist { address: String },
     /// Update config, only callable by admin

@@ -19,6 +19,11 @@ exclude = [
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "schema"
+path = "src/bin/schema.rs"
+doc  = false
+
 [features]
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
@@ -42,9 +47,10 @@ sg-name-common   = { workspace = true }
 sg-std           = { workspace = true }
 sg1              = { workspace = true }
 thiserror        = { workspace = true }
+sg-name          = { workspace = true }
+sg-name-minter   = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = { workspace = true }
 sg-multi-test = { workspace = true }
-sg721-name    = { workspace = true, features = ["library"] }
 sg721         = { workspace = true }

@@ -11,3 +11,6 @@ publish:
 
 schema:
 	sh scripts/schema.sh
+
+coverage:
+	cargo tarpaulin --verbose --workspace --timeout 120 --out Html --avoid-cfg-tarpaulin

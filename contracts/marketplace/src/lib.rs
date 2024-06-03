@@ -1,7 +1,8 @@
 mod error;
 pub mod execute;
-mod helpers;
+pub mod helpers;
 pub mod hooks;
+pub mod migrate;
 pub mod msg;
 pub mod query;
 pub mod state;

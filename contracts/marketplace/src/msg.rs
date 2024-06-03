@@ -1,6 +1,6 @@
 use crate::state::{Ask, Bid, Id, SudoParams, TokenId};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_binary, Addr, Binary, StdResult, Timestamp, Uint128};
+use cosmwasm_std::{to_json_binary, Addr, Binary, Coin, Decimal, StdResult, Timestamp, Uint128};
 use sg_controllers::HooksResponse;
 
 #[cw_serde]
@@ -12,6 +12,18 @@ pub struct InstantiateMsg {
     pub min_price: Uint128,
     /// Interval to rate limit setting asks (in seconds)
     pub ask_interval: u64,
+    /// The maximum number of renewals that can be processed in each block
+    pub max_renewals_per_block: u32,
+    /// The number of bids to query to when searching for the highest bid
+    pub valid_bid_query_limit: u32,
+    /// The number of seconds before the current block time that a
+    /// bid must have been created in order to be considered valid.
+    /// Also, the number of seconds before an ask expires where it can be renewed.
+    pub renew_window: u64,
+    /// The percentage of the winning bid that must be paid to renew a name
+    pub renewal_bid_percentage: Decimal,
+    /// The address with permission to invoke process_renewals
+    pub operator: String,
 }
 
 #[cw_serde]
@@ -31,13 +43,17 @@ pub enum ExecuteMsg {
     RemoveBid { token_id: TokenId },
     /// Accept a bid on an existing ask
     AcceptBid { token_id: TokenId, bidder: String },
+    /// Migrate bids from the old index to the new index
+    MigrateBids { limit: u32 },
     /// Fund renewal of a name
     FundRenewal { token_id: TokenId },
     /// Refund a renewal of a name
     RefundRenewal { token_id: TokenId },
+    /// Fully renew a name if within the renewal period
+    Renew { token_id: TokenId },
     /// Check if expired names have been paid for, and collect fees.
     /// If not paid, transfer ownership to the highest bidder.
-    ProcessRenewals { time: Timestamp },
+    ProcessRenewals { limit: u32 },
     /// Setup contract with minter and collection addresses
     /// Can only be run once
     Setup { minter: String, collection: String },
@@ -68,6 +84,9 @@ pub enum SudoMsg {
     AddSaleHook { hook: String },
     /// Remove a trade hook
     RemoveSaleHook { hook: String },
+    /// Is called by x/cron module EndBlocker,
+    /// and is used to process name renewals.
+    EndBlock {},
 }
 
 pub type Collection = String;
@@ -106,6 +125,13 @@ impl BidOffset {
 }
 
 #[cw_serde]
+pub struct AskRenewPriceResponse {
+    pub token_id: TokenId,
+    pub price: Coin,
+    pub bid: Option<Bid>,
+}
+
+#[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Get the current ask for specific name
@@ -127,6 +153,25 @@ pub enum QueryMsg {
         start_after: Option<TokenId>,
         limit: Option<u32>,
     },
+    /// Get all renewable Asks
+    #[returns(Vec<Ask>)]
+    AsksByRenewTime {
+        max_time: Timestamp,
+        start_after: Option<Timestamp>,
+        limit: Option<u32>,
+    },
+    /// Get the renewal price for a specific name
+    #[returns((Option<Coin>, Option<Bid>))]
+    AskRenewPrice {
+        current_time: Timestamp,
+        token_id: TokenId,
+    },
+    /// Get renewal price for multiple names
+    #[returns(Vec<AskRenewPriceResponse>)]
+    AskRenewalPrices {
+        current_time: Timestamp,
+        token_ids: Vec<TokenId>,
+    },
     /// Get data for a specific bid
     #[returns(Option<Bid>)]
     Bid { token_id: TokenId, bidder: Bidder },
@@ -142,6 +187,12 @@ pub enum QueryMsg {
     Bids {
         token_id: TokenId,
         start_after: Option<Bidder>,
+        limit: Option<u32>,
+    },
+    /// Get all legacy bids
+    #[returns(Vec<Bid>)]
+    LegacyBids {
+        start_after: Option<BidOffset>,
         limit: Option<u32>,
     },
     /// Get all bids for a collection, sorted by price
@@ -209,9 +260,9 @@ impl SaleHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self) -> StdResult<Binary> {
+    pub fn into_json_binary(self) -> StdResult<Binary> {
         let msg = SaleExecuteMsg::SaleHook(self);
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 
@@ -239,13 +290,13 @@ impl AskHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self, action: HookAction) -> StdResult<Binary> {
+    pub fn into_json_binary(self, action: HookAction) -> StdResult<Binary> {
         let msg = match action {
             HookAction::Create => AskHookExecuteMsg::AskCreatedHook(self),
             HookAction::Update => AskHookExecuteMsg::AskUpdatedHook(self),
             HookAction::Delete => AskHookExecuteMsg::AskDeletedHook(self),
         };
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 
@@ -268,13 +319,13 @@ impl BidHookMsg {
     }
 
     /// serializes the message
-    pub fn into_binary(self, action: HookAction) -> StdResult<Binary> {
+    pub fn into_json_binary(self, action: HookAction) -> StdResult<Binary> {
         let msg = match action {
             HookAction::Create => BidExecuteMsg::BidCreatedHook(self),
             HookAction::Update => BidExecuteMsg::BidUpdatedHook(self),
             HookAction::Delete => BidExecuteMsg::BidDeletedHook(self),
         };
-        to_binary(&msg)
+        to_json_binary(&msg)
     }
 }
 

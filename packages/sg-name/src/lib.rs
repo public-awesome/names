@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{to_vec, Addr};
+use cosmwasm_std::{to_json_vec, Addr};
 
 pub const MAX_TEXT_LENGTH: u32 = 512;
 
@@ -13,7 +13,7 @@ pub struct NFT {
 
 impl NFT {
     pub fn into_json_string(self: &NFT) -> String {
-        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+        String::from_utf8(to_json_vec(&self).unwrap_or_default()).unwrap_or_default()
     }
 }
 
@@ -34,7 +34,7 @@ impl TextRecord {
     }
 
     pub fn into_json_string(self: &TextRecord) -> String {
-        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+        String::from_utf8(to_json_vec(&self).unwrap_or_default()).unwrap_or_default()
     }
 }
 
@@ -53,7 +53,7 @@ impl Metadata {
     // and represent it as a type. Note that we have to use the CosmWasm fork
     // of serde_json to avoid floats.
     pub fn into_json_string(self: &Metadata) -> String {
-        String::from_utf8(to_vec(&self).unwrap_or_default()).unwrap_or_default()
+        String::from_utf8(to_json_vec(&self).unwrap_or_default()).unwrap_or_default()
     }
 }
 

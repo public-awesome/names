@@ -1,6 +1,6 @@
 {
   "contract_name": "name-minter",
-  "contract_version": "1.2.6",
+  "contract_version": "2.1.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -151,10 +151,14 @@
           "add_whitelist": {
             "type": "object",
             "required": [
-              "address"
+              "address",
+              "whitelist_type"
             ],
             "properties": {
               "address": {
+                "type": "string"
+              },
+              "whitelist_type": {
                 "type": "string"
               }
             },

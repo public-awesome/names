@@ -31,6 +31,7 @@ export type ExecuteMsg = {
 } | {
   add_whitelist: {
     address: string;
+    whitelist_type: string;
   };
 } | {
   remove_whitelist: {

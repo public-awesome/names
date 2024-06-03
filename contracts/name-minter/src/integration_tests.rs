@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::contract::{execute, instantiate, reply};
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::query::query;
@@ -7,18 +9,27 @@ use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{
     AppResponse, BankSudo, Contract, ContractWrapper, Executor, SudoMsg as CwSudoMsg,
 };
+use name_marketplace::helpers::get_char_price;
 use name_marketplace::msg::{
     ExecuteMsg as MarketplaceExecuteMsg, QueryMsg as MarketplaceQueryMsg,
     SudoMsg as MarketplaceSudoMsg,
 };
 use name_marketplace::state::Bid;
+use name_marketplace::{
+    msg::QueryMsg as NameMarketplaceQueryMsg, state::SudoParams as NameMarketplaceParams,
+};
 use sg721_name::ExecuteMsg as Sg721NameExecuteMsg;
 use sg_multi_test::StargazeApp;
 use sg_name::{SgNameExecuteMsg, SgNameQueryMsg};
 use sg_name_common::SECONDS_PER_YEAR;
-use sg_name_minter::PUBLIC_MINT_START_TIME_IN_SECONDS;
+use sg_name_minter::{
+    SgNameMinterQueryMsg, SudoParams as NameMinterParams, PUBLIC_MINT_START_TIME_IN_SECONDS,
+};
 use sg_std::{StargazeMsgWrapper, NATIVE_DENOM};
-use whitelist_updatable::msg::{ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg};
+use whitelist_updatable::msg::QueryMsg as PercentWhitelistQueryMsg;
+use whitelist_updatable_flatrate::msg::{
+    ExecuteMsg as WhitelistExecuteMsg, QueryMsg as WhitelistQueryMsg,
+};
 
 pub fn contract_minter() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -47,6 +58,15 @@ pub fn contract_collection() -> Box<dyn Contract<StargazeMsgWrapper>> {
 
 pub fn contract_whitelist() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
+        whitelist_updatable_flatrate::contract::execute,
+        whitelist_updatable_flatrate::contract::instantiate,
+        whitelist_updatable_flatrate::contract::query,
+    );
+    Box::new(contract)
+}
+
+pub fn contract_whitelist_percent() -> Box<dyn Contract<StargazeMsgWrapper>> {
+    let contract = ContractWrapper::new(
         whitelist_updatable::contract::execute,
         whitelist_updatable::contract::instantiate,
         whitelist_updatable::contract::query,
@@ -73,7 +93,9 @@ const BIDDER2: &str = "bidder2";
 const ADMIN: &str = "admin";
 const ADMIN2: &str = "admin2";
 const NAME: &str = "bobo";
+const NAME2: &str = "mccool";
 const VERIFIER: &str = "verifier";
+const OPERATOR: &str = "operator";
 
 const TRADING_FEE_BPS: u64 = 200; // 2%
 const BASE_PRICE: u128 = 100_000_000;
@@ -122,6 +144,11 @@ fn instantiate_contracts(
         trading_fee_bps: TRADING_FEE_BPS,
         min_price: Uint128::from(5u128),
         ask_interval: 60,
+        max_renewals_per_block: 20,
+        valid_bid_query_limit: 10,
+        renew_window: 60 * 60 * 24 * 30,
+        renewal_bid_percentage: Decimal::from_str("0.005").unwrap(),
+        operator: OPERATOR.to_string(),
     };
     let marketplace = app
         .instantiate_contract(
@@ -172,12 +199,12 @@ fn instantiate_contracts(
 
     let res: Addr = app
         .wrap()
-        .query_wasm_smart(COLLECTION, &SgNameQueryMsg::NameMarketplace {})
+        .query_wasm_smart(COLLECTION, &(SgNameQueryMsg::NameMarketplace {}))
         .unwrap();
     assert_eq!(res, marketplace.to_string());
 
     // 4. Instantiate Whitelist
-    let msg = whitelist_updatable::msg::InstantiateMsg {
+    let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
         per_address_limit: PER_ADDRESS_LIMIT,
         addresses: vec![
             "addr0001".to_string(),
@@ -186,7 +213,8 @@ fn instantiate_contracts(
             USER4.to_string(),
             ADMIN2.to_string(),
         ],
-        mint_discount_bps: None,
+        mint_discount_amount: None,
+        admin_list: None,
     };
     let wl = app
         .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
@@ -196,6 +224,7 @@ fn instantiate_contracts(
     if let Some(admin) = admin {
         let msg = ExecuteMsg::AddWhitelist {
             address: wl.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(admin), Addr::unchecked(minter), &msg, &[]);
         assert!(res.is_ok());
@@ -209,10 +238,10 @@ fn owner_of(app: &StargazeApp, token_id: String) -> String {
         .wrap()
         .query_wasm_smart(
             COLLECTION,
-            &sg721_base::msg::QueryMsg::OwnerOf {
+            &(sg721_base::msg::QueryMsg::OwnerOf {
                 token_id,
                 include_expired: None,
-            },
+            }),
         )
         .unwrap();
 
@@ -245,12 +274,12 @@ fn mint_and_list(
     );
     assert!(res.is_ok());
 
-    let amount: Uint128 = match name.len() {
+    let amount: Uint128 = (match name.len() {
         0..=2 => BASE_PRICE,
         3 => BASE_PRICE * 100,
         4 => BASE_PRICE * 10,
         _ => BASE_PRICE,
-    }
+    })
     .into();
 
     let amount = discount
@@ -259,14 +288,16 @@ fn mint_and_list(
 
     // give user some funds
     let name_fee = coins(amount.into(), NATIVE_DENOM);
-    app.sudo(CwSudoMsg::Bank({
-        BankSudo::Mint {
-            to_address: user.to_string(),
-            amount: name_fee.clone(),
-        }
-    }))
-    .map_err(|err| println!("{:?}", err))
-    .ok();
+    if amount > Uint128::from(0u128) {
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: user.to_string(),
+                amount: name_fee.clone(),
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+    }
 
     let msg = ExecuteMsg::MintAndList {
         name: name.to_string(),
@@ -305,10 +336,10 @@ fn bid(app: &mut StargazeApp, name: &str, bidder: &str, amount: u128) {
         .wrap()
         .query_wasm_smart(
             MKT,
-            &MarketplaceQueryMsg::Bid {
+            &(MarketplaceQueryMsg::Bid {
                 token_id: name.to_string(),
                 bidder: bidder.to_string(),
-            },
+            }),
         )
         .unwrap();
     let bid = res.unwrap();
@@ -323,7 +354,7 @@ mod execute {
     use name_marketplace::state::{Ask, SudoParams};
     use sg721_name::msg::QueryMsg as Sg721NameQueryMsg;
     use sg_name::Metadata;
-    use whitelist_updatable::msg::QueryMsg::IncludesAddress;
+    use whitelist_updatable_flatrate::msg::QueryMsg::IncludesAddress;
 
     use crate::msg::QueryMsg;
 
@@ -341,12 +372,12 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &sg721_base::msg::QueryMsg::AllOperators {
+                &(sg721_base::msg::QueryMsg::AllOperators {
                     owner: USER.to_string(),
                     include_expired: None,
                     start_after: None,
                     limit: None,
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.operators.len(), 1);
@@ -364,9 +395,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Ask {
+                &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.unwrap().token_id, NAME);
@@ -376,7 +407,7 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &sg721_base::msg::QueryMsg::NumTokens {},
+                &(sg721_base::msg::QueryMsg::NumTokens {}),
             )
             .unwrap();
 
@@ -420,10 +451,10 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Bid {
+                &(MarketplaceQueryMsg::Bid {
                     token_id: NAME.to_string(),
                     bidder: BIDDER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -444,9 +475,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::Ask {
+                &(MarketplaceQueryMsg::Ask {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         let ask = res.unwrap();
@@ -507,9 +538,9 @@ mod execute {
         // when no associated address, query should throw error
         let res: Result<String, cosmwasm_std::StdError> = app.wrap().query_wasm_smart(
             COLLECTION,
-            &SgNameQueryMsg::AssociatedAddress {
+            &(SgNameQueryMsg::AssociatedAddress {
                 name: NAME.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
 
@@ -530,9 +561,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &SgNameQueryMsg::AssociatedAddress {
+                &(SgNameQueryMsg::AssociatedAddress {
                     name: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, user.to_string());
@@ -561,9 +592,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &SgNameQueryMsg::Name {
+                &(SgNameQueryMsg::Name {
                     address: user.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, name2.to_string());
@@ -573,9 +604,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -585,9 +616,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: name2.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, Some(user.to_string()));
@@ -610,9 +641,9 @@ mod execute {
             .wrap()
             .query_wasm_smart(
                 Addr::unchecked(COLLECTION),
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.token_uri, None);
@@ -633,9 +664,9 @@ mod execute {
         // confirm removed from reverse names map
         let res: Result<String, StdError> = app.wrap().query_wasm_smart(
             Addr::unchecked(COLLECTION),
-            &SgNameQueryMsg::Name {
+            &(SgNameQueryMsg::Name {
                 address: user.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
     }
@@ -715,7 +746,7 @@ mod execute {
         // verify addr in wl
         let whitelists: Vec<Addr> = app
             .wrap()
-            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
             .unwrap();
 
         assert_eq!(whitelists.len(), 1);
@@ -725,9 +756,9 @@ mod execute {
                 .wrap()
                 .query_wasm_smart(
                     Addr::unchecked(whitelist.to_string()),
-                    &IncludesAddress {
+                    &(IncludesAddress {
                         address: USER.to_string(),
-                    },
+                    }),
                 )
                 .unwrap();
             dbg!(included, whitelist);
@@ -763,7 +794,7 @@ mod execute {
 
         let res: SudoParams = app
             .wrap()
-            .query_wasm_smart(Addr::unchecked(MKT), &QueryMsg::Params {})
+            .query_wasm_smart(Addr::unchecked(MKT), &(QueryMsg::Params {}))
             .unwrap();
         let params = res;
 
@@ -774,7 +805,7 @@ mod execute {
 }
 
 mod admin {
-    use whitelist_updatable::state::Config;
+    use whitelist_updatable_flatrate::state::Config;
 
     use crate::msg::QueryMsg;
 
@@ -814,7 +845,7 @@ mod admin {
 
         let msg = WhitelistQueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.admin, ADMIN2.to_string());
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
@@ -844,7 +875,10 @@ mod admin {
 }
 
 mod query {
+    use cosmwasm_std::coin;
+    use cosmwasm_std::Coin;
     use cosmwasm_std::StdResult;
+    use name_marketplace::msg::AskRenewPriceResponse;
     use name_marketplace::msg::BidOffset;
     use name_marketplace::state::Ask;
     use sg721_base::msg::CollectionInfoResponse;
@@ -1016,9 +1050,9 @@ mod query {
             .wrap()
             .query_wasm_smart(
                 MKT,
-                &MarketplaceQueryMsg::RenewalQueue {
+                &(MarketplaceQueryMsg::RenewalQueue {
                     time: app.block_info().time.plus_seconds(SECONDS_PER_YEAR),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.len(), 2);
@@ -1026,7 +1060,7 @@ mod query {
     }
 
     #[test]
-    fn renewal_fee() {
+    fn renewal_fee_transfer_refund() {
         let mut app = instantiate_contracts(None, None, None);
 
         mint_and_list(&mut app, NAME, USER, None).unwrap();
@@ -1090,6 +1124,429 @@ mod query {
     }
 
     #[test]
+    fn renew_price_no_bid() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        let res: StdResult<String> = app.wrap().query_wasm_smart(
+            COLLECTION,
+            &SgNameQueryMsg::Name {
+                address: USER.to_string(),
+            },
+        );
+        assert!(res.is_err());
+
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
+        assert!(renewal_price.is_none());
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
+
+        let params: NameMinterParams = app
+            .wrap()
+            .query_wasm_smart(MINTER, &SgNameMinterQueryMsg::Params {})
+            .unwrap();
+
+        let char_price = get_char_price(params.base_price.u128(), NAME.len());
+
+        println!("char_price: {}", char_price);
+
+        assert_eq!(renewal_price.unwrap().amount, char_price);
+    }
+
+    #[test]
+    fn renew_price_with_bid() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // Amount to make it just above the char price
+        let bid_amount = 1_000_000_000u128 * 201u128;
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 31));
+
+        bid(&mut app, NAME, BIDDER, bid_amount);
+
+        update_block_time(&mut app, 60 * 60 * 24 * 31);
+
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
+
+        let params: NameMarketplaceParams = app
+            .wrap()
+            .query_wasm_smart(MKT, &NameMarketplaceQueryMsg::Params {})
+            .unwrap();
+
+        let expect_price = Uint128::from(bid_amount) * params.renewal_bid_percentage;
+        assert_eq!(renewal_price.unwrap().amount, expect_price);
+    }
+
+    #[test]
+    fn multiple_renew_prices() {
+        // test that QueryRenewPrices returns multiple entires
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+        mint_and_list(&mut app, NAME2, USER, None).unwrap();
+
+        // Amount to make it just above the char price
+        let bid_amount = 1_000_000_000u128 * 201u128;
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 31));
+
+        bid(&mut app, NAME, BIDDER, bid_amount);
+        bid(&mut app, NAME2, BIDDER, bid_amount);
+
+        update_block_time(&mut app, 60 * 60 * 24 * 31);
+
+        let result = app.wrap().query_wasm_smart::<Vec<AskRenewPriceResponse>>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewalPrices {
+                current_time: app.block_info().time,
+                token_ids: vec![NAME.to_string(), NAME2.to_string()],
+            },
+        );
+        println!("{:?}", result);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn renew_execute_msg() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // Amount to make it just above the char price
+        let bid_amount = 1_000_000_000u128 * 201u128;
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        bid(&mut app, NAME, BIDDER, bid_amount);
+
+        update_block_time(&mut app, 1);
+
+        let result = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+
+        let (renewal_price, _renewal_bid) = result.unwrap();
+        let renewal_amount = renewal_price.unwrap().amount;
+
+        let fund_amount = coins(renewal_amount.u128() * 100_u128, NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+
+        let ask = app
+            .wrap()
+            .query_wasm_smart::<Option<Ask>>(
+                MKT,
+                &MarketplaceQueryMsg::Ask {
+                    token_id: NAME.to_string(),
+                },
+            )
+            .unwrap()
+            .unwrap();
+        let expected_renewal_time = ask.renewal_time.plus_seconds(SECONDS_PER_YEAR);
+
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::Renew {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_amount.u128(), NATIVE_DENOM)],
+        );
+        assert!(result.is_ok());
+
+        let result = app.wrap().query_wasm_smart::<Option<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::Ask {
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+        let ask = result.unwrap().unwrap();
+
+        assert_eq!(ask.renewal_fund, Uint128::zero());
+        assert_eq!(ask.renewal_time, expected_renewal_time);
+
+        let result = app.wrap().query_wasm_smart::<Vec<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::RenewalQueue {
+                time: expected_renewal_time,
+            },
+        );
+        assert!(result.is_ok());
+
+        let asks = result.unwrap();
+        assert_eq!(asks.len(), 1);
+    }
+
+    #[test]
+    fn process_renewals_renew() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(response.is_ok());
+        let renewal_price = response.unwrap().0.unwrap();
+
+        let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::FundRenewal {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_price.amount.u128(), NATIVE_DENOM)],
+        );
+        assert!(result.is_ok());
+
+        update_block_time(&mut app, 60 * 60 * 24 * 30);
+
+        let result = app.execute_contract(
+            Addr::unchecked(OPERATOR),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
+            &[],
+        );
+        assert!(result.is_ok());
+
+        let result = app.wrap().query_wasm_smart::<Option<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::Ask {
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+        let ask = result.unwrap().unwrap();
+
+        assert_eq!(ask.seller, USER.to_string());
+        assert_eq!(ask.renewal_fund, renewal_price.amount);
+
+        let expected_renewal_time = app.block_info().time.plus_seconds(SECONDS_PER_YEAR);
+        assert_eq!(ask.renewal_time, expected_renewal_time);
+
+        let result = app.wrap().query_wasm_smart::<Vec<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::RenewalQueue {
+                time: expected_renewal_time,
+            },
+        );
+        assert!(result.is_ok());
+
+        let asks = result.unwrap();
+        assert_eq!(asks.len(), 1);
+    }
+
+    #[test]
+    fn process_renewals_sell() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        // Amount to make it just above the char price
+        let bid_amount = 1_000_000_000u128 * 201u128;
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 31));
+
+        bid(&mut app, NAME, BIDDER, bid_amount);
+
+        update_block_time(&mut app, 60 * 60 * 24 * 31);
+
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        println!("xxx {:?}", response);
+        assert!(response.is_ok());
+        let response = response.unwrap();
+
+        assert!(response.1.is_some());
+        let renewal_price = response.0.unwrap();
+
+        let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::FundRenewal {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_price.amount.u128() - 1u128, NATIVE_DENOM)],
+        );
+        assert!(result.is_ok());
+
+        let user_balance_before = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
+
+        let result = app.execute_contract(
+            Addr::unchecked(OPERATOR),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
+            &[],
+        );
+        assert!(result.is_ok());
+
+        let result = app.wrap().query_wasm_smart::<Option<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::Ask {
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+        let ask = result.unwrap().unwrap();
+
+        assert_eq!(ask.seller, BIDDER.to_string());
+        assert_eq!(ask.renewal_fund, Uint128::zero());
+
+        let expected_renewal_time = app.block_info().time.plus_seconds(SECONDS_PER_YEAR);
+        assert_eq!(ask.renewal_time, expected_renewal_time);
+
+        let result = app.wrap().query_wasm_smart::<Vec<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::RenewalQueue {
+                time: expected_renewal_time,
+            },
+        );
+        assert!(result.is_ok());
+
+        let asks = result.unwrap();
+        assert_eq!(asks.len(), 1);
+
+        let user_balance_after = app
+            .wrap()
+            .query_balance(USER.to_string(), NATIVE_DENOM)
+            .unwrap();
+        assert!(user_balance_before.amount < user_balance_after.amount);
+    }
+
+    #[test]
+    fn process_renewals_renew_free() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(response.is_ok());
+        let renewal_price = response.unwrap().0.unwrap();
+
+        let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::FundRenewal {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_price.amount.u128() - 1u128, NATIVE_DENOM)],
+        );
+        assert!(result.is_ok());
+
+        update_block_time(&mut app, 60 * 60 * 24 * 30);
+
+        let result = app.execute_contract(
+            Addr::unchecked(OPERATOR),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::ProcessRenewals { limit: 1 },
+            &[],
+        );
+        assert!(result.is_ok());
+
+        let result = app.wrap().query_wasm_smart::<Option<Ask>>(
+            MKT,
+            &MarketplaceQueryMsg::Ask {
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_some());
+    }
+
+    #[test]
     fn query_name() {
         let mut app = instantiate_contracts(None, None, None);
 
@@ -1099,9 +1556,9 @@ mod query {
         // fails with "user" string, has to be a bech32 address
         let res: StdResult<String> = app.wrap().query_wasm_smart(
             COLLECTION,
-            &SgNameQueryMsg::Name {
+            &(SgNameQueryMsg::Name {
                 address: USER.to_string(),
-            },
+            }),
         );
         assert!(res.is_err());
 
@@ -1127,9 +1584,9 @@ mod query {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &SgNameQueryMsg::Name {
+                &(SgNameQueryMsg::Name {
                     address: cosmos_address.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, "yoyo".to_string());
@@ -1141,7 +1598,7 @@ mod query {
 
         let res: CollectionInfoResponse = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721QueryMsg::CollectionInfo {})
+            .query_wasm_smart(COLLECTION, &(Sg721QueryMsg::CollectionInfo {}))
             .unwrap();
         assert_eq!(
             res.start_trading_time.unwrap(),
@@ -1153,7 +1610,7 @@ mod query {
 }
 
 mod collection {
-    use cosmwasm_std::{to_binary, StdResult};
+    use cosmwasm_std::{to_json_binary, StdResult};
     use cw721::NftInfoResponse;
     use cw_controllers::AdminResponse;
     use name_marketplace::state::Ask;
@@ -1183,7 +1640,7 @@ mod collection {
     }
 
     fn send(app: &mut StargazeApp, from: &str, to: &str) {
-        let msg = to_binary("You now have the melting power").unwrap();
+        let msg = to_json_binary("You now have the melting power").unwrap();
         let target = to.to_string();
         let send_msg = Sg721NameExecuteMsg::SendNft {
             contract: target,
@@ -1232,9 +1689,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1271,9 +1728,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1321,9 +1778,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1362,9 +1819,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1392,9 +1849,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1405,9 +1862,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::NftInfo {
+                &(Sg721NameQueryMsg::NftInfo {
                     token_id: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res.extension.records[0].name, name.to_string());
@@ -1418,9 +1875,9 @@ mod collection {
             .wrap()
             .query_wasm_smart(
                 COLLECTION,
-                &Sg721NameQueryMsg::ImageNFT {
+                &(Sg721NameQueryMsg::ImageNFT {
                     name: NAME.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert!(res.is_none());
@@ -1634,7 +2091,7 @@ mod collection {
         let mut app = instantiate_contracts(None, None, None);
         let params: SudoParams = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .query_wasm_smart(COLLECTION, &(Sg721NameQueryMsg::Params {}))
             .unwrap();
         let max_record_count = params.max_record_count;
 
@@ -1645,7 +2102,7 @@ mod collection {
         assert!(res.is_ok());
         let params: SudoParams = app
             .wrap()
-            .query_wasm_smart(COLLECTION, &Sg721NameQueryMsg::Params {})
+            .query_wasm_smart(COLLECTION, &(Sg721NameQueryMsg::Params {}))
             .unwrap();
         assert_eq!(params.max_record_count, max_record_count + 1);
     }
@@ -1653,7 +2110,7 @@ mod collection {
 
 mod whitelist {
     use crate::msg::QueryMsg;
-    use whitelist_updatable::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
+    use whitelist_updatable_flatrate::{msg::QueryMsg as WhitelistQueryMsg, state::Config};
 
     use super::*;
 
@@ -1665,16 +2122,49 @@ mod whitelist {
     }
 
     #[test]
-    fn add_remove_whitelist() {
+    fn add_remove_flatrate_whitelist() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         let whitelists: Vec<Addr> = app
             .wrap()
-            .query_wasm_smart(MINTER, &QueryMsg::Whitelists {})
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
             .unwrap();
         let wl_count = whitelists.len();
         let msg = ExecuteMsg::AddWhitelist {
             address: "whitelist".to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
+        };
+
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count + 1);
+
+        let msg = ExecuteMsg::RemoveWhitelist {
+            address: "whitelist".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), wl_count);
+    }
+
+    #[test]
+    fn add_remove_percent_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let whitelists: Vec<Addr> = app
+            .wrap()
+            .query_wasm_smart(MINTER, &(QueryMsg::Whitelists {}))
+            .unwrap();
+        let wl_count = whitelists.len();
+        let msg = ExecuteMsg::AddWhitelist {
+            address: "whitelist".to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
         };
 
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
@@ -1701,7 +2191,7 @@ mod whitelist {
         let wl_id = app.store_code(contract_whitelist());
 
         // instantiate wl2
-        let msg = whitelist_updatable::msg::InstantiateMsg {
+        let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: vec![
                 "addr0001".to_string(),
@@ -1710,7 +2200,8 @@ mod whitelist {
                 USER2.to_string(),
                 ADMIN2.to_string(),
             ],
-            mint_discount_bps: None,
+            mint_discount_amount: None,
+            admin_list: None,
         };
         let wl2 = app
             .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
@@ -1719,6 +2210,7 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -1738,9 +2230,9 @@ mod whitelist {
             .wrap()
             .query_wasm_smart(
                 WHITELIST,
-                &WhitelistQueryMsg::MintCount {
+                &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, 1);
@@ -1750,9 +2242,9 @@ mod whitelist {
             .wrap()
             .query_wasm_smart(
                 WHITELIST2,
-                &WhitelistQueryMsg::MintCount {
+                &(WhitelistQueryMsg::MintCount {
                     address: USER.to_string(),
-                },
+                }),
             )
             .unwrap();
         assert_eq!(res, 0);
@@ -1776,7 +2268,7 @@ mod whitelist {
         let wl_id = app.store_code(contract_whitelist());
 
         // instantiate wl2
-        let msg = whitelist_updatable::msg::InstantiateMsg {
+        let msg = whitelist_updatable_flatrate::msg::InstantiateMsg {
             per_address_limit: PER_ADDRESS_LIMIT,
             addresses: vec![
                 "addr0001".to_string(),
@@ -1785,7 +2277,8 @@ mod whitelist {
                 USER2.to_string(),
                 ADMIN2.to_string(),
             ],
-            mint_discount_bps: Some(3500),
+            mint_discount_amount: Some(BASE_PRICE as u64),
+            admin_list: None,
         };
 
         let wl2 = app
@@ -1795,6 +2288,61 @@ mod whitelist {
         // add wl2 to minter
         let msg = ExecuteMsg::AddWhitelist {
             address: wl2.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN.to_string()),
+            Addr::unchecked(MINTER.to_string()),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        // mint and list with discount
+        // query discount, pass to mint_and_list
+        let discount: u64 = app
+            .wrap()
+            .query_wasm_smart(wl2, &(WhitelistQueryMsg::MintDiscountAmount {}))
+            .unwrap();
+        let res = mint_and_list(
+            &mut app,
+            NAME,
+            USER2,
+            Some(Decimal::from_ratio(
+                discount,
+                Uint128::from(1_000_000_000u128),
+            )),
+        );
+        println!("result: {:?}", res);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn discount2() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+        let wl_id = app.store_code(contract_whitelist_percent());
+
+        // instantiate wl2
+        let msg = whitelist_updatable::msg::InstantiateMsg {
+            per_address_limit: PER_ADDRESS_LIMIT,
+            addresses: vec![
+                "addr0001".to_string(),
+                "addr0002".to_string(),
+                USER.to_string(),
+                USER2.to_string(),
+                ADMIN2.to_string(),
+            ],
+            mint_discount_bps: Some(1000u64),
+        };
+
+        let wl2 = app
+            .instantiate_contract(wl_id, Addr::unchecked(ADMIN2), &msg, &[], "Whitelist", None)
+            .unwrap();
+
+        // add wl2 to minter
+        let msg = ExecuteMsg::AddWhitelist {
+            address: wl2.to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
         };
         let res = app.execute_contract(
             Addr::unchecked(ADMIN.to_string()),
@@ -1808,18 +2356,32 @@ mod whitelist {
         // query discount, pass to mint_and_list
         let discount: Decimal = app
             .wrap()
-            .query_wasm_smart(wl2, &WhitelistQueryMsg::MintDiscountPercent {})
+            .query_wasm_smart(wl2, &(PercentWhitelistQueryMsg::MintDiscountPercent {}))
             .unwrap();
         let res = mint_and_list(&mut app, NAME, USER2, Some(discount));
+        println!("result: {:?}", res);
         assert!(res.is_ok());
     }
 
     #[test]
-    fn mint_from_whitelist() {
+    fn mint_from_incorrect_whitelist_type() {
         let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
 
         let msg = ExecuteMsg::AddWhitelist {
             address: WHITELIST.to_string(),
+            whitelist_type: "FakeDiscount".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn mint_from_percent_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: WHITELIST.to_string(),
+            whitelist_type: "PercentDiscount".to_string(),
         };
         let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
         assert!(res.is_ok());
@@ -1845,7 +2407,55 @@ mod whitelist {
 
         let msg = WhitelistQueryMsg::Config {};
         let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
-        assert_eq!(res.admin, ADMIN2.to_string());
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res, wl_addr_count + 1);
+
+        let msg = WhitelistQueryMsg::IncludesAddress {
+            address: USER3.to_string(),
+        };
+        let res: bool = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert!(res);
+
+        let res = mint_and_list(&mut app, NAME, USER3, None);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn mint_from_flatrate_whitelist() {
+        let mut app = instantiate_contracts(None, Some(ADMIN.to_string()), None);
+
+        let msg = ExecuteMsg::AddWhitelist {
+            address: WHITELIST.to_string(),
+            whitelist_type: "FlatrateDiscount".to_string(),
+        };
+        let res = app.execute_contract(Addr::unchecked(ADMIN), Addr::unchecked(MINTER), &msg, &[]);
+        assert!(res.is_ok());
+
+        let msg = QueryMsg::Whitelists {};
+        let whitelists: Vec<Addr> = app.wrap().query_wasm_smart(MINTER, &msg).unwrap();
+        assert_eq!(whitelists.len(), 2);
+
+        let msg = WhitelistQueryMsg::AddressCount {};
+        let wl_addr_count: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(wl_addr_count, 5);
+
+        let msg = WhitelistExecuteMsg::AddAddresses {
+            addresses: vec![USER3.to_string()],
+        };
+        let res = app.execute_contract(
+            Addr::unchecked(ADMIN2),
+            Addr::unchecked(WHITELIST),
+            &msg,
+            &[],
+        );
+        assert!(res.is_ok());
+
+        let msg = WhitelistQueryMsg::Config {};
+        let res: Config = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();
+        assert_eq!(res.admins, [ADMIN2.to_string()]);
 
         let msg = WhitelistQueryMsg::AddressCount {};
         let res: u64 = app.wrap().query_wasm_smart(WHITELIST, &msg).unwrap();

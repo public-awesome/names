@@ -1,32 +1,35 @@
-use std::marker::PhantomData;
-
 use crate::error::ContractError;
+use crate::helpers::{get_char_price, get_renewal_price_and_bid, process_renewal, renew_name};
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
 use crate::state::{
-    ask_key, asks, bid_key, bids, increment_asks, Ask, Bid, SudoParams, IS_SETUP, NAME_COLLECTION,
-    NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
+    ask_key, asks, bid_key, bids, increment_asks, legacy_bids, Ask, Bid, SudoParams, IS_SETUP,
+    NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
+
 use cosmwasm_std::{
-    coin, coins, to_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo,
-    Order, StdError, StdResult, Storage, Timestamp, Uint128, WasmMsg,
+    coin, coins, ensure, ensure_eq, to_json_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty,
+    Env, Event, MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw721::{Cw721ExecuteMsg, OwnerOfResponse};
 use cw721_base::helpers::Cw721Contract;
-use cw_utils::{must_pay, nonpayable};
-use semver::Version;
+use cw_storage_plus::Bound;
+use cw_utils::{may_pay, must_pay, nonpayable};
 use sg_name_common::{charge_fees, SECONDS_PER_YEAR};
+use sg_name_minter::{SgNameMinterQueryMsg, SudoParams as NameMinterParams};
 use sg_std::{Response, SubMsg, NATIVE_DENOM};
+use std::marker::PhantomData;
 
 // Version info for migration info
-const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CONTRACT_NAME: &str = "crates.io:sg-name-marketplace";
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // bps fee can not exceed 100%
 const MAX_FEE_BPS: u64 = 10000;
+
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -44,6 +47,11 @@ pub fn instantiate(
         trading_fee_percent: Decimal::percent(msg.trading_fee_bps) / Uint128::from(100u128),
         min_price: msg.min_price,
         ask_interval: msg.ask_interval,
+        max_renewals_per_block: msg.max_renewals_per_block,
+        valid_bid_query_limit: msg.valid_bid_query_limit,
+        renew_window: msg.renew_window,
+        renewal_bid_percentage: msg.renewal_bid_percentage,
+        operator: deps.api.addr_validate(&msg.operator)?,
     };
     SUDO_PARAMS.save(deps.storage, &params)?;
 
@@ -74,9 +82,11 @@ pub fn execute(
         ExecuteMsg::AcceptBid { token_id, bidder } => {
             execute_accept_bid(deps, env, info, &token_id, api.addr_validate(&bidder)?)
         }
+        ExecuteMsg::MigrateBids { limit } => execute_migrate_bids(deps, env, info, limit),
         ExecuteMsg::FundRenewal { token_id } => execute_fund_renewal(deps, info, &token_id),
         ExecuteMsg::RefundRenewal { token_id } => execute_refund_renewal(deps, info, &token_id),
-        ExecuteMsg::ProcessRenewals { time } => execute_process_renewal(deps, env, time),
+        ExecuteMsg::Renew { token_id } => execute_renew(deps, env, info, &token_id),
+        ExecuteMsg::ProcessRenewals { limit } => execute_process_renewals(deps, env, info, limit),
         ExecuteMsg::Setup { minter, collection } => execute_setup(
             deps,
             api.addr_validate(&minter)?,
@@ -237,15 +247,21 @@ pub fn execute_set_bid(
     info: MessageInfo,
     token_id: &str,
 ) -> Result<Response, ContractError> {
-    let params = SUDO_PARAMS.load(deps.storage)?;
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let ask_key = ask_key(token_id);
-    asks().load(deps.storage, ask_key)?;
+    let ask = asks().load(deps.storage, ask_key(token_id))?;
 
+    // Ensure bid price is above char price
     let bid_price = must_pay(&info, NATIVE_DENOM)?;
-    if bid_price < params.min_price {
-        return Err(ContractError::PriceTooSmall(bid_price));
-    }
+    let char_price = get_char_price(name_minter_params.base_price.u128(), ask.token_id.len());
+
+    ensure!(
+        bid_price >= char_price,
+        ContractError::PriceTooSmall(char_price)
+    );
 
     let bidder = info.sender;
     let mut res = Response::new();
@@ -337,6 +353,7 @@ pub fn execute_accept_bid(
     bids().remove(deps.storage, bid_key)?;
 
     // Update renewal queue
+    RENEWAL_QUEUE.remove(deps.storage, (ask.renewal_time.seconds(), ask.id));
     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
     RENEWAL_QUEUE.save(
         deps.storage,
@@ -380,6 +397,61 @@ pub fn execute_accept_bid(
         .add_attribute("price", bid.amount.to_string());
 
     Ok(res.add_event(event))
+}
+
+/// Migrates bids from the old index contract to the new index
+pub fn execute_migrate_bids(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    limit: u32,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    ensure_eq!(
+        info.sender,
+        sudo_params.operator,
+        ContractError::Unauthorized {}
+    );
+
+    let old_bids = legacy_bids()
+        .range(deps.storage, None, None, Order::Ascending)
+        .take(limit as usize)
+        .map(|item| item.map(|(_, b)| b))
+        .collect::<StdResult<Vec<_>>>()?;
+
+    ensure!(
+        !old_bids.is_empty(),
+        ContractError::Std(StdError::generic_err("No bids to migrate"))
+    );
+
+    let mut response = Response::new();
+
+    let mut event = Event::new("migrate-bids");
+
+    for bid in old_bids {
+        let existing_bid = bids().may_load(deps.storage, bid_key(&bid.token_id, &bid.bidder))?;
+
+        legacy_bids().remove(deps.storage, bid_key(&bid.token_id, &bid.bidder))?;
+
+        if let Some(existing_bid) = existing_bid {
+            let msg = BankMsg::Send {
+                to_address: existing_bid.bidder.to_string(),
+                amount: vec![coin(existing_bid.amount.u128(), NATIVE_DENOM)],
+            };
+            response = response.add_message(msg);
+        } else {
+            store_bid(deps.storage, &bid)?;
+        }
+
+        event = event.add_attribute("bid_key", format!("{}-{}", bid.token_id, bid.bidder));
+    }
+
+    response = response.add_event(event);
+
+    Ok(response)
 }
 
 pub fn execute_fund_renewal(
@@ -429,51 +501,109 @@ pub fn execute_refund_renewal(
     Ok(Response::new().add_event(event).add_message(msg))
 }
 
-/// Anyone can call this to process renewals for a block and earn a reward
-pub fn execute_process_renewal(
-    _deps: DepsMut,
+pub fn execute_renew(
+    deps: DepsMut,
     env: Env,
-    time: Timestamp,
+    info: MessageInfo,
+    token_id: &str,
 ) -> Result<Response, ContractError> {
-    println!("Processing renewals at time {}", time);
+    let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
-    if time > env.block.time {
-        return Err(ContractError::CannotProcessFutureRenewal {});
+    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.renew_window;
+
+    ensure!(
+        env.block.time.seconds() >= ask_renew_start_time,
+        ContractError::CannotProcessFutureRenewal {}
+    );
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let (renewal_price, _valid_bid) = get_renewal_price_and_bid(
+        deps.as_ref(),
+        &env.block.time,
+        &sudo_params,
+        &ask.token_id,
+        name_minter_params.base_price.u128(),
+    )?;
+
+    let payment = may_pay(&info, NATIVE_DENOM)?;
+
+    ask.renewal_fund += payment;
+
+    ensure!(
+        ask.renewal_fund >= renewal_price,
+        ContractError::InsufficientRenewalFunds {
+            expected: coin(renewal_price.u128(), NATIVE_DENOM),
+            actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
+        }
+    );
+
+    let mut response = Response::new();
+
+    response = renew_name(deps, &env, &sudo_params, ask, renewal_price, response)?;
+
+    Ok(response)
+}
+
+pub fn execute_process_renewals(
+    mut deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    limit: u32,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+
+    let sudo_params = SUDO_PARAMS.load(deps.storage)?;
+
+    ensure_eq!(
+        info.sender,
+        sudo_params.operator,
+        ContractError::Unauthorized {}
+    );
+
+    let renewable_asks = asks()
+        .idx
+        .renewal_time
+        .range(
+            deps.storage,
+            None,
+            Some(Bound::exclusive((
+                (env.block.time.seconds() + 1),
+                "".to_string(),
+            ))),
+            Order::Ascending,
+        )
+        .take(limit as usize)
+        .map(|item| item.map(|(_, v)| v))
+        .collect::<StdResult<Vec<Ask>>>()?;
+
+    let name_minter = NAME_MINTER.load(deps.storage)?;
+    let name_minter_params = deps
+        .querier
+        .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
+
+    let mut response = Response::new();
+
+    for renewable_ask in renewable_asks {
+        response = process_renewal(
+            deps.branch(),
+            &env,
+            &sudo_params,
+            &name_minter_params,
+            renewable_ask,
+            response,
+        )?;
     }
 
-    // // TODO: add renewal processing logic
-    // let renewal_queue = RENEWAL_QUEUE.load(deps.storage, time)?;
-    // for name in renewal_queue.iter() {
-    //     let ask = asks().load(deps.storage, ask_key(name))?;
-    //     if ask.renewal_fund.is_zero() {
-    //         continue;
-    //         // transfer ownership to name service
-    //         // list in marketplace for 0.5% of bid price
-    //         // if no bids, list for original price
-    //     }
-
-    //     // charge renewal fee
-    //     // pay out reward to operator
-    //     // reset ask
-
-    //     // Update Ask with new renewal_time
-    //     let renewal_time = env.block.time.plus_seconds(SECONDS_PER_YEAR);
-    //     let ask = Ask {
-    //         token_id: name.to_string(),
-    //         id: ask.id,
-    //         seller: ask.seller,
-    //         renewal_time,
-    //         renewal_fund: ask.renewal_fund - payment, // validate payment
-    //     };
-    //     store_ask(deps.storage, &ask)?;
-    // }
-
-    let event = Event::new("process-renewal").add_attribute("time", time.to_string());
-    Ok(Response::new().add_event(event))
+    Ok(response)
 }
 
 /// Transfers funds and NFT, updates bid
-fn finalize_sale(
+pub fn finalize_sale(
     deps: Deps,
     ask: Ask,
     price: Uint128,
@@ -491,7 +621,7 @@ fn finalize_sale(
 
     let exec_cw721_transfer = WasmMsg::Execute {
         contract_addr: collection.to_string(),
-        msg: to_binary(&cw721_transfer_msg)?,
+        msg: to_json_binary(&cw721_transfer_msg)?,
         funds: vec![],
     };
     res.messages.push(SubMsg::new(exec_cw721_transfer));
@@ -503,7 +633,9 @@ fn finalize_sale(
         .add_attribute("token_id", ask.token_id.to_string())
         .add_attribute("seller", ask.seller.to_string())
         .add_attribute("buyer", buyer.to_string())
-        .add_attribute("price", price.to_string());
+        .add_attribute("price", price.to_string())
+        .add_attribute("renewal_time", ask.renewal_time.to_string());
+
     res.events.push(event);
 
     Ok(())
@@ -534,11 +666,11 @@ fn payout(
     Ok(())
 }
 
-fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
+pub fn store_bid(store: &mut dyn Storage, bid: &Bid) -> StdResult<()> {
     bids().save(store, bid_key(&bid.token_id, &bid.bidder), bid)
 }
 
-fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
+pub fn store_ask(store: &mut dyn Storage, ask: &Ask) -> StdResult<()> {
     asks().save(store, ask_key(&ask.token_id), ask)
 }
 
@@ -556,31 +688,4 @@ fn only_owner(
     }
 
     Ok(res)
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    let current_version = cw2::get_contract_version(deps.storage)?;
-    if current_version.contract != CONTRACT_NAME {
-        return Err(StdError::generic_err("Cannot upgrade to a different contract").into());
-    }
-    let version: Version = current_version
-        .version
-        .parse()
-        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-    let new_version: Version = CONTRACT_VERSION
-        .parse()
-        .map_err(|_| StdError::generic_err("Invalid contract version"))?;
-
-    if version > new_version {
-        return Err(StdError::generic_err("Cannot upgrade to a previous contract version").into());
-    }
-    // if same version return
-    if version == new_version {
-        return Ok(Response::new());
-    }
-
-    // set new contract version
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    Ok(Response::new())
 }

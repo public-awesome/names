@@ -4,12 +4,12 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    ensure, to_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event, MessageInfo,
-    StdError, StdResult, WasmMsg,
+    ensure, to_json_binary, Addr, Binary, ContractInfoResponse, Deps, DepsMut, Env, Event,
+    MessageInfo, StdError, StdResult, WasmMsg,
 };
 
 use cw721_base::{state::TokenInfo, MintMsg};
-use cw_utils::nonpayable;
+use cw_utils::{nonpayable, Expiration};
 
 use sg721::ExecuteMsg as Sg721ExecuteMsg;
 use sg721_base::msg::CollectionInfoResponse;
@@ -125,15 +125,39 @@ pub fn execute_mint(
     Ok(Response::new().add_event(event))
 }
 
-/// WIP Throw not implemented error
 pub fn execute_burn(
-    _deps: DepsMut,
-    _env: Env,
+    deps: DepsMut,
+    env: Env,
     info: MessageInfo,
-    _token_id: String,
+    token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
-    Err(ContractError::NotImplemented {})
+
+    let names_marketplace = NAME_MARKETPLACE.load(deps.storage)?;
+
+    ensure!(info.sender == names_marketplace, Unauthorized {});
+
+    let sg721 = Sg721NameContract::default();
+
+    // Force names marketplace address as operator
+    sg721.operators.save(
+        deps.storage,
+        (&info.sender, &names_marketplace),
+        &Expiration::Never {},
+    )?;
+
+    sg721.execute(
+        deps,
+        env,
+        info,
+        Sg721ExecuteMsg::Burn {
+            token_id: token_id.to_string(),
+        },
+    )?;
+
+    let event = Event::new("burn-name").add_attribute("token_id", token_id);
+
+    Ok(Response::new().add_event(event))
 }
 
 pub fn execute_transfer_nft(
@@ -144,9 +168,12 @@ pub fn execute_transfer_nft(
     token_id: String,
 ) -> Result<Response, ContractError> {
     nonpayable(&info)?;
+
+    let names_marketplace = NAME_MARKETPLACE.load(deps.storage)?;
     let recipient = deps.api.addr_validate(&recipient)?;
 
-    let update_ask_msg = _transfer_nft(deps, env, &info, &recipient, &token_id)?;
+    let update_ask_msg =
+        _transfer_nft(deps, env, &info, &recipient, &token_id, &names_marketplace)?;
 
     let event = Event::new("transfer")
         .add_attribute("sender", info.sender)
@@ -169,7 +196,7 @@ fn update_ask_on_marketplace(
     let update_ask_msg = WasmMsg::Execute {
         contract_addr: NAME_MARKETPLACE.load(deps.storage)?.to_string(),
         funds: vec![],
-        msg: to_binary(&msg)?,
+        msg: to_json_binary(&msg)?,
     };
     Ok(update_ask_msg)
 }
@@ -214,6 +241,7 @@ fn _transfer_nft(
     info: &MessageInfo,
     recipient: &Addr,
     token_id: &str,
+    names_marketplace: &Addr,
 ) -> Result<WasmMsg, ContractError> {
     let update_ask_msg = update_ask_on_marketplace(deps.as_ref(), token_id, recipient.clone())?;
 
@@ -224,7 +252,16 @@ fn _transfer_nft(
         token_id: token_id.to_string(),
     };
 
-    Sg721NameContract::default().execute(deps, env, info.clone(), msg)?;
+    let sg721 = Sg721NameContract::default();
+
+    // Force names marketplace address as operator
+    sg721.operators.save(
+        deps.storage,
+        (&info.sender, names_marketplace),
+        &Expiration::Never {},
+    )?;
+
+    sg721.execute(deps, env, info.clone(), msg)?;
 
     Ok(update_ask_msg)
 }
@@ -475,7 +512,7 @@ fn only_owner(deps: Deps, sender: &Addr, token_id: &str) -> Result<Addr, Contrac
         .load(deps.storage, token_id)?
         .owner;
 
-    if &owner != sender {
+    if owner != sender {
         return Err(ContractError::Base(Unauthorized {}));
     }
 
@@ -567,7 +604,7 @@ pub fn transcode(address: &str) -> StdResult<String> {
 
 fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, ContractError> {
     // we have an EOA registration
-    if sender == &addr {
+    if sender == addr {
         return Ok(addr);
     }
 
@@ -578,7 +615,7 @@ fn validate_address(deps: Deps, sender: &Addr, addr: Addr) -> Result<Addr, Contr
         let collection_info: CollectionInfoResponse = deps
             .querier
             .query_wasm_smart(&addr, &sg721_base::msg::QueryMsg::CollectionInfo {})?;
-        if collection_info.creator == sender.to_string() {
+        if collection_info.creator == *sender.to_string() {
             return Ok(addr);
         }
     }

@@ -27,7 +27,10 @@ pub enum SgNameMinterExecuteMsg {
     /// Will be set to null after go-to-market
     UpdateAdmin { admin: Option<String> },
     /// Add a whiltelist address
-    AddWhitelist { address: String },
+    AddWhitelist {
+        address: String,
+        whitelist_type: String,
+    },
     /// Remove a whitelist address
     RemoveWhitelist { address: String },
     /// Update config, only callable by admin

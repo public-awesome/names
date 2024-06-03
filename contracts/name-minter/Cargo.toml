@@ -1,11 +1,11 @@
 [package]
-name = "name-minter"
-authors = ["Shane Vitarana <s@noreply.publicawesome.com>"]
-version     = { workspace = true }
-edition     = { workspace = true }
-homepage    = { workspace = true }
-repository  = { workspace = true }
-license     = { workspace = true }
+name       = "name-minter"
+authors    = ["Shane Vitarana <s@noreply.publicawesome.com>"]
+version    = { workspace = true }
+edition    = { workspace = true }
+homepage   = { workspace = true }
+repository = { workspace = true }
+license    = { workspace = true }
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -16,6 +16,11 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "schema"
+path = "src/bin/schema.rs"
+doc  = false
 
 [features]
 # for more explicit tests, cargo test --features=backtraces
@@ -44,12 +49,14 @@ sg-name-common = { path = "../../packages/sg-name-common" }
 sg-name-minter = { path = "../../packages/sg-name-minter" }
 sg-std = { workspace = true }
 thiserror = { workspace = true }
+whitelist-updatable-flatrate = { path = "../whitelist-updatable-flatrate", features = ["library"]}
 whitelist-updatable = { path = "../whitelist-updatable", features = [
   "library",
 ] }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true }
-sg-multi-test = { workspace = true }
-sg721-base = { workspace = true }
-anyhow = "1"
+cw-multi-test    = { workspace = true }
+sg-multi-test    = { workspace = true }
+sg721-base       = { workspace = true }
+name-marketplace = { workspace = true }
+anyhow           = "1"

@@ -3,7 +3,7 @@ members  = ["packages/*", "contracts/*"]
 resolver = "2"
 
 [workspace.package]
-version    = "1.2.7"
+version    = "2.1.0"
 edition    = "2021"
 homepage   = "https://stargaze.zone"
 repository = "https://github.com/public-awesome/names"
@@ -31,11 +31,13 @@ sg-metadata      = "0.22.9"
 sg-multi-test    = "0.22.9"
 sg-std           = "0.22.9"
 thiserror        = "1.0.31"
-sg-name-common   = { version = "1.2.5", path = "./packages/sg-name-common" }
-sg721-name       = { version = "1.2.5", path = "./contracts/sg721-name" }
-sg-name          = { version = "1.2.5", path = "./packages/sg-name" }
-sg-name-market   = { version = "1.2.5", path = "./packages/sg-name-market" }
-name-marketplace = { version = "1.2.5", path = "./contracts/marketplace", features = ["library"] }
+sg-name-common   = { path = "./packages/sg-name-common" }
+sg-name          = { path = "./packages/sg-name" }
+sg-name-market   = { path = "./packages/sg-name-market" }
+sg-name-minter   = { path = "./packages/sg-name-minter" }
+name-marketplace = { path = "./contracts/marketplace", features = ["library"] }
+name-minter      = { path = "./contracts/name-minter", features = ["library"] }
+sg721-name       = { path = "./contracts/sg721-name", features = ["library"] }
 
 [profile.release.package.name-minter]
 codegen-units = 1

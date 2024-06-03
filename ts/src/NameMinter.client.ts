@@ -74,9 +74,11 @@ export interface NameMinterInterface extends NameMinterReadOnlyInterface {
     pause: boolean;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   addWhitelist: ({
-    address
+    address,
+    whitelistType
   }: {
     address: string;
+    whitelistType: string;
   }, fee?: number | StdFee | "auto", memo?: string, funds?: Coin[]) => Promise<ExecuteResult>;
   removeWhitelist: ({
     address
@@ -141,13 +143,16 @@ export class NameMinterClient extends NameMinterQueryClient implements NameMinte
     }, fee, memo, funds);
   };
   addWhitelist = async ({
-    address
+    address,
+    whitelistType
   }: {
     address: string;
+    whitelistType: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       add_whitelist: {
-        address
+        address,
+        whitelist_type: whitelistType
       }
     }, fee, memo, funds);
   };

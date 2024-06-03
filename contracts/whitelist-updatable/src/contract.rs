@@ -2,7 +2,7 @@ use crate::state::{Config, CONFIG, TOTAL_ADDRESS_COUNT, WHITELIST};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
+    to_json_binary, Addr, Binary, Decimal, Deps, DepsMut, Empty, Env, Event, MessageInfo, Order,
     StdError, StdResult,
 };
 use cw2::set_contract_version;
@@ -30,7 +30,7 @@ pub fn instantiate(
     let config = Config {
         admin: info.sender,
         per_address_limit: msg.per_address_limit,
-        /// 1% = 100, 50% = 5000
+        // 1% = 100, 50% = 5000
         mint_discount_bps: msg.mint_discount_bps,
     };
 
@@ -176,7 +176,7 @@ pub fn execute_process_address(
     // query whitelists from minter to see if this one exists...
     let whitelists: Vec<Addr> = deps
         .querier
-        .query_wasm_smart(&minter, &SgNameMinterQueryMsg::Whitelists {})?;
+        .query_wasm_smart(&minter, &(SgNameMinterQueryMsg::Whitelists {}))?;
     if !whitelists.contains(&env.contract.address) {
         return Err(ContractError::Unauthorized {});
     }
@@ -247,14 +247,18 @@ pub fn execute_purge(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::IncludesAddress { address } => to_binary(&query_includes_address(deps, address)?),
-        QueryMsg::MintCount { address } => to_binary(&query_mint_count(deps, address)?),
-        QueryMsg::Admin {} => to_binary(&query_admin(deps)?),
-        QueryMsg::AddressCount {} => to_binary(&query_address_count(deps)?),
-        QueryMsg::PerAddressLimit {} => to_binary(&query_per_address_limit(deps)?),
-        QueryMsg::IsProcessable { address } => to_binary(&query_is_processable(deps, address)?),
-        QueryMsg::MintDiscountPercent {} => to_binary(&query_mint_discount_percent(deps)?),
+        QueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::IncludesAddress { address } => {
+            to_json_binary(&query_includes_address(deps, address)?)
+        }
+        QueryMsg::MintCount { address } => to_json_binary(&query_mint_count(deps, address)?),
+        QueryMsg::Admin {} => to_json_binary(&query_admin(deps)?),
+        QueryMsg::AddressCount {} => to_json_binary(&query_address_count(deps)?),
+        QueryMsg::PerAddressLimit {} => to_json_binary(&query_per_address_limit(deps)?),
+        QueryMsg::IsProcessable { address } => {
+            to_json_binary(&query_is_processable(deps, address)?)
+        }
+        QueryMsg::MintDiscountPercent {} => to_json_binary(&query_mint_discount_percent(deps)?),
     }
 }
 
