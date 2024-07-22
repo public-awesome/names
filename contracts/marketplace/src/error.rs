@@ -53,6 +53,12 @@ pub enum ContractError {
     #[error("InsufficientRenewalFunds: expected {expected}, actual {actual}")]
     InsufficientRenewalFunds { expected: Coin, actual: Coin },
 
+    #[error("ExcededRenewalFund: expected {expected}, actual {actual}")]
+    ExcededRenewalFund { expected: Coin, actual: Coin },
+
+    #[error("InvalidRenewalPrice")]
+    InvalidRenewalPrice {},
+
     #[error("Cannot remove ask with existing bids")]
     ExistingBids {},
 

@@ -469,13 +469,18 @@ pub fn execute_fund_renewal(
 
     // make sure that we do not over fund the renewal
     // based on the price we got back
-    ensure!(
-        ask.renewal_fund + payment <= renewal_price.0.as_ref().unwrap().amount,
-        ContractError::InsufficientRenewalFunds {
-            expected: coin(renewal_price.0.unwrap().amount.u128(), NATIVE_DENOM),
-            actual: coin(ask.renewal_fund.u128() + payment.u128(), NATIVE_DENOM),
-        }
-    );
+    if let Some(renewal_price_coin) = renewal_price.0.as_ref() {
+        ensure!(
+            ask.renewal_fund + payment <= renewal_price_coin.amount,
+            ContractError::ExcededRenewalFund {
+                expected: coin(renewal_price_coin.amount.u128(), NATIVE_DENOM),
+                actual: coin(ask.renewal_fund.u128() + payment.u128(), NATIVE_DENOM),
+            }
+        );
+    } else {
+        return Err(ContractError::InvalidRenewalPrice {});
+    }
+
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
