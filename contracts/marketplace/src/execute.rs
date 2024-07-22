@@ -467,9 +467,10 @@ pub fn execute_fund_renewal(
     let renewal_price =
         query_ask_renew_price(deps.as_ref(), ask.renewal_time, (&token_id).to_string())?;
 
-    // check if renewal_fund + payment > renewal_price
+    // make sure that we do not over fund the renewal
+    // based on the price we got back
     ensure!(
-        ask.renewal_fund + payment > renewal_price.0.as_ref().unwrap().amount,
+        ask.renewal_fund + payment <= renewal_price.0.as_ref().unwrap().amount,
         ContractError::InsufficientRenewalFunds {
             expected: coin(renewal_price.0.unwrap().amount.u128(), NATIVE_DENOM),
             actual: coin(ask.renewal_fund.u128() + payment.u128(), NATIVE_DENOM),

@@ -1507,7 +1507,8 @@ mod query {
         assert!(response.is_ok());
         let renewal_price = response.unwrap().0.unwrap();
 
-        let fund_amount = coins(renewal_price.amount.u128() * 100_u128, NATIVE_DENOM);
+        // send set the fund_amount to the exact price
+        let fund_amount = coins(renewal_price.amount.u128(), NATIVE_DENOM);
         app.sudo(CwSudoMsg::Bank({
             BankSudo::Mint {
                 to_address: USER.to_string(),
@@ -1522,7 +1523,7 @@ mod query {
             &MarketplaceExecuteMsg::FundRenewal {
                 token_id: NAME.to_string(),
             },
-            &[coin(renewal_price.amount.u128() - 1u128, NATIVE_DENOM)],
+            &[coin(renewal_price.amount.u128(), NATIVE_DENOM)],
         );
         assert!(result.is_ok());
 
