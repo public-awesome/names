@@ -2,11 +2,11 @@ use crate::error::ContractError;
 use crate::helpers::{get_char_price, get_renewal_price_and_bid, process_renewal, renew_name};
 use crate::hooks::{prepare_ask_hook, prepare_bid_hook, prepare_sale_hook};
 use crate::msg::{ExecuteMsg, HookAction, InstantiateMsg};
+use crate::query::query_ask_renew_price;
 use crate::state::{
     ask_key, asks, bid_key, bids, increment_asks, legacy_bids, Ask, Bid, SudoParams, IS_SETUP,
     NAME_COLLECTION, NAME_MINTER, RENEWAL_QUEUE, SUDO_PARAMS,
 };
-
 use cosmwasm_std::{
     coin, coins, ensure, ensure_eq, to_json_binary, Addr, BankMsg, Decimal, Deps, DepsMut, Empty,
     Env, Event, MessageInfo, Order, StdError, StdResult, Storage, Uint128, WasmMsg,
@@ -462,6 +462,19 @@ pub fn execute_fund_renewal(
     let payment = must_pay(&info, NATIVE_DENOM)?;
 
     let mut ask = asks().load(deps.storage, ask_key(token_id))?;
+
+    // get the renewal price
+    let renewal_price =
+        query_ask_renew_price(deps.as_ref(), ask.renewal_time, (&token_id).to_string())?;
+
+    // check if renewal_fund + payment > renewal_price
+    ensure!(
+        ask.renewal_fund + payment > renewal_price.0.as_ref().unwrap().amount,
+        ContractError::InsufficientRenewalFunds {
+            expected: coin(renewal_price.0.unwrap().amount.u128(), NATIVE_DENOM),
+            actual: coin(ask.renewal_fund.u128() + payment.u128(), NATIVE_DENOM),
+        }
+    );
     ask.renewal_fund += payment;
     asks().save(deps.storage, ask_key(token_id), &ask)?;
 
