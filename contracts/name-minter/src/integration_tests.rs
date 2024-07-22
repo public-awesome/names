@@ -1548,6 +1548,84 @@ mod query {
     }
 
     #[test]
+    fn allow_partial_funded_renewal() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(response.is_ok());
+        let renewal_price = response.unwrap().0.unwrap();
+
+        // try to over-fund renewal
+        let fund_amount = coins(renewal_price.amount.u128(), NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::FundRenewal {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_price.amount.u128() - 100u128, NATIVE_DENOM)],
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn reject_overfunded_renewal() {
+        let mut app = instantiate_contracts(None, None, None);
+
+        mint_and_list(&mut app, NAME, USER, None).unwrap();
+
+        update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
+
+        let response = app.wrap().query_wasm_smart::<(Option<Coin>, Option<Bid>)>(
+            MKT,
+            &MarketplaceQueryMsg::AskRenewPrice {
+                current_time: app.block_info().time,
+                token_id: NAME.to_string(),
+            },
+        );
+        assert!(response.is_ok());
+        let renewal_price = response.unwrap().0.unwrap();
+
+        // try to over-fund renewal
+        let fund_amount = coins(renewal_price.amount.u128(), NATIVE_DENOM);
+        app.sudo(CwSudoMsg::Bank({
+            BankSudo::Mint {
+                to_address: USER.to_string(),
+                amount: fund_amount,
+            }
+        }))
+        .map_err(|err| println!("{:?}", err))
+        .ok();
+        let result = app.execute_contract(
+            Addr::unchecked(USER),
+            Addr::unchecked(MKT),
+            &MarketplaceExecuteMsg::FundRenewal {
+                token_id: NAME.to_string(),
+            },
+            &[coin(renewal_price.amount.u128() + 100u128, NATIVE_DENOM)],
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn query_name() {
         let mut app = instantiate_contracts(None, None, None);
 
