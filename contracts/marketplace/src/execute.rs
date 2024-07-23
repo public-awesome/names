@@ -472,7 +472,7 @@ pub fn execute_fund_renewal(
     if let Some(renewal_price_coin) = renewal_price.0.as_ref() {
         ensure!(
             ask.renewal_fund + payment <= renewal_price_coin.amount,
-            ContractError::ExcededRenewalFund {
+            ContractError::ExceededRenewalFund {
                 expected: coin(renewal_price_coin.amount.u128(), NATIVE_DENOM),
                 actual: coin(ask.renewal_fund.u128() + payment.u128(), NATIVE_DENOM),
             }

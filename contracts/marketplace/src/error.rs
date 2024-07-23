@@ -54,7 +54,7 @@ pub enum ContractError {
     InsufficientRenewalFunds { expected: Coin, actual: Coin },
 
     #[error("ExcededRenewalFund: expected {expected}, actual {actual}")]
-    ExcededRenewalFund { expected: Coin, actual: Coin },
+    ExceededRenewalFund { expected: Coin, actual: Coin },
 
     #[error("InvalidRenewalPrice")]
     InvalidRenewalPrice {},
