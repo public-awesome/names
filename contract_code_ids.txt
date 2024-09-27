@@ -1,0 +1,31 @@
+name_marketplace.wasm: 
+code_id:4289, 4320, 4399
+contract_address:
+stars1vs72epl4v9cd53wyeh57lk9595txf2w7k4764qhr5fxyt50xcksq8kyc9w 
+stars1xg2dhc22makmn93e72agwa86clshha2jwtm0l2kgduqfl5qaplmqngrln4
+stars1m4nkl9a7grq0es95aggz75pdt033nk4aghvkr74ywx9f4mm69qhsrsqjkw
+
+name_minter.wasm: 
+code_id: 4290
+contract_address:stars15689t72jjnpd0y78vnrcw0ssz0y7hx5v0etq6gysygw66kcz6u0q9duh0g 
+stars1evwy29sv74rtzl7gpp2slgml3732dp00eagq0jmsg0h7eutglluq49u0h7
+stars17m20l2xfrlceygdmjfjqf0xwua7jnqrvn4c0jdjfskdavkuykhrq8zdvfn
+
+sg721_name.wasm: 
+code_id: 4291 
+{
+  "image": "ipfs://example.com",
+  "collection_name": "Name Tokens",
+  "sg721_names_addr": "stars1k4kxtwjp94c4uz3fdfpr965zxferz4d8e7lw232umnns48hzgkvq2fm9j4"
+  stars1wgd2sqfk6tya6lhx37fcstwehjvlw22rn69d9fvlwypea6vg87gsl9pal6
+}
+
+
+whitelist_updatable.wasm:
+code_id:4177
+contract_address:
+
+whitelist_updatable_flatrate.wasm:
+tx:
+code_id: 4178
+contract_address:
