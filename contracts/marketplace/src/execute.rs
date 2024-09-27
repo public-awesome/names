@@ -548,22 +548,26 @@ pub fn execute_renew(
         &ask.token_id,
         name_minter_params.base_price.u128(),
     )?;
+    let mut final_price = renewal_price;
+    if let Some(_valid_bid) = _valid_bid {
+        let payment = may_pay(&info, NATIVE_DENOM)?;
 
-    let payment = may_pay(&info, NATIVE_DENOM)?;
-
-    ask.renewal_fund += payment;
-
-    ensure!(
-        ask.renewal_fund >= renewal_price,
-        ContractError::InsufficientRenewalFunds {
-            expected: coin(renewal_price.u128(), NATIVE_DENOM),
-            actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
-        }
-    );
+        ask.renewal_fund += payment;
+    
+        ensure!(
+            ask.renewal_fund >= renewal_price,
+            ContractError::InsufficientRenewalFunds {
+                expected: coin(renewal_price.u128(), NATIVE_DENOM),
+                actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
+            }
+        );
+    } else {
+        final_price = Uint128::zero();
+    }
 
     let mut response = Response::new();
 
-    response = renew_name(deps, &env, &sudo_params, ask, renewal_price, response)?;
+    response = renew_name(deps, &env, &sudo_params, ask, final_price, response)?;
 
     Ok(response)
 }
