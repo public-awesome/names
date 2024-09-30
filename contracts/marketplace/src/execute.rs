@@ -553,7 +553,7 @@ pub fn execute_renew(
         let payment = may_pay(&info, NATIVE_DENOM)?;
 
         ask.renewal_fund += payment;
-    
+
         ensure!(
             ask.renewal_fund >= renewal_price,
             ContractError::InsufficientRenewalFunds {
