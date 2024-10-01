@@ -541,7 +541,7 @@ pub fn execute_renew(
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let (renewal_price, _valid_bid) = get_renewal_price_and_bid(
+    let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps.as_ref(),
         &env.block.time,
         &sudo_params,
@@ -549,7 +549,7 @@ pub fn execute_renew(
         name_minter_params.base_price.u128(),
     )?;
     let mut final_price = renewal_price;
-    if let Some(_valid_bid) = _valid_bid {
+    if let Some(_bid) = valid_bid {
         let payment = may_pay(&info, NATIVE_DENOM)?;
 
         ask.renewal_fund += payment;
