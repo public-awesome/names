@@ -541,29 +541,33 @@ pub fn execute_renew(
         .querier
         .query_wasm_smart::<NameMinterParams>(name_minter, &SgNameMinterQueryMsg::Params {})?;
 
-    let (renewal_price, _valid_bid) = get_renewal_price_and_bid(
+    let (renewal_price, valid_bid) = get_renewal_price_and_bid(
         deps.as_ref(),
         &env.block.time,
         &sudo_params,
         &ask.token_id,
         name_minter_params.base_price.u128(),
     )?;
+    let mut final_price = renewal_price;
+    if let Some(_bid) = valid_bid {
+        let payment = may_pay(&info, NATIVE_DENOM)?;
 
-    let payment = may_pay(&info, NATIVE_DENOM)?;
+        ask.renewal_fund += payment;
 
-    ask.renewal_fund += payment;
-
-    ensure!(
-        ask.renewal_fund >= renewal_price,
-        ContractError::InsufficientRenewalFunds {
-            expected: coin(renewal_price.u128(), NATIVE_DENOM),
-            actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
-        }
-    );
+        ensure!(
+            ask.renewal_fund >= renewal_price,
+            ContractError::InsufficientRenewalFunds {
+                expected: coin(renewal_price.u128(), NATIVE_DENOM),
+                actual: coin(ask.renewal_fund.u128(), NATIVE_DENOM),
+            }
+        );
+    } else {
+        final_price = Uint128::zero();
+    }
 
     let mut response = Response::new();
 
-    response = renew_name(deps, &env, &sudo_params, ask, renewal_price, response)?;
+    response = renew_name(deps, &env, &sudo_params, ask, final_price, response)?;
 
     Ok(response)
 }
