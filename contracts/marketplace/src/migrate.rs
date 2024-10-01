@@ -49,19 +49,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         StdError::generic_err("Must upgrade contract version")
     );
 
-    let sudo_params_v1_2 = SUDO_PARAMS_V1_2.load(deps.storage)?;
-    let sudo_params = SudoParams {
-        trading_fee_percent: sudo_params_v1_2.trading_fee_percent,
-        min_price: sudo_params_v1_2.min_price,
-        ask_interval: sudo_params_v1_2.ask_interval,
-        max_renewals_per_block: msg.max_renewals_per_block,
-        valid_bid_query_limit: msg.valid_bid_query_limit,
-        renew_window: msg.renew_window,
-        renewal_bid_percentage: msg.renewal_bid_percentage,
-        operator: deps.api.addr_validate(&msg.operator)?,
-    };
-    SUDO_PARAMS.save(deps.storage, &sudo_params)?;
-
     cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let response = Response::new().add_event(
