@@ -1,7 +1,6 @@
 use crate::{
     error::ContractError,
     execute::{CONTRACT_NAME, CONTRACT_VERSION},
-    state::{SudoParams, SUDO_PARAMS},
 };
 
 use cosmwasm_schema::cw_serde;
@@ -25,20 +24,14 @@ pub struct SudoParamsV1_2 {
 pub const SUDO_PARAMS_V1_2: Item<SudoParamsV1_2> = Item::new("sudo-params");
 
 #[cw_serde]
-pub struct MigrateMsg {
-    max_renewals_per_block: u32,
-    valid_bid_query_limit: u32,
-    renew_window: u64,
-    renewal_bid_percentage: Decimal,
-    operator: String,
-}
+pub struct MigrateMsg {}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 #[allow(clippy::cmp_owned)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let prev_contract_version = cw2::get_contract_version(deps.storage)?;
 
-    let valid_contract_names = vec![CONTRACT_NAME.to_string()];
+    let valid_contract_names = [CONTRACT_NAME.to_string()];
     ensure!(
         valid_contract_names.contains(&prev_contract_version.contract),
         StdError::generic_err("Invalid contract name for migration")
