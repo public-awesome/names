@@ -562,6 +562,7 @@ pub fn execute_renew(
             }
         );
     } else {
+        nonpayable(&info)?;
         final_price = Uint128::zero();
     }
 
