@@ -1145,9 +1145,9 @@ mod query {
             },
         );
         assert!(result.is_ok());
-
-        let (renewal_price, _renewal_bid) = result.unwrap();
-        assert!(renewal_price.is_none());
+        // NOTE: disabling to support prefunding before renewal window
+        // let (renewal_price, _renewal_bid) = result.unwrap();
+        // assert!(renewal_price.is_none());
 
         update_block_time(&mut app, SECONDS_PER_YEAR - (60 * 60 * 24 * 30));
 
