@@ -204,11 +204,14 @@ pub fn query_ask_renew_price(
     let ask = asks().load(deps.storage, ask_key(&token_id))?;
     let sudo_params = SUDO_PARAMS.load(deps.storage)?;
 
-    let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.renew_window;
+    // NOTE: disabling to support prefunding before renewal window
+    //       this may be re-enabled if the prefunding logic needs
+    //       to be supported again
+    // let ask_renew_start_time = ask.renewal_time.seconds() - sudo_params.renew_window;
 
-    if current_time.seconds() < ask_renew_start_time {
-        return Ok((None, None));
-    }
+    // if current_time.seconds() < ask_renew_start_time {
+    //     return Ok((None, None));
+    // }
 
     let name_minter = NAME_MINTER.load(deps.storage)?;
     let name_minter_params = deps
